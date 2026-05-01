@@ -22,10 +22,15 @@ return new class extends Migration
             $table->string('password');
             $table->integer('experience_years');
             $table->string('education');
-            $table->string('profile_picture');
+            $table->string('profile_picture')->nullable();
             $table->string('rating');
             $table->string('cv');
             $table->string('fee');
+
+            $table->string('otp_code')->nullable(); // رمز التحقق
+            $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق
+            $table->text('fcm_token')->nullable();
+
             $table->timestamps();
         });
     }

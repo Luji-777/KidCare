@@ -14,7 +14,7 @@ class Doctor extends Model
         return $this->belongsTo(Department::class);
     }
     public function parents(){
-        return $this->belongsToMany(Parent::class,'favorite');
+        return $this->belongsToMany(ParentModel::class,'favorite');
 
     }
     public function appointments(){

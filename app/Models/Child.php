@@ -20,7 +20,7 @@ class Child extends Model
     }
 
     public function appointments(){
-        return $this->hasMany(Appointments::class);
+        return $this->hasMany(Appointment::class);
     }
 
 }

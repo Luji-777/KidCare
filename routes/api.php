@@ -1,0 +1,22 @@
+<?php
+
+use App\Http\Controllers\ParentModelController;
+use App\Http\Controllers\DoctorController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+Route::post('/register', [ParentModelController::class, 'register']);
+Route::post('/verifyOtp', [ParentModelController::class, 'verifyOtp']);
+Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
+Route::post('/login', [ParentModelController::class, 'login']);
+Route::post('/verifyOtpAndSetPassword', [ParentModelController::class, 'verifyOtpAndSetPassword']);
+Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
+
+
+//Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+//Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+//Route::post('/verifyOtpAndSetPasswordDoctor', [DoctorController::class, 'verifyOtpAndSetPasswordDoctor']);
