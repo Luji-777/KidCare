@@ -14,13 +14,14 @@ use Illuminate\Notifications\Notifiable;
 
 
 
-class ParentModel extends Model
+
+class ParentModel extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens;
     protected $guarded=[];
 
     public function children(){
-        return $this->hasMany(Child::class);
+        return $this->hasMany(Child::class,'parent_id');
     }
 
     public function notification(){

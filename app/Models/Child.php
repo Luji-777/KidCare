@@ -12,7 +12,7 @@ class Child extends Model
     protected $guarded=[];
 
     public function parent(){
-        return $this->belongsTo(ParentModel::class);
+        return $this->belongsTo(ParentModel::class,'parent_id');
     }
 
     public function growth(){
