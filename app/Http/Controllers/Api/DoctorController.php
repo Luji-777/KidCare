@@ -14,25 +14,26 @@ class DoctorController extends Controller
         //
     }
 
-    public function store(StoreDoctorRequest $request){
+    public function store(StoreDoctorRequest $request)
+    {
 
         $data = $request->validated();
 
-    if ($request->hasFile('profile_picture')) {
+        if ($request->hasFile('profile_picture')) {
         $data['profile_picture'] = $request->file('profile_picture')->store('doctors/photos', 'public');
-    }
+        }
 
-    if ($request->hasFile('cv')) {
+        if ($request->hasFile('cv')) {
         $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
-    }
+        }
 
-    $doctor = Doctor::create($data);
+        $doctor = Doctor::create($data);
 
-    return response()->json([
+        return response()->json([
         'status' => 'success',
         'message' => 'Doctor profile created successfully',
         'data' => $doctor
-    ], 201);
+            ], 201);
     }
 
 

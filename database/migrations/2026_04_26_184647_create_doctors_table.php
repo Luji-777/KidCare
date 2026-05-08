@@ -19,12 +19,12 @@ return new class extends Migration
             $table->string('address');
             $table->string('email');
             $table->string('phone_number');
-           $table->string('password')->nullable();
+            $table->string('password')->nullable();
             $table->integer('experience_years');
             $table->string('education');
             $table->string('profile_picture')->nullable();
             $table->string('rating')->nullable();
-            $table->string('cv');
+            $table->string('cv')->nullable();
             $table->string('fee');
 
             $table->string('otp_code')->nullable(); // رمز التحقق

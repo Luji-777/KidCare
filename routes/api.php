@@ -27,16 +27,14 @@ Route::put('children/{id}', [ChildController::class, 'update']);
 Route::delete('children/{id}', [ChildController::class, 'destroy']);
 
 
-<<<<<<< HEAD
-=======
 Route::get('departments', [DepartmentController::class, 'index']);
 Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
->>>>>>> department
+
+
 
 });
 
 Route::apiResource('doctors', DoctorController::class);
-
 
 
 //Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
