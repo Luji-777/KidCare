@@ -3,6 +3,7 @@
 use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ChildController;
+use App\Http\Controllers\DepartmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,10 @@ Route::post('children', [ChildController::class, 'store']);
 Route::get('children/{id}', [ChildController::class, 'show']);
 Route::put('children/{id}', [ChildController::class, 'update']);
 Route::delete('children/{id}', [ChildController::class, 'destroy']);
+
+
+Route::get('departments', [DepartmentController::class, 'index']);
+Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
 
 });
 
