@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('experience_years');
             $table->string('education');
             $table->string('profile_picture')->nullable();
-            $table->string('rating');
+            $table->string('rating')->nullable();
             $table->string('cv');
             $table->string('fee');
 

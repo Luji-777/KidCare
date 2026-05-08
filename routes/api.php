@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\ParentModelController;
-use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\ChildController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,9 +25,11 @@ Route::get('children/{id}', [ChildController::class, 'show']);
 Route::put('children/{id}', [ChildController::class, 'update']);
 Route::delete('children/{id}', [ChildController::class, 'destroy']);
 
+
+
 });
 
-
+Route::apiResource('doctors', DoctorController::class);
 
 
 

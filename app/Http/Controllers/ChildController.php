@@ -6,12 +6,13 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreChildRequest;
 use App\Http\Requests\UpdateChildRequest;
 use App\Models\Child;
+use Illuminate\Support\Facades\Auth;
 
 class ChildController extends Controller
 {
     public function store(StoreChildRequest $request){
        $child=Child::create([
-       'parent_id'=>auth()->id(),
+       'parent_id'=>Auth::guard()->user()->id,
         ...$request->validated() ]);
 
         return response()->json([
@@ -21,6 +22,7 @@ class ChildController extends Controller
     }
 
     public function update(UpdateChildRequest $request,$id){
+
         $child=auth()->user()->children()->where('id',$id)->firstOrFail();
         $child->update($request->validated());
 
@@ -32,7 +34,6 @@ class ChildController extends Controller
 
     public function index(){
         $children=auth()->user()->children;
-
         return response()->json([
         'children' => $children
         ]);
