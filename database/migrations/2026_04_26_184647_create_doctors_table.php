@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('address');
             $table->string('email');
             $table->string('phone_number');
-            $table->string('password');
+           $table->string('password')->nullable();
             $table->integer('experience_years');
             $table->string('education');
             $table->string('profile_picture')->nullable();
