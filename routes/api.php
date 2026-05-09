@@ -15,7 +15,7 @@ Route::post('/register', [ParentModelController::class, 'register']);
 Route::post('/verifyOtp', [ParentModelController::class, 'verifyOtp']);
 Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
 Route::post('/login', [ParentModelController::class, 'login']);
-Route::post('/verifyOtpAndSetPassword', [ParentModelController::class, 'verifyOtpAndSetPassword']);
+Route::post('/SetPassword', [ParentModelController::class, 'SetPassword']);
 Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {

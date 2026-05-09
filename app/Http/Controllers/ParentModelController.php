@@ -152,43 +152,41 @@ class ParentModelController extends Controller
         ], 200);
     }
 
-    public function verifyOtpAndSetPassword(Request $request)
-    {
-        $request->validate([
-            'phone_number' => 'required',
-            'otp'          => 'required|digits:4',
-            'password'     => 'required|string|min:6|max:255|confirmed',
-        ]);
+  public function SetPassword(Request $request)
+{
 
-        $parent = ParentModel::where('phone_number', $request->phone_number)
-            ->where('otp_code', $request->otp)
-            ->where('otp_expires_at', '>', now())
-            ->first();
+    $request->validate([
+        'phone_number' => 'required',
+        'password'     => 'required|string|min:6|max:255|confirmed',
+    ]);
 
-        if (!$parent) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Verification failed. Invalid or expired OTP.'
-                ],
-                400
-            );
-        }
 
-        $parent->update([
-            'password'       => Hash::make($request->password),
-            'otp_code'       => null,
-            'otp_expires_at' => null,
-        ]);
+    $parent = ParentModel::where('phone_number', $request->phone_number)->first();
 
-        $token = $parent->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Password updated successfully. You can now log in with your new credentials.',
-            'token'   => $token
-        ], 200);
+    if (!$parent) {
+        return response()->json(
+            [
+                'status' => 'error',
+                'message' => 'User not found.'
+            ],
+            404
+        );
     }
+
+
+    $parent->update([
+        'password'       => Hash::make($request->password)
+    ]);
+
+
+    $token = $parent->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Password updated successfully.',
+        'token'   => $token
+    ], 200);
+}
 
     public function logout(Request $request)
     {
