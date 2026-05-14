@@ -204,4 +204,28 @@ class ParentModelController extends Controller
             'message' => 'No active session found.'
         ], 401);
     }
+
+    public function showProfile(Request $request)
+{
+    $parent = $request->user();
+
+    if (!$parent) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'user' => [
+            'id'           => $parent->id,
+            'first_name'   => $parent->first_name,
+            'last_name'    => $parent->last_name,
+            'email'        => $parent->email,
+            'phone_number' => $parent->phone_number,
+            'address'      => $parent->address,
+        ]
+    ], 200);
+}
 }

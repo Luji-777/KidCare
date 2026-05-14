@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreChildRequest;
 use App\Http\Requests\UpdateChildRequest;
 use App\Models\Child;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ChildController extends Controller
@@ -55,4 +56,19 @@ class ChildController extends Controller
             'message'=>'Child deleted successfully'
         ]);
     }
+
+    public function homeChildren()
+{
+    $children = auth()->user()->children->map(function ($child) {
+        return [
+            'id' =>$child->id,
+            'name' =>$child->first_name . ' ' . $child->last_name,
+            'age' =>Carbon::parse($child->birth_date)->age,
+        ];
+    });
+
+    return response()->json([
+        'children' => $children
+    ]);
+}
 }

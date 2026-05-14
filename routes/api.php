@@ -17,6 +17,7 @@ Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
 Route::post('/login', [ParentModelController::class, 'login']);
 Route::post('/SetPassword', [ParentModelController::class, 'SetPassword']);
 Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('profile', [ParentModelController::class, 'showProfile'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -25,6 +26,7 @@ Route::post('children', [ChildController::class, 'store']);
 Route::get('children/{id}', [ChildController::class, 'show']);
 Route::put('children/{id}', [ChildController::class, 'update']);
 Route::delete('children/{id}', [ChildController::class, 'destroy']);
+Route::get('/home-children', [ChildController::class, 'homeChildren']);
 
 
 Route::get('departments', [DepartmentController::class, 'index']);
