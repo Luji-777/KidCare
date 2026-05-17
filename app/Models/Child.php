@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\ParentModel;
 use App\Models\Growth;
 use App\Models\Appointment;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Child extends Model
 {
+    use HasFactory;
     protected $guarded=[];
 
     public function parent(){

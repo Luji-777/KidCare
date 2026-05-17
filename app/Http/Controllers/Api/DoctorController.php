@@ -26,7 +26,6 @@ class DoctorController extends Controller
 
     public function store(StoreDoctorRequest $request)
     {
-
         $data = $request->validated();
 
         if ($request->hasFile('profile_picture')) {

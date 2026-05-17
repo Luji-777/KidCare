@@ -65,10 +65,10 @@ class ChildController extends Controller
             'name' =>$child->first_name . ' ' . $child->last_name,
             'age' =>Carbon::parse($child->birth_date)->age,
         ];
-    });
+           });
 
-    return response()->json([
+             return response()->json([
         'children' => $children
-    ]);
-}
+        ]);
+        }
 }
