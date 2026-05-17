@@ -4,6 +4,7 @@ use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DoctorAvailabilityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('departments', [DepartmentController::class, 'index']);
     Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
+
+    Route::get('doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
+    Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'store']);
+    Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 });
 
 Route::apiResource('doctors', DoctorController::class);
