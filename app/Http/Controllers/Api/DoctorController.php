@@ -1,27 +1,152 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
-
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
+use Carbon\Carbon;
 
 class DoctorController extends Controller
 {
+    public function sendOtpDoctor(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|digits_between:9,15'
+        ]);
+
+        $doctor = Doctor::where('phone_number', $request->phone_number)->firstOrFail();
+
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'This phone number is not registered in our records. Please check the number or create a new account.'
+            ], 404);
+        }
+
+        $otp = rand(1000, 9999);
+
+        session(['otp' => $otp]);
+        session(['otp_phone' => $request->phone_number]);
+
+        // أرسل عبر واتساب
+        sendWhatsAppMessage(
+            $request->phone_number,
+            "Your confirmation code is: {$otp}. Do not share it with anyone."
+        );
+
+        $doctor->otp_code = $otp;
+        $doctor->otp_expires_at = Carbon::now()->addMinutes(10);
+        $doctor->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'A new verification code has been sent to your phone.',
+            'otp'     => $otp
+        ]);
+    }
+    public function verifyOtpDoctor(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|digits_between:9,15',
+            'otp'   => 'required|string|max:255'
+        ]);
+
+        $doctor = Doctor::where('phone_number', $request->phone_number)->firstOrFail();
+        if ($doctor->otp_code !== $request->otp || Carbon::now()->gt($doctor->otp_expires_at)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'The provided OTP is invalid or has expired.',
+                'otp' => $doctor->otp_code
+            ], 422);
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Phone number verified successfully.'
+        ]);
+    }
+    public function setPasswordDoctor(Request $request)
+    {
+
+        $request->validate([
+            'phone_number' => 'required',
+            'password'     => 'required|string|min:6|max:255|confirmed',
+        ]);
+
+
+        $doctor = Doctor::where('phone_number', $request->phone_number)->first();
+
+        if (!$doctor) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'User not found.'
+                ],
+                404
+            );
+        }
+
+
+        $doctor->update([
+            'password'       => Hash::make($request->password)
+        ]);
+
+        $token = $doctor->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password updated successfully.',
+            'token'   => $token
+        ], 200);
+    }
+    public function loginDoctor(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|digits_between:9,15',
+            'password'     => 'required|string|min:6|max:255'
+        ]);
+
+        $doctor = Doctor::where('phone_number', $request->phone_number)->first();
+
+        if (!$doctor || !Hash::check($request->password, $doctor->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid phone number or password.'
+            ], 401);
+        }
+
+        $token = $doctor->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login successful. Welcome back!',
+            'user'    => [
+                'id'           => $doctor->id,
+                'phone_number' => $doctor->phone_number,
+                'first_name'   => $doctor->first_name,
+                'last_name'    => $doctor->last_name,
+            ],
+            'Token'   => $token,
+        ], 200);
+    }
+
 
     public function index()
     {
         // الترتيب الأبجدي حسب الاسم الأول ثم جلب 10 بكل صفحة
-    $doctors = Doctor::with('department')
-        ->orderBy('first_name', 'asc')
-        ->paginate(10);
+        $doctors = Doctor::with('department')
+            ->orderBy('first_name', 'asc')
+            ->paginate(10);
 
-    return response()->json([
-        'status' => 'success',
-        'data'   => $doctors
-    ], 200);
+        return response()->json([
+            'status' => 'success',
+            'data'   => $doctors
+        ], 200);
     }
 
     public function store(StoreDoctorRequest $request)
@@ -29,20 +154,20 @@ class DoctorController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('profile_picture')) {
-        $data['profile_picture'] = $request->file('profile_picture')->store('doctors/photos', 'public');
+            $data['profile_picture'] = $request->file('profile_picture')->store('doctors/photos', 'public');
         }
 
         if ($request->hasFile('cv')) {
-        $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
+            $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
         }
 
         $doctor = Doctor::create($data);
 
         return response()->json([
-        'status' => 'success',
-        'message' => 'Doctor profile created successfully',
-        'data' => $doctor
-            ], 201);
+            'status' => 'success',
+            'message' => 'Doctor profile created successfully',
+            'data' => $doctor
+        ], 201);
     }
 
 
@@ -50,69 +175,68 @@ class DoctorController extends Controller
     {
         $doctor = Doctor::with('department')->find($id);
 
-    if (!$doctor) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Doctor not found.'
-        ], 404);
-    }
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Doctor not found.'
+            ], 404);
+        }
 
-    return response()->json([
-        'status' => 'success',
-        'data'   => $doctor
-    ], 200);
+        return response()->json([
+            'status' => 'success',
+            'data'   => $doctor
+        ], 200);
     }
 
 
     public function update(UpdateDoctorRequest $request, string $id)
-    {
+    { {
+            $doctor = Doctor::findOrFail($id);
+            $data = $request->validated();
 
-        {
-         $doctor = Doctor::findOrFail($id);
-         $data = $request->validated();
+            if ($request->hasFile('profile_picture')) {
+                $data['profile_picture'] = $request->file('profile_picture')->store('doctors/profiles', 'public');
+            }
 
-    if ($request->hasFile('profile_picture')) {
-        $data['profile_picture'] = $request->file('profile_picture')->store('doctors/profiles', 'public');
+            if ($request->hasFile('cv')) {
+                $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
+            }
+
+            $doctor->update($data);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Doctor profile updated successfully.',
+                'data'    => $doctor
+            ], 200);
+        }
     }
-
-    if ($request->hasFile('cv')) {
-        $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
-    }
-
-    $doctor->update($data);
-
-    return response()->json([
-        'status'  => 'success',
-        'message' => 'Doctor profile updated successfully.',
-        'data'    => $doctor
-    ], 200);
-    }}
 
 
     public function destroy(string $id)
     {
         $doctor = Doctor::find($id);
 
-      if (!$doctor) {
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Doctor not found.'
+            ], 404);
+        }
+
+        if ($doctor->profile_picture) {
+            Storage::disk('public')->delete($doctor->profile_picture);
+        }
+
+        if ($doctor->cv) {
+            Storage::disk('public')->delete($doctor->cv);
+        }
+
+        $doctor->delete();
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Doctor not found.'
-        ], 404);
-            }
-
-    if ($doctor->profile_picture) {
-         Storage::disk('public')->delete($doctor->profile_picture);
-    }
-
-    if ($doctor->cv) {
-        Storage::disk('public')->delete($doctor->cv);
-    }
-
-    $doctor->delete();
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Doctor and their related files have been deleted successfully.'
-    ], 200);
+            'status' => 'success',
+            'message' => 'Doctor and their related files have been deleted successfully.'
+        ], 200);
     }
 }

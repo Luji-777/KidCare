@@ -11,64 +11,70 @@ use Illuminate\Support\Facades\Auth;
 
 class ChildController extends Controller
 {
-    public function store(StoreChildRequest $request){
-       $child=Child::create([
-       'parent_id'=>Auth::guard()->user()->id,
-        ...$request->validated() ]);
+    public function store(StoreChildRequest $request)
+    {
+        $child = Child::create([
+            'parent_id' => Auth::guard()->user()->id,
+            ...$request->validated()
+        ]);
 
         return response()->json([
-            'message'=>'Child added successfully',
-            'child'=>$child
-        ],201);
+            'message' => 'Child added successfully',
+            'child' => $child
+        ], 201);
     }
 
-    public function update(UpdateChildRequest $request,$id){
+    public function update(UpdateChildRequest $request, $id)
+    {
 
-        $child=auth()->user()->children()->where('id',$id)->firstOrFail();
+        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
         $child->update($request->validated());
 
         return response()->json([
-            'message'=>'Child info updated successfully',
-            'child'=>$child
+            'message' => 'Child info updated successfully',
+            'child' => $child
         ]);
     }
 
-    public function index(){
-        $children=auth()->user()->children;
+    public function index()
+    {
+        $children = auth()->user()->children;
         return response()->json([
-        'children' => $children
+            'children' => $children
         ]);
     }
 
-    public function show($id){
-        $child=auth()->user()->children()->where('id',$id)->firstOrFail();
+    public function show($id)
+    {
+        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
 
         return response()->json([
-        'child' => $child
+            'child' => $child
         ]);
     }
 
-    public function destroy($id){
-        $child=auth()->user()->children()->where('id',$id)->firstOrFail();
+    public function destroy($id)
+    {
+        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
         $child->delete();
 
         return response()->json([
-            'message'=>'Child deleted successfully'
+            'message' => 'Child deleted successfully'
         ]);
     }
 
     public function homeChildren()
-{
-    $children = auth()->user()->children->map(function ($child) {
-        return [
-            'id' =>$child->id,
-            'name' =>$child->first_name . ' ' . $child->last_name,
-            'age' =>Carbon::parse($child->birth_date)->age,
-        ];
-           });
+    {
+        $children = auth()->user()->children->map(function ($child) {
+            return [
+                'id' => $child->id,
+                'name' => $child->first_name . ' ' . $child->last_name,
+                'age' => Carbon::parse($child->birth_date)->age,
+            ];
+        });
 
-             return response()->json([
-        'children' => $children
+        return response()->json([
+            'children' => $children
         ]);
-        }
+    }
 }

@@ -21,24 +21,22 @@ Route::get('profile', [ParentModelController::class, 'showProfile'])->middleware
 
 Route::middleware('auth:sanctum')->group(function () {
 
-Route::get('children', [ChildController::class, 'index']);
-Route::post('children', [ChildController::class, 'store']);
-Route::get('children/{id}', [ChildController::class, 'show']);
-Route::put('children/{id}', [ChildController::class, 'update']);
-Route::delete('children/{id}', [ChildController::class, 'destroy']);
-Route::get('/home-children', [ChildController::class, 'homeChildren']);
+    Route::get('children', [ChildController::class, 'index']);
+    Route::post('children', [ChildController::class, 'store']);
+    Route::get('children/{id}', [ChildController::class, 'show']);
+    Route::put('children/{id}', [ChildController::class, 'update']);
+    Route::delete('children/{id}', [ChildController::class, 'destroy']);
+    Route::get('/home-children', [ChildController::class, 'homeChildren']);
 
 
-Route::get('departments', [DepartmentController::class, 'index']);
-Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
-
-
-
+    Route::get('departments', [DepartmentController::class, 'index']);
+    Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
 });
 
 Route::apiResource('doctors', DoctorController::class);
 
 
-//Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-//Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-//Route::post('/verifyOtpAndSetPasswordDoctor', [DoctorController::class, 'verifyOtpAndSetPasswordDoctor']);
+Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
