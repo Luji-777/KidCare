@@ -59,6 +59,7 @@ class ChildController extends Controller
                 unlink(public_path($oldImagePath));
             }
 
+
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/children'), $imageName);
@@ -85,11 +86,15 @@ class ChildController extends Controller
 
     public function show($id)
     {
-        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
+        $child = Child::find($id);
 
-        return response()->json([
-            'child' => $child
-        ]);
+        if (!$child) {
+            return response()->json([
+                'message' => 'not found'
+            ], 404);
+        }
+
+        return response()->json($child);
     }
 
     public function destroy($id)
@@ -109,6 +114,7 @@ class ChildController extends Controller
                 'id' => $child->id,
                 'name' => $child->first_name . ' ' . $child->last_name,
                 'age' => Carbon::parse($child->birth_date)->age,
+                'image' => $child->image
             ];
         });
 
