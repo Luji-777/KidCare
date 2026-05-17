@@ -13,9 +13,28 @@ class ChildController extends Controller
 {
     public function store(StoreChildRequest $request)
     {
+
+        $data = $request->validated();
+
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            $image->move(public_path('uploads/children'), $imageName);
+
+
+            $data['image'] = 'uploads/children/' . $imageName;
+        } else {
+
+            $data['image'] = null;
+        }
+
+
         $child = Child::create([
-            'parent_id' => Auth::guard()->user()->id,
-            ...$request->validated()
+            'parent_id' => auth()->user()->id,
+            ...$data
         ]);
 
         return response()->json([
@@ -28,7 +47,27 @@ class ChildController extends Controller
     {
 
         $child = auth()->user()->children()->where('id', $id)->firstOrFail();
-        $child->update($request->validated());
+
+        $data = $request->validated();
+
+
+        if ($request->hasFile('image')) {
+
+
+            $oldImagePath = $child->getRawOriginal('image');
+            if ($oldImagePath && file_exists(public_path($oldImagePath))) {
+                unlink(public_path($oldImagePath));
+            }
+
+            $image = $request->file('image');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/children'), $imageName);
+
+
+            $data['image'] = 'uploads/children/' . $imageName;
+        }
+
+        $child->update($data);
 
         return response()->json([
             'message' => 'Child info updated successfully',

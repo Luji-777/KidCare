@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('gender', ['male', 'female']);
             $table->date('birth_date');
             $table->enum('blood_type', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
+            $table->string('image')->nullable();
             $table->text('medical_history')->nullable();
             $table->text('allergies')->nullable();
             $table->timestamps();

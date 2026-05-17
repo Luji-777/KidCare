@@ -29,6 +29,7 @@ class StoreChildRequest extends FormRequest
             'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
             'medical_history' => 'nullable|string',
             'allergies' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 }
