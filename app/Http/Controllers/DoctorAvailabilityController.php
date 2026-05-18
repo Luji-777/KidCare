@@ -1,21 +1,22 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Requests\StoreDoctorAvailabilityRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DoctorAvailabilityController extends Controller
 {
     public function availability(StoreDoctorAvailabilityRequest $request){
-        $availability = DoctorAvailability::create([
-        'doctor_id' => auth()->id(),
-        'day_of_week' => $request->day_of_week,
-        'start_time' => $request->start_time,
-        'end_time' => $request->end_time,
+        $availability=DoctorAvailability::create([
+        'doctor_id' =>auth()->id(),
+        'day_of_week' =>$request->day_of_week,
+        'start_time' =>$request->start_time,
+        'end_time' =>$request->end_time,
         ]);
         return response()->json([
-            'massage'=>"added successfully",
-            'availability' => $availability
+            'massage'=>"Added successfully",
+            'availability'=> $availability
         ]);
 
     }

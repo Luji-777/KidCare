@@ -40,6 +40,6 @@ Route::get('/doctors/{id}/availabilities',[DoctorAvailabilityController::class, 
 Route::apiResource('doctors', DoctorController::class);
 
 
-//Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-//Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-//Route::post('/verifyOtpAndSetPasswordDoctor', [DoctorController::class, 'verifyOtpAndSetPasswordDoctor']);
+Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+Route::post('/verifyOtpAndSetPasswordDoctor', [DoctorController::class, 'verifyOtpAndSetPasswordDoctor']);
