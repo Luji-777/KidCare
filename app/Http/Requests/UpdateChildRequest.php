@@ -29,6 +29,7 @@ class UpdateChildRequest extends FormRequest
             'blood_type' => 'sometimes|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
             'medical_history' => 'nullable|string',
             'allergies' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 }

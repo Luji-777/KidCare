@@ -7,17 +7,19 @@ use App\Models\Department;
 
 class DepartmentController extends Controller
 {
-    public function index(){
-        $departments=Department::select('id','name','description')->get();
+    public function index()
+    {
+        $departments = Department::select('id', 'name', 'description')->get();
 
         return response()->json($departments);
+    }
 
-        }
+    public function doctors($id)
+    {
+        $doctors = \App\Models\Doctor::where('department_id', $id)
+            ->select('id', 'department_id', 'first_name', 'last_name', 'email', 'address')
+            ->get();
 
-    public function doctors($id){
-        $department=Department::with('doctors')->findOrFail($id);
-
-            return response()->json($department->doctors);
-
-        }
+        return response()->json($doctors);
+    }
 }
