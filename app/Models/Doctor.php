@@ -9,9 +9,10 @@ use App\Models\Appointment;
 use App\Models\DoctorAvailability;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class Doctor extends Model
+class Doctor extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens;
     protected $guarded = [];

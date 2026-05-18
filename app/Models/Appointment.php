@@ -9,6 +9,7 @@ use App\Models\medicalRecord;
 
 class Appointment extends Model
 {
+    protected $guarded=[];
     public function doctor(){
         return $this->belongsTo(Doctor::class);
     }

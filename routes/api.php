@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
@@ -27,19 +28,18 @@ Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('children', [ChildController::class, 'index']);
-    Route::post('children', [ChildController::class, 'store']);
-    Route::get('children/{id}', [ChildController::class, 'show']);
-    Route::put('children/{id}', [ChildController::class, 'update']);
-    Route::delete('children/{id}', [ChildController::class, 'destroy']);
+    Route::get('/children', [ChildController::class, 'index']);
+    Route::post('/children', [ChildController::class, 'store']);
+    Route::get('/children/{id}', [ChildController::class, 'show']);
+    Route::put('/children/{id}', [ChildController::class, 'update']);
+    Route::delete('/children/{id}', [ChildController::class, 'destroy']);
     Route::get('/home-children', [ChildController::class, 'homeChildren']);
 
+    Route::get('/departments', [DepartmentController::class, 'index']);
+    Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
 
-    Route::get('departments', [DepartmentController::class, 'index']);
-    Route::get('departments/{id}/doctors', [DepartmentController::class, 'doctors']);
-
-    Route::get('doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
-    Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'store']);
+    Route::get('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
+    Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
     Route::get('parentProfile', [ParentModelController::class, 'showProfile'])->middleware('auth:sanctum');
@@ -47,3 +47,16 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::apiResource('doctors', DoctorController::class);
+Route::post('/appointment', [AppointmentController::class, 'store']);
+Route::get('/appointments', [AppointmentController::class, 'index']);
+Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
+Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+
+
+Route::apiResource('doctors', DoctorController::class);
+
+Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
