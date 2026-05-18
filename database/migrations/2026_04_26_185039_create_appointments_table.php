@@ -18,7 +18,8 @@ return new class extends Migration
             $table->date('date');
             $table->time('time');
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
-            $table->double('price')->nullable();
+            $table->decimal('price', 8, 2);
+            $table->string('currency', 3)->default('USD');
             $table->timestamps();
         });
     }

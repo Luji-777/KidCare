@@ -9,18 +9,23 @@ use App\Models\medicalRecord;
 
 class Appointment extends Model
 {
-    protected $guarded=[];
-    public function doctor(){
+    protected $guarded = [];
+    public function doctor()
+    {
         return $this->belongsTo(Doctor::class);
     }
 
-    public function child(){
+    public function child()
+    {
         return $this->belongsTo(Child::class);
     }
 
-    public function record(){
+    public function record()
+    {
         return $this->hasOne(medicalRecord::class);
     }
-
+    public function transaction()
+    {
+        return $this->hasOne(Transaction::class);
+    }
 }
-

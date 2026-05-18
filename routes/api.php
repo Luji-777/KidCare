@@ -6,6 +6,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
+use App\Http\Controllers\API\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,16 +43,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
-    Route::get('parentProfile', [ParentModelController::class, 'showProfile'])->middleware('auth:sanctum');
-    Route::get('parentName', [ParentModelController::class, 'parentName'])->middleware('auth:sanctum');
+    Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
+    Route::get('parentName', [ParentModelController::class, 'parentName']);
+
+    Route::post('/appointment', [AppointmentController::class, 'store']);
+    Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+    Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
+    Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+
+
+    Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
+    Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
 });
 
 Route::apiResource('doctors', DoctorController::class);
-Route::post('/appointment', [AppointmentController::class, 'store']);
-Route::get('/appointments', [AppointmentController::class, 'index']);
-Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
-Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
-Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+
 
 
 Route::apiResource('doctors', DoctorController::class);
