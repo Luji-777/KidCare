@@ -18,7 +18,12 @@ Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
 Route::post('/login', [ParentModelController::class, 'login']);
 Route::post('/SetPassword', [ParentModelController::class, 'SetPassword']);
 Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
-Route::get('profile', [ParentModelController::class, 'showProfile'])->middleware('auth:sanctum');
+
+
+Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -36,12 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
     Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'store']);
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
+
+    Route::get('parentProfile', [ParentModelController::class, 'showProfile'])->middleware('auth:sanctum');
+    Route::get('parentName', [ParentModelController::class, 'parentName'])->middleware('auth:sanctum');
 });
 
 Route::apiResource('doctors', DoctorController::class);
-
-
-Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
-Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);

@@ -152,41 +152,41 @@ class ParentModelController extends Controller
         ], 200);
     }
 
-  public function SetPassword(Request $request)
-{
+    public function SetPassword(Request $request)
+    {
 
-    $request->validate([
-        'phone_number' => 'required',
-        'password'     => 'required|string|min:6|max:255|confirmed',
-    ]);
+        $request->validate([
+            'phone_number' => 'required',
+            'password'     => 'required|string|min:6|max:255|confirmed',
+        ]);
 
 
-    $parent = ParentModel::where('phone_number', $request->phone_number)->first();
+        $parent = ParentModel::where('phone_number', $request->phone_number)->first();
 
-    if (!$parent) {
-        return response()->json(
-            [
-                'status' => 'error',
-                'message' => 'User not found.'
-            ],
-            404
-        );
+        if (!$parent) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'User not found.'
+                ],
+                404
+            );
+        }
+
+
+        $parent->update([
+            'password'       => Hash::make($request->password)
+        ]);
+
+
+        $token = $parent->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password updated successfully.',
+            'token'   => $token
+        ], 200);
     }
-
-
-    $parent->update([
-        'password'       => Hash::make($request->password)
-    ]);
-
-
-    $token = $parent->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Password updated successfully.',
-        'token'   => $token
-    ], 200);
-}
 
     public function logout(Request $request)
     {
@@ -206,26 +206,43 @@ class ParentModelController extends Controller
     }
 
     public function showProfile(Request $request)
-{
-    $parent = $request->user();
+    {
+        $parent = $request->user();
 
-    if (!$parent) {
+        if (!$parent) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Unauthorized'
-        ], 401);
+            'status' => 'success',
+            'user' => [
+                'id'           => $parent->id,
+                'first_name'   => $parent->first_name,
+                'last_name'    => $parent->last_name,
+                'email'        => $parent->email,
+                'phone_number' => $parent->phone_number,
+                'address'      => $parent->address,
+            ]
+        ], 200);
     }
+    public function parentName(Request $request)
+    {
+        $parent = $request->user();
 
-    return response()->json([
-        'status' => 'success',
-        'user' => [
-            'id'           => $parent->id,
-            'first_name'   => $parent->first_name,
-            'last_name'    => $parent->last_name,
-            'email'        => $parent->email,
-            'phone_number' => $parent->phone_number,
-            'address'      => $parent->address,
-        ]
-    ], 200);
-}
+        if (!$parent) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+        return response()->json([
+            'user' => [
+                'first_name'   => $parent->first_name,
+                'last_name'    => $parent->last_name,
+            ]
+        ], 200);
+    }
 }
