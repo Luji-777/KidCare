@@ -60,7 +60,7 @@ class DoctorAvailabilityController extends Controller
 
         while ($start < $end) {
 
-            $formatted = $start->format('H:i:s');
+            $formatted = $start->format('H:i');
 
             $isBooked = Appointment::where('doctor_id', $doctorId)
                 ->where('date', $date)
