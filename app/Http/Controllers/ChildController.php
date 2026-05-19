@@ -45,34 +45,31 @@ class ChildController extends Controller
 
     public function update(UpdateChildRequest $request, $id)
     {
-
         $child = auth()->user()->children()->where('id', $id)->firstOrFail();
 
         $data = $request->validated();
 
-
         if ($request->hasFile('image')) {
-
-
             $oldImagePath = $child->getRawOriginal('image');
             if ($oldImagePath && file_exists(public_path($oldImagePath))) {
                 unlink(public_path($oldImagePath));
             }
 
-
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/children'), $imageName);
-
 
             $data['image'] = 'uploads/children/' . $imageName;
         }
 
         $child->update($data);
 
+
+        $changes = $child->getChanges();
+
         return response()->json([
             'message' => 'Child info updated successfully',
-            'child' => $child
+            'updated_fields' => $changes
         ]);
     }
 

@@ -7,82 +7,113 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 
 class ParentModelController extends Controller
 {
+
+
     public function register(Request $request)
     {
+
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
+            'first_name'   => 'required|string|max:255',
+            'last_name'    => 'required|string|max:255',
+            'address'      => 'required|string|max:255',
             'phone_number' => 'required|digits_between:9,15|unique:parent_models,phone_number',
-            'email' => 'required|string|max:255',
-            'password' => 'required|string|min:6|max:255|confirmed',
-
+            'email'        => 'required|string|max:255',
+            'password'     => 'required|string|min:6|max:255|confirmed',
         ]);
-
         $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
 
-        session(['otp' => $otp]);
-        session(['otp_phone' => $request->phone_number]);
 
-        // أرسل عبر واتساب
+        $pendingUserData = [
+            'otp'          => $otp,
+            'first_name'   => $request->first_name,
+            'last_name'    => $request->last_name,
+            'address'      => $request->address,
+            'email'        => $request->email,
+            'phone_number' => $request->phone_number,
+            'password'     => Hash::make($request->password),
+        ];
+
+        Cache::put('pending_user_' . $request->phone_number, $pendingUserData, now()->addMinutes(10));
+
+
         sendWhatsAppMessage(
             $request->phone_number,
             "Your confirmation code is: {$otp}. Do not share it with anyone."
         );
 
-
-        // $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
-
-
-        // إنشاء مستخدم جديد
-        $parent = ParentModel::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'address' => $request->address,
-            'email' => $request->email,
-            'phone_number' => $request->phone_number,
-            'password' => Hash::make($request->password),
-            'otp_code' => $otp,
-            'otp_expires_at' => Carbon::now()->addMinutes(10), // صلاحية الرمز 10 دقايق
-        ]);
-
-        // إنشاء توكن للمستخدم
-        $token = $parent->createToken('auth_token')->plainTextToken;
-
-        // إعادة استجابة بنجاح التسجيل
         return response()->json([
-            'message' => 'the account created successfully, Please verify your phone number.',
-            'otp'     => $otp,
-            'phone_number'   => $request->phone_number,
-            'next_step' => 'verify-otp',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'message'      => 'Confirmation code sent. Please verify your phone number to create your account.',
+            'otp'          => $otp,
+            'phone_number' => $request->phone_number,
+            'next_step'    => 'verify-otp',
         ]);
     }
     public function verifyOtp(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',
-            'otp'   => 'required|string|max:255'
+            'otp'          => 'required|string|max:255'
         ]);
 
-        $parent = ParentModel::where('phone_number', $request->phone_number)->firstOrFail();
-        if ($parent->otp_code !== $request->otp || Carbon::now()->gt($parent->otp_expires_at)) {
+        $parent = ParentModel::where('phone_number', $request->phone_number)->first();
+
+        if ($parent) {
+
+            if ($parent->otp_code !== $request->otp || now()->gt($parent->otp_expires_at)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'The provided OTP is invalid or has expired for this registered account.',
+                ], 422);
+            }
+
+            $token = $parent->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'The provided OTP is invalid or has expired.',
-                'otp' => $parent->otp_code
+                'status'       => 'success',
+                'message'      => 'Phone number verified successfully (Account already existed).',
+                'access_token' => $token,
+                'token_type'   => 'Bearer',
+                'user'         => $parent
+            ], 200);
+        }
+
+
+        $pendingUser = Cache::get('pending_user_' . $request->phone_number);
+
+        if (!$pendingUser || $pendingUser['otp'] != $request->otp) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'The provided OTP is invalid, expired, or no pending registration found.',
             ], 422);
         }
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Phone number verified successfully.'
+
+        $newParent = ParentModel::create([
+            'first_name'     => $pendingUser['first_name'],
+            'last_name'      => $pendingUser['last_name'],
+            'address'        => $pendingUser['address'],
+            'email'          => $pendingUser['email'],
+            'phone_number'   => $pendingUser['phone_number'],
+            'password'       => $pendingUser['password'],
+            'otp_code'       => $pendingUser['otp'],
+            'otp_expires_at' => now()->addMinutes(10),
         ]);
+
+        $token = $newParent->createToken('auth_token')->plainTextToken;
+
+        Cache::forget('pending_user_' . $request->phone_number);
+
+        return response()->json([
+            'status'       => 'success',
+            'message'      => 'Phone number verified and account created successfully.',
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+            'user'         => $newParent
+        ], 201);
     }
     public function sendOtp(Request $request)
     {
