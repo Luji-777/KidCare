@@ -216,6 +216,8 @@ class ParentModelController extends Controller
             ], 401);
         }
 
+        $children = $parent->children()->select('image', 'first_name')->get();
+
         return response()->json([
             'status' => 'success',
             'user' => [
@@ -225,6 +227,7 @@ class ParentModelController extends Controller
                 'email'        => $parent->email,
                 'phone_number' => $parent->phone_number,
                 'address'      => $parent->address,
+                'children'     => $children
             ]
         ], 200);
     }
