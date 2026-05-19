@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
-    public function login(Request $request)
+    public function loginAdmin(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',

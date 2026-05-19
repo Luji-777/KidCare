@@ -12,8 +12,6 @@ use Illuminate\Http\Request;
 
 class ParentModelController extends Controller
 {
-
-
     public function register(Request $request)
     {
 
@@ -182,7 +180,6 @@ class ParentModelController extends Controller
             'Token'   => $token,
         ], 200);
     }
-
     public function SetPassword(Request $request)
     {
 
@@ -218,7 +215,6 @@ class ParentModelController extends Controller
             'token'   => $token
         ], 200);
     }
-
     public function logout(Request $request)
     {
         if ($request->user()) {
@@ -235,7 +231,6 @@ class ParentModelController extends Controller
             'message' => 'No active session found.'
         ], 401);
     }
-
     public function showProfile(Request $request)
     {
         $parent = $request->user();

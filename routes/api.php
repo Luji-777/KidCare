@@ -7,6 +7,7 @@ use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,7 @@ Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
 Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
 Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
 Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
