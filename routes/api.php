@@ -48,9 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
-    Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
-    Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
-    Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
+    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
+    Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
 
 
     Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
