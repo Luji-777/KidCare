@@ -9,25 +9,57 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
+use App\Models\Doctor;
+
 
 
 class DoctorAvailabilityController extends Controller
 {
 
     public function availability(StoreDoctorAvailabilityRequest $request)
-    {
-        $availability = DoctorAvailability::create([
-            'doctor_id'   => auth()->id(),
-            'day_of_week' => $request->day_of_week,
-            'start_time'  => $request->start_time,
-            'end_time'    => $request->end_time,
-        ]);
+{
+    $doctor = auth()->user();   
+    $doctorIds = Doctor::where('department_id', $doctor->department_id)
+        ->pluck('id');
 
+    $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
+        ->where('day_of_week', $request->day_of_week)
+        ->where(function ($query) use ($request) {
+
+            $query->whereBetween('start_time', [
+                    $request->start_time,
+                    $request->end_time
+                ])
+                ->orWhereBetween('end_time', [
+                    $request->start_time,
+                    $request->end_time
+                ])
+                ->orWhere(function ($q) use ($request) {
+                    $q->where('start_time', '<=', $request->start_time)
+                      ->where('end_time', '>=', $request->end_time);
+                });
+
+        })
+        ->exists();
+
+    if ($conflict) {
         return response()->json([
-            'message'      => 'Added successfully',
-            'availability' => $availability
-        ]);
+            'message' =>"There is another doctor in this time"
+        ], 422);
     }
+
+    $availability = DoctorAvailability::create([
+        'doctor_id'   => $doctor->id,
+        'day_of_week' => $request->day_of_week,
+        'start_time'  => $request->start_time,
+        'end_time'    => $request->end_time,
+    ]);
+
+    return response()->json([
+        'message'      => 'Added successfully',
+        'availability' => $availability
+    ]);
+}
 
     public function index($doctorId)
     {
