@@ -199,9 +199,56 @@ public function destroy(Appointment $appointment)
     }
 
     $appointment->delete();
+    
 
     return response()->json([
         'message' => 'Appointment deleted successfully'
+    ]);
+}
+
+public function upcoming()
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+            $query->where('parent_id', auth()->id());
+        })
+        ->whereDate('date', '>=', now()->toDateString())
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get([
+            'id',
+            'doctor_id',
+            'child_id',
+            'date',
+            'time',
+            'status',
+            'price'
+        ]);
+
+    return response()->json([
+        'appointments' => $appointments
+    ]);
+}
+
+public function past()
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+            $query->where('parent_id', auth()->id());
+        })
+        ->whereDate('date', '<', now()->toDateString())
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get([
+            'id',
+            'doctor_id',
+            'child_id',
+            'date',
+            'time',
+            'status',
+            'price'
+        ]);
+
+    return response()->json([
+        'appointments' => $appointments
     ]);
 }
 }

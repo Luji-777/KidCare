@@ -50,10 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::get('/appointments/past', [AppointmentController::class, 'past']);
+    Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
-
+    
 
     Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
     Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
