@@ -57,10 +57,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
-    
+
 
     Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
     Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
+    Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 });
 
 Route::apiResource('doctors', DoctorController::class);

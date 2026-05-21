@@ -10,6 +10,8 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Carbon\Carbon;
 use Exception;
+use Stripe\Webhook;
+use Stripe\Exception\SignatureVerificationException;
 
 class PaymentController extends Controller
 {
@@ -38,45 +40,39 @@ class PaymentController extends Controller
 
         return response()->json([
             "patient_name"      => $patient_full_name,
-            "patient_age"       => (string)$patient_age, // تحويله لنص بناءً على التوثيق المرسل
+            "patient_age"       => (string)$patient_age,
             "patient_image_url" => $appointment->child->image ? url('storage/' . $appointment->child->image) : '',
             "doctor_name"       => $doctor_full_name,
-            "department_name"   => $appointment->doctor->department->name ?? 'عيادة الأطفال',
-            "date_time"         => $appointment->date . ' ' . $appointment->time, // دمج التاريخ والوقت
+            "department_name"   => $appointment->doctor->department->name,
+            "date_time"         => $appointment->date . ' ' . $appointment->time,
             "price"             => (string)$appointment->price,
             "currency"          => $appointment->currency,
         ], 200);
     }
-
-
     public function checkout(Request $request)
     {
         $request->validate([
             'appointment_id' => 'required|exists:appointments,id',
-            'amount'         => 'required|numeric',
             'currency'       => 'required|string|max:3',
         ]);
 
         $appointment = Appointment::with('child')->find($request->appointment_id);
 
-        // حماية المعاملة المالية من التلاعب
+
         if ($appointment->child->parent_id !== auth()->id()) {
-            return response()->json(['message' => 'غير مصرح لك لإتمام هذه العملية المالية'], 403);
+            return response()->json(['message' => 'Unauthorized action for this financial transaction.'], 403);
         }
 
-        // التأكد أن الموعد غير مدفوع مسبقاً لحظر الدفع المزدوج
-        if ($appointment->status === 'confirmed') {
-            return response()->json(['message' => 'هذا الموعد مؤكد ومدفوع مسبقاً'], 400);
+
+        if ($appointment->payment_status !== 'unpaid') {
+            return response()->json(['message' => 'This appointment is already confirmed and paid.'], 400);
         }
 
-        // إعداد مفتاح Stripe السري من ملف .env
-        Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
-            // تحويل المبلغ لأصغر وحدة نقدية (سنتات) لأن Stripe لا يقبل الكسور في العملات الأساسية
-            $amountInCents = round($request->amount * 100);
+            $amountInCents = round($appointment->price * 100);
 
-            // إنشاء الـ Payment Intent في Stripe
             $intent = PaymentIntent::create([
                 'amount'   => $amountInCents,
                 'currency' => strtolower($request->currency),
@@ -86,23 +82,67 @@ class PaymentController extends Controller
                 ]
             ]);
 
-            // تسجيل المعاملة في جدول الـ transactions الخاص بك بوضع الانتظار الحالي
             $transaction = Transaction::create([
                 'appointment_id'           => $appointment->id,
                 'stripe_payment_intent_id' => $intent->id,
-                'amount'                   => $request->amount,
+                'amount'                   => $appointment->price,
                 'currency'                 => $request->currency,
                 'status'                   => $intent->status,
             ]);
 
-            // الرد المتوافق حرفياً مع متطلبات الفرونت-إند
             return response()->json([
                 "status"         => $intent->status,
-                "client_secret"  => $intent->client_secret, // التوكن المهم جداً للموبايل
+                "client_secret"  => $intent->client_secret,
                 "transaction_id" => (string)$transaction->id
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['error' => 'فشلت عملية الدفع في نظام سترايب: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Stripe payment initialization failed: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function handleWebhook(Request $request)
+    {
+
+        $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
+
+        $payload = $request->getContent();
+        $sig_header = $request->header('Stripe-Signature');
+        $event = null;
+
+        try {
+
+            $event = Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
+        } catch (\UnexpectedValueException $e) {
+
+            return response()->json(['error' => 'Invalid payload'], 400);
+        } catch (SignatureVerificationException $e) {
+            return response()->json(['error' => 'Invalid signature'], 400);
+        }
+
+        if ($event->type === 'payment_intent.succeeded') {
+
+            $paymentIntent = $event->data->object;
+
+            $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
+
+            if ($transaction) {
+
+
+                $transaction->update(['status' => 'succeeded']);
+
+
+                $appointment = Appointment::find($transaction->appointment_id);
+
+                if ($appointment) {
+
+                    $appointment->update([
+                        'status'         => 'confirmed',
+                        'payment_status' => 'paid_online',
+                    ]);
+                }
+            }
+        }
+        return response()->json(['status' => 'success'], 200);
     }
 }

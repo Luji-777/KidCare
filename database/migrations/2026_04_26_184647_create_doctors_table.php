@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('rating')->nullable();
             $table->string('cv')->nullable();
             $table->string('fee');
+            $table->unsignedInteger('commission_percentage')->default(100);
+
 
             $table->string('otp_code')->nullable(); // رمز التحقق
             $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق

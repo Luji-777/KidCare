@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
+use App\Models\Appointment;
 use Carbon\Carbon;
 
 class DoctorController extends Controller
@@ -135,7 +136,6 @@ class DoctorController extends Controller
         ], 200);
     }
 
-
     public function index()
     {
         // الترتيب الأبجدي حسب الاسم الأول ثم جلب 10 بكل صفحة
@@ -188,7 +188,6 @@ class DoctorController extends Controller
         ], 200);
     }
 
-
     public function update(UpdateDoctorRequest $request, string $id)
     { {
             $doctor = Doctor::findOrFail($id);
@@ -211,8 +210,6 @@ class DoctorController extends Controller
             ], 200);
         }
     }
-
-
     public function destroy(string $id)
     {
         $doctor = Doctor::find($id);
@@ -238,5 +235,37 @@ class DoctorController extends Controller
             'status' => 'success',
             'message' => 'Doctor and their related files have been deleted successfully.'
         ], 200);
+    }
+    public function addAdditions(Request $request, $appointment_id)
+    {
+        $request->validate([
+            'additions' => 'required|array',
+            'additions.*.item_name' => 'required|string',
+            'additions.*.price' => 'required|numeric|min:0',
+        ]);
+
+        $appointment = Appointment::with('doctor')->findOrFail($appointment_id);
+
+
+        foreach ($request->additions as $addition) {
+            $appointment->additions()->create([
+                'item_name' => $addition['item_name'],
+                'price' => $addition['price']
+            ]);
+        }
+
+        $totalAdditions = collect($request->additions)->sum('price');
+
+
+        $doctorCommission = ($appointment->price * $appointment->doctor->commission_percentage) / 100;
+
+
+        $appointment->update([
+            'status' => 'completed',
+            'doctor_earnings' => $doctorCommission,
+            'payment_status' => $totalAdditions > 0 ? 'partially_paid' : 'fully_paid'
+        ]);
+
+        return response()->json(['message' => 'The appointment was completed and the additional costs were successfully recorded.']);
     }
 }
