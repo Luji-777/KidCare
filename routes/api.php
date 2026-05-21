@@ -37,11 +37,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/children/{id}', [ChildController::class, 'update']);
     Route::delete('/children/{id}', [ChildController::class, 'destroy']);
     Route::get('/home-children', [ChildController::class, 'homeChildren']);
+    Route::get('/childProfile/{id}', [ChildController::class, 'childProfile']);
+    Route::get('/childAllergies/{id}', [ChildController::class, 'childAllergies']);
 
     Route::get('/departments', [DepartmentController::class, 'index']);
     Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
 
-    Route::get('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
+    Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
     Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
