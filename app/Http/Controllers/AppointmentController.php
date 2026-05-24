@@ -255,4 +255,52 @@ class AppointmentController extends Controller
             'appointments' => $appointments
         ]);
     }
+
+    public function upcomingByChild($childId)
+{
+    $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
+        $query->where('parent_id', auth()->id())
+              ->where('id', $childId);
+    })
+        ->whereDate('date', '>=', now()->toDateString())
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get([
+            'id',
+            'doctor_id',
+            'child_id',
+            'date',
+            'time',
+            'status',
+            'price'
+        ]);
+
+    return response()->json([
+        'appointments' => $appointments
+    ]);
+}
+
+public function pastByChild($childId)
+{
+    $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
+        $query->where('parent_id', auth()->id())
+              ->where('id', $childId);
+    })
+        ->whereDate('date', '<', now()->toDateString())
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get([
+            'id',
+            'doctor_id',
+            'child_id',
+            'date',
+            'time',
+            'status',
+            'price'
+        ]);
+
+    return response()->json([
+        'appointments' => $appointments
+    ]);
+}
 }

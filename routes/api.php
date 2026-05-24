@@ -53,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::get('/appointments/past', [AppointmentController::class, 'past']);
+    Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
+    Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
     Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
