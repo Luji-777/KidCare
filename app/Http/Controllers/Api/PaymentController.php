@@ -14,41 +14,74 @@ use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Models\Doctor;
+use App\Models\Child;
+
 
 class PaymentController extends Controller
 {
-
     public function getSummary($appointment_id)
     {
 
-        $appointment = Appointment::with(['child', 'doctor.department'])
-            ->where('id', $appointment_id)
-            ->first();
+        $appointmentData = Cache::get("pending_appointment_{$appointment_id}");
 
-        if (!$appointment) {
-            return response()->json(['message' => 'Appointment is not found'], 404);
+        if ($appointmentData) {
+
+            $child = Child::find($appointmentData['child_id']);
+            $doctor = Doctor::with('department')->find($appointmentData['doctor_id']);
+
+            if (!$child || !$doctor) {
+                return response()->json(['message' => 'Appointment details not found'], 404);
+            }
+
+
+            if ($child->parent_id !== auth()->id()) {
+                return response()->json(['message' => 'unauthorized'], 403);
+            }
+
+
+            $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
+            $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
+            $patient_age       = Carbon::parse($child->birth_date)->age;
+            $patient_image     = $child->image ? url('storage/' . $child->image) : '';
+            $department_name   = $doctor->department->name;
+            $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
+            $price             = (string)$appointmentData['price'];
+            $currency          = 'USD';
+        } else {
+
+            $appointment = Appointment::with(['child', 'doctor.department'])
+                ->where('id', $appointment_id)
+                ->first();
+
+            if (!$appointment) {
+                return response()->json(['message' => 'Appointment is not found'], 404);
+            }
+
+
+            if ($appointment->child->parent_id !== auth()->id()) {
+                return response()->json(['message' => 'unauthorized'], 403);
+            }
+
+            $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
+            $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
+            $patient_age       = Carbon::parse($appointment->child->birth_date)->age;
+            $patient_image     = $appointment->child->image ? url('storage/' . $appointment->child->image) : '';
+            $department_name   = $appointment->doctor->department->name;
+            $date_time         = $appointment->date . ' ' . $appointment->time;
+            $price             = (string)$appointment->price;
+            $currency          = $appointment->currency ?? 'USD';
         }
-
-
-        if ($appointment->child->parent_id !== auth()->id()) {
-            return response()->json(['message' => 'unauthorized'], 403);
-        }
-
-        $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
-        $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
-
-
-        $patient_age = Carbon::parse($appointment->child->birth_date)->age;
 
         return response()->json([
             "patient_name"      => $patient_full_name,
             "patient_age"       => (string)$patient_age,
-            "patient_image_url" => $appointment->child->image ? url('storage/' . $appointment->child->image) : '',
+            "patient_image_url" => $patient_image,
             "doctor_name"       => $doctor_full_name,
-            "department_name"   => $appointment->doctor->department->name,
-            "date_time"         => $appointment->date . ' ' . $appointment->time,
-            "price"             => (string)$appointment->price,
-            "currency"          => $appointment->currency,
+            "department_name"   => $department_name,
+            "date_time"         => $date_time,
+            "price"             => $price,
+            "currency"          => $currency,
         ], 200);
     }
 
