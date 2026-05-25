@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use Exception;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -49,46 +51,52 @@ class PaymentController extends Controller
             "currency"          => $appointment->currency,
         ], 200);
     }
+
     public function checkout(Request $request)
     {
         $request->validate([
-            'appointment_id' => 'required|exists:appointments,id',
+            'appointment_id' => 'required|string',
             'currency'       => 'required|string|max:3',
         ]);
 
-        $appointment = Appointment::with('child')->find($request->appointment_id);
+        $pendingAppointmentId = $request->appointment_id;
+        $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
 
 
-        if ($appointment->child->parent_id !== auth()->id()) {
-            return response()->json(['message' => 'Unauthorized action for this financial transaction.'], 403);
+        if (!$appointmentData) {
+            return response()->json(['message' => 'Appointment session expired or not found.'], 404);
         }
 
 
-        if ($appointment->payment_status !== 'unpaid') {
-            return response()->json(['message' => 'This appointment is already confirmed and paid.'], 400);
+        if ($appointmentData['parent_id'] !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized action for this financial transaction.'], 403);
         }
 
         Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
-            $amountInCents = round($appointment->price * 100);
+
+            $amountInCents = round($appointmentData['price'] * 100);
+
 
             $intent = PaymentIntent::create([
                 'amount'   => $amountInCents,
                 'currency' => strtolower($request->currency),
                 'metadata' => [
-                    'appointment_id' => $appointment->id,
-                    'parent_id'      => auth()->id()
+                    'pending_appointment_id' => $pendingAppointmentId,
+                    'parent_id'              => auth()->id()
                 ]
             ]);
 
+
             $transaction = Transaction::create([
-                'appointment_id'           => $appointment->id,
+                'appointment_id'           => null,
                 'stripe_payment_intent_id' => $intent->id,
-                'amount'                   => $appointment->price,
+                'amount'                   => $appointmentData['price'],
                 'currency'                 => $request->currency,
                 'status'                   => $intent->status,
             ]);
+
 
             return response()->json([
                 "status"         => $intent->status,
@@ -96,14 +104,12 @@ class PaymentController extends Controller
                 "transaction_id" => (string)$transaction->id
             ], 200);
         } catch (Exception $e) {
-
             return response()->json(['error' => 'Stripe payment initialization failed: ' . $e->getMessage()], 500);
         }
     }
 
     public function handleWebhook(Request $request)
     {
-
         $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
 
         $payload = $request->getContent();
@@ -111,38 +117,74 @@ class PaymentController extends Controller
         $event = null;
 
         try {
-
             $event = Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
         } catch (\UnexpectedValueException $e) {
-
             return response()->json(['error' => 'Invalid payload'], 400);
         } catch (SignatureVerificationException $e) {
             return response()->json(['error' => 'Invalid signature'], 400);
         }
 
-        if ($event->type === 'payment_intent.succeeded') {
 
+        if ($event->type === 'payment_intent.succeeded') {
             $paymentIntent = $event->data->object;
 
-            $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
-            if ($transaction) {
+            $pendingAppointmentId = $paymentIntent->metadata->pending_appointment_id ?? null;
+
+            if ($pendingAppointmentId) {
+
+                $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
+
+                if ($appointmentData) {
 
 
-                $transaction->update(['status' => 'succeeded']);
+                    $alreadyExists = Appointment::where('doctor_id', $appointmentData['doctor_id'])
+                        ->where('date', $appointmentData['date'])
+                        ->where('time', $appointmentData['time'])
+                        ->exists();
+
+                    if (!$alreadyExists) {
+
+                        DB::beginTransaction();
+                        try {
+
+                            $appointment = Appointment::create([
+                                'child_id'       => $appointmentData['child_id'],
+                                'doctor_id'      => $appointmentData['doctor_id'],
+                                'date'           => $appointmentData['date'],
+                                'time'           => $appointmentData['time'],
+                                'status'         => 'confirmed',
+                                'payment_status' => 'paid_online',
+                                'price'          => $appointmentData['price'],
+                            ]);
 
 
-                $appointment = Appointment::find($transaction->appointment_id);
+                            $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
-                if ($appointment) {
+                            if ($transaction) {
+                                $transaction->update([
+                                    'appointment_id' => $appointment->id,
+                                    'status'         => 'succeeded'
+                                ]);
+                            }
 
-                    $appointment->update([
-                        'status'         => 'confirmed',
-                        'payment_status' => 'paid_online',
-                    ]);
+                            DB::commit();
+
+
+                            Cache::forget("pending_appointment_{$pendingAppointmentId}");
+                            Cache::forget("booked_slot_{$appointmentData['doctor_id']}_{$appointmentData['date']}_{$appointmentData['time']}");
+                        } catch (Exception $e) {
+                            DB::rollBack();
+
+                            logger('Webhook failed to create appointment: ' . $e->getMessage());
+                            return response()->json(['error' => 'Database operation failed'], 500);
+                        }
+                    }
                 }
             }
         }
+
+
         return response()->json(['status' => 'success'], 200);
     }
 }

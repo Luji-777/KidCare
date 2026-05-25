@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('appointment_id')->constrained()->onDelete('cascade');
+            if (!Schema::hasColumn('transactions', 'appointment_id')) {
+                $table->foreignId('appointment_id')->nullable()->constrained()->onDelete('cascade');
+            } else {
+                // إذا كان موجوداً، يقوم فقط بتعديله ليقبل NULL
+                $table->foreignId('appointment_id')->nullable()->change();
+            }
             $table->string('stripe_payment_intent_id')->unique(); // الـ ID من سترايب
             $table->decimal('amount', 8, 2);
             $table->string('currency', 3);
@@ -22,11 +28,15 @@ return new class extends Migration
         });
     }
 
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
         Schema::dropIfExists('transactions');
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->foreignId('appointment_id')->nullable(false)->change();
+        });
     }
 };
