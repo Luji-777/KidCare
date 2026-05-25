@@ -9,11 +9,9 @@ use Carbon\Carbon;
 
 class ParentSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+
     public function run(): void
     {
-
+        ParentModel::factory()->count(10)->create();
     }
 }

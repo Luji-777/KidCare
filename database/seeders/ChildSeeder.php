@@ -5,14 +5,14 @@ namespace Database\Seeders;
 use App\Models\Child;
 use App\Models\ParentModel;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash; // تأكدي من وجود هذا السطر
-use Carbon\Carbon; // تأكدي من وجود هذا السطر
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class ChildSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. مصفوفة الآباء الخاصة بكِ بالأسماء والبيانات الحقيقية
+
         $parents = [
             [
                 'first_name'   => 'Louay',
@@ -51,25 +51,25 @@ class ChildSeeder extends Seeder
             ],
         ];
 
-        // 2. حلقة التكرار لإنشاء الآباء وتوليد أطفال تابعين لهم تلقائياً
+
         foreach ($parents as $data) {
 
-            // إنشاء الأب أولاً وحفظه في متغير $parent
+
             $parent = ParentModel::create([
                 'first_name'     => $data['first_name'],
                 'last_name'      => $data['last_name'],
                 'address'        => $data['address'],
                 'email'          => $data['email'],
                 'phone_number'   => $data['phone_number'],
-                'password'       => Hash::make('password123'), // كلمة المرور الخاصة بكِ لتجربة الـ Postman
+                'password'       => Hash::make('password123'),
                 'otp_code'       => rand(1000, 9999),
                 'otp_expires_at' => Carbon::now()->addMinutes(10),
             ]);
 
-            // الحركة الاحترافية: ننشئ فوراً عدد عشوائي (من 1 إلى 3 أطفال) يتبعون لهذا الأب المحدد
-            Child::factory()->count(rand(1, 3))->create([
+
+            Child::factory()->count(3)->create([
                 'parent_id' => $parent->id,
-                'last_name' => $parent->last_name, // الطفل يأخذ كنية الأب الحقيقية (مثل Khneifas أو Hassan)
+                'last_name' => $parent->last_name,
             ]);
         }
     }

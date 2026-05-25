@@ -13,39 +13,27 @@ class DepartmentSeeder extends Seeder
      */
     public function run(): void
     {
-        $departments=[
-
-              [
+        $departments = [
+            [
                 'name' => 'Pediatrics',
-                'description' => 'Healthcare services for children'
+                'description' => 'Healthcare services for children',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
-
             [
                 'name' => 'Dentistry',
-                'description' => 'Diagnosis and treatment of dental and oral health'
+                'description' => 'Diagnosis and treatment of dental and oral health',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
-
             [
                 'name' => 'Psychiatry',
-                'description' => 'Mental health and psychological care for children'
+                'description' => 'Mental health and psychological care for children',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
-
-            [
-                'name' => 'Speech and Language',
-                'description' => 'Evaluation and treatment of speech, language, and communication disorders'
-            ],
-
-            [
-                'name' => 'Vaccination',
-                'description' => 'Vaccination services for children'
-            ],
-
         ];
 
-        foreach($departments as $department){
-            Department::create($department);
-        }
-
-        
+        Department::insert($departments);
     }
 }
