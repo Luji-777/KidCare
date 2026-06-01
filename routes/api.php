@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
 
+
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::get('/appointments/past', [AppointmentController::class, 'past']);
@@ -63,9 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
     Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
-    Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 });
-
+Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 Route::apiResource('doctors', DoctorController::class);
 
 
