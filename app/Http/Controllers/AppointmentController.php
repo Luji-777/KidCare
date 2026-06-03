@@ -94,6 +94,7 @@ class AppointmentController extends Controller
             'appointment_id' => $pendingAppointmentId,
         ], 201);
     }
+    
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
         $doctorId = $request->doctor_id ?? $appointment->doctor_id;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Transaction;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
@@ -191,6 +192,12 @@ class PaymentController extends Controller
                                 'price'          => $appointmentData['price'],
                             ]);
 
+                            $child = Child::find($appointment->child_id);
+
+                            Notification::create([
+                            'parent_id' => $child->parent_id,
+                                 'message'   => 'Your appointment has been confirmed successfully.'
+]);
 
                             $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
@@ -220,4 +227,65 @@ class PaymentController extends Controller
 
         return response()->json(['status' => 'success'], 200);
     }
+
+   /* public function testAppointment(Request $request)
+{
+    $pendingAppointmentId = $request->appointment_id;
+
+    $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
+
+    if (!$appointmentData) {
+        return response()->json([
+            'message' => 'Appointment session expired or not found.'
+        ], 404);
+    }
+
+    $alreadyExists = Appointment::where('doctor_id', $appointmentData['doctor_id'])
+        ->where('date', $appointmentData['date'])
+        ->where('time', $appointmentData['time'])
+        ->exists();
+
+    if ($alreadyExists) {
+        return response()->json([
+            'message' => 'Appointment already exists'
+        ], 409);
+    }
+
+    DB::beginTransaction();
+
+    try {
+
+        $appointment = Appointment::create([
+            'child_id'       => $appointmentData['child_id'],
+            'doctor_id'      => $appointmentData['doctor_id'],
+            'date'           => $appointmentData['date'],
+            'time'           => $appointmentData['time'],
+            'status'         => 'confirmed',
+            'payment_status' => 'paid_online',
+            'price'          => $appointmentData['price'],
+        ]);
+
+        $child = Child::find($appointment->child_id);
+
+        Notification::create([
+            'parent_id' => $child->parent_id,
+            'message'   => 'Your appointment has been confirmed successfully.'
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Appointment created successfully',
+            'appointment' => $appointment
+        ]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}*/
 }

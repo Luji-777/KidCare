@@ -274,4 +274,21 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
+
+    public function saveFcmToken(Request $request)
+{
+    $request->validate([
+        'fcm_token' => 'required'
+    ]);
+
+    $parent = ParentModel::find($request->parent_id);
+
+    $parent->update([
+        'fcm_token' => $request->fcm_token
+    ]);
+
+    return response()->json([
+        'message' => 'Token saved successfully'
+    ]);
+}
 }

@@ -7,6 +7,8 @@ use App\Models\ParentModel;
 
 class Notification extends Model
 {
+    protected $guarded=[];
+
     public function parent(){
 
         return $this->belongsTo(ParentModel::class);

@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
+    Route::post('/parent/save-fcm-token', [ParentController::class, 'saveFcmToken']);
 
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
@@ -60,10 +61,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
 
-
+    Route::post('/test-appointment', [PaymentController::class, 'testAppointment']);
     Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
     Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
     Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
 });
 
 Route::apiResource('doctors', DoctorController::class);
