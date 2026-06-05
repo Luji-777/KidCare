@@ -7,7 +7,14 @@ use App\Models\Child;
 
 class Growth extends Model
 {
-    public function child(){
+    protected $fillable = [
+        'child_id',
+        'height',
+        'weight',
+        'date'
+    ];
+    public function child()
+    {
         return $this->belongsTo(Child::class);
     }
 }

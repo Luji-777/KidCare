@@ -121,41 +121,41 @@ class ChildController extends Controller
     }
 
     public function childAllergies($id)
-{
-    $child = auth()->user()
-        ->children()
-        ->where('id', $id)
-        ->firstOrFail();
+    {
+        $child = auth()->user()
+            ->children()
+            ->where('id', $id)
+            ->firstOrFail();
 
-    return response()->json([
-        'child_id' => $child->id,
-        'name' => $child->first_name . ' ' . $child->last_name,
-        'allergies' => $child->allergies
-    ]);
-}
+        return response()->json([
+            'child_id' => $child->id,
+            'name' => $child->first_name . ' ' . $child->last_name,
+            'allergies' => $child->allergies
+        ]);
+    }
 
-public function childProfile($id)
-{
-    $child = auth()->user()
-        ->children()
-        ->with('growth')
-        ->where('id', $id)
-        ->firstOrFail();
+    public function childProfile($id)
+    {
+        $child = auth()->user()
+            ->children()
+            ->with('growth')
+            ->where('id', $id)
+            ->firstOrFail();
 
-    $latestGrowth = $child->growth()
-        ->latest('date')
-        ->first();
+        $latestGrowth = $child->growth()
+            ->latest('date')
+            ->first();
 
-    return response()->json([
+        return response()->json([
 
-        'id' => $child->id,
-        'name' => $child->first_name . ' ' . $child->last_name,
-        'age' => Carbon::parse($child->birth_date)->age,
-        'gender' => $child->gender,
-        'blood_type' => $child->blood_type,
-        'image' => $child->image,
-        'height' => $latestGrowth?->height,
-        'weight' => $latestGrowth?->weight,
-    ]);
-}
+            'id' => $child->id,
+            'name' => $child->first_name . ' ' . $child->last_name,
+            'age' => Carbon::parse($child->birth_date)->age,
+            'gender' => $child->gender,
+            'blood_type' => $child->blood_type,
+            'image' => $child->image,
+            'height' => $latestGrowth?->height,
+            'weight' => $latestGrowth?->weight,
+        ]);
+    }
 }

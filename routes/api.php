@@ -9,6 +9,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GrowthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,14 @@ Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
 Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
 Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
 Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+
+Route::apiResource('doctors', DoctorController::class);
+
+
+Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -38,8 +47,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/children/{id}', [ChildController::class, 'update']);
     Route::delete('/children/{id}', [ChildController::class, 'destroy']);
     Route::get('/home-children', [ChildController::class, 'homeChildren']);
-    Route::get('/childProfile/{id}', [ChildController::class, 'childProfile']);
-    Route::get('/childAllergies/{id}', [ChildController::class, 'childAllergies']);
+
+    // Route::get('/childProfile/{id}', [ChildController::class, 'childProfile']);
+    // Route::get('/childAllergies/{id}', [ChildController::class, 'childAllergies']);
+
+    Route::get('/children/{child_id}/growth', [GrowthController::class, 'index']);
+    Route::post('/growth', [GrowthController::class, 'store']);
+    Route::delete('/growth/{id}', [GrowthController::class, 'destroy']);
 
     Route::get('/departments', [DepartmentController::class, 'index']);
     Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
@@ -73,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/test-notification', [NotificationController::class, 'test']);
 
 });
+
 //Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 //Route::apiResource('doctors', DoctorController::class);
 
@@ -84,3 +99,6 @@ Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
 Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
 Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
 Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+
+Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+
