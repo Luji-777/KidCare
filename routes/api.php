@@ -63,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
+    Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
 
 
     Route::post('/appointment', [AppointmentController::class, 'store']);

@@ -274,4 +274,45 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
+    public function updateProfile(Request $request)
+    {
+        $parent = $request->user();
+
+        if (!$parent) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $request->validate([
+
+            'email'        => 'sometimes|email|unique:users,email,' . $parent->id,
+            'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . $parent->id,
+            'address'      => 'sometimes|string|max:255',
+        ]);
+
+        $parent->update($request->only([
+
+            'email',
+            'phone_number',
+            'address'
+        ]));
+
+        $children = $parent->children()->select('image', 'first_name')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id'           => $parent->id,
+                'first_name'   => $parent->first_name,
+                'last_name'    => $parent->last_name,
+                'email'        => $parent->email,
+                'phone_number' => $parent->phone_number,
+                'address'      => $parent->address,
+                'children'     => $children
+            ]
+        ], 200);
+    }
 }
