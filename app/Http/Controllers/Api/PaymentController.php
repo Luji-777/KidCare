@@ -44,7 +44,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_age       = Carbon::parse($child->birth_date)->age;
-            $patient_image     = $child->image ? url('storage/' . $child->image) : '';
+            $patient_image = $child->image ?? '';
             $department_name   = $doctor->department->name;
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
@@ -67,7 +67,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
             $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
             $patient_age       = Carbon::parse($appointment->child->birth_date)->age;
-            $patient_image     = $appointment->child->image ? url('storage/' . $appointment->child->image) : '';
+            $patient_image = $child->image ?? '';
             $department_name   = $appointment->doctor->department->name;
             $date_time         = $appointment->date . ' ' . $appointment->time;
             $price             = (string)$appointment->price;
@@ -96,22 +96,35 @@ class PaymentController extends Controller
         $pendingAppointmentId = $request->appointment_id;
         $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
 
-
         if (!$appointmentData) {
             return response()->json(['message' => 'Appointment session expired or not found.'], 404);
         }
-
 
         if ($appointmentData['parent_id'] !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized action for this financial transaction.'], 403);
         }
 
+        $cacheKeyTransaction = "transaction_for_{$pendingAppointmentId}";
+        if (Cache::has($cacheKeyTransaction)) {
+            $existingTransactionData = Cache::get($cacheKeyTransaction);
+
+            return response()->json([
+                "status"         => $existingTransactionData['status'],
+                "client_secret"  => $existingTransactionData['client_secret'],
+                "transaction_id" => (string)$existingTransactionData['transaction_id']
+            ], 200);
+        }
+
+        $lockKey = "lock_checkout_{$pendingAppointmentId}";
+        if (Cache::has($lockKey)) {
+            return response()->json(['message' => 'Payment is already processing. Please wait.'], 400);
+        }
+        Cache::put($lockKey, true, now()->addSeconds(10));
+
         Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
-
             $amountInCents = round($appointmentData['price'] * 100);
-
 
             $intent = PaymentIntent::create([
                 'amount'   => $amountInCents,
@@ -122,7 +135,6 @@ class PaymentController extends Controller
                 ]
             ]);
 
-
             $transaction = Transaction::create([
                 'appointment_id'           => null,
                 'stripe_payment_intent_id' => $intent->id,
@@ -131,6 +143,14 @@ class PaymentController extends Controller
                 'status'                   => $intent->status,
             ]);
 
+            $transactionDataToCache = [
+                'status'        => $intent->status,
+                'client_secret' => $intent->client_secret,
+                'transaction_id' => $transaction->id
+            ];
+            Cache::put($cacheKeyTransaction, $transactionDataToCache, now()->addMinutes(15));
+
+            Cache::forget($lockKey);
 
             return response()->json([
                 "status"         => $intent->status,
@@ -138,6 +158,7 @@ class PaymentController extends Controller
                 "transaction_id" => (string)$transaction->id
             ], 200);
         } catch (Exception $e) {
+            Cache::forget($lockKey);
             return response()->json(['error' => 'Stripe payment initialization failed: ' . $e->getMessage()], 500);
         }
     }

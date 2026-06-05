@@ -24,6 +24,7 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request)
     {
+
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
         if (!$child) {
             return response()->json(['message' => 'Child not found'], 404);
@@ -306,7 +307,6 @@ class AppointmentController extends Controller
             'appointments' => $appointments
         ]);
     }
-
     public function past()
     {
         $appointments = Appointment::whereHas('child', function ($query) {

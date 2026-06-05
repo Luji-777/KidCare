@@ -3,6 +3,7 @@
 use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
@@ -49,7 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
-    Route::post('/parent/save-fcm-token', [ParentController::class, 'saveFcmToken']);
+    Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
+
 
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
@@ -68,9 +70,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::get('/notifications', [NotificationController::class, 'index']);
-});
+    Route::get('/test-notification', [NotificationController::class, 'test']);
 
-Route::apiResource('doctors', DoctorController::class);
+});
+//Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+//Route::apiResource('doctors', DoctorController::class);
 
 
 
