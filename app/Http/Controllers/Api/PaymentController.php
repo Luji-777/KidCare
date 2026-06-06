@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
@@ -219,25 +219,25 @@ class PaymentController extends Controller
 
                             $child = Child::find($appointment->child_id);
 
-$parent = ParentModel::find($child->parent_id);
+                            $parent = ParentModel::find($child->parent_id);
 
-if ($parent && $parent->fcm_token) {
+                            if ($parent && $parent->fcm_token) {
 
-    $firebase = new FirebaseNotificationService();
+                                $firebase = new FirebaseNotificationService();
 
-    $firebase->send(
-        $parent->fcm_token,
-        'Appointment Confirmed',
-        'Your appointment has been confirmed successfully.'
-    );
-}
+                                $firebase->send(
+                                    $parent->fcm_token,
+                                    'Appointment Confirmed',
+                                    'Your appointment has been confirmed successfully.'
+                                );
+                            }
 
-                           
+
 
                             Notification::create([
-                            'parent_id' => $child->parent_id,
-                                 'message'   => 'Your appointment has been confirmed successfully.'
-]);
+                                'parent_id' => $child->parent_id,
+                                'message'   => 'Your appointment has been confirmed successfully.'
+                            ]);
 
                             $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
@@ -269,101 +269,100 @@ if ($parent && $parent->fcm_token) {
     }
 
     public function testAppointment(Request $request)
-{
-    $pendingAppointmentId = $request->appointment_id;
+    {
+        $pendingAppointmentId = $request->appointment_id;
 
-    $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
+        $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
 
-    if (!$appointmentData) {
-        return response()->json([
-            'message' => 'Appointment session expired or not found.'
-        ], 404);
+        if (!$appointmentData) {
+            return response()->json([
+                'message' => 'Appointment session expired or not found.'
+            ], 404);
+        }
+
+        $alreadyExists = Appointment::where('doctor_id', $appointmentData['doctor_id'])
+            ->where('date', $appointmentData['date'])
+            ->where('time', $appointmentData['time'])
+            ->exists();
+
+        if ($alreadyExists) {
+            return response()->json([
+                'message' => 'Appointment already exists'
+            ], 409);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $appointment = Appointment::create([
+                'child_id'       => $appointmentData['child_id'],
+                'doctor_id'      => $appointmentData['doctor_id'],
+                'date'           => $appointmentData['date'],
+                'time'           => $appointmentData['time'],
+                'status'         => 'confirmed',
+                'payment_status' => 'paid_online',
+                'price'          => $appointmentData['price'],
+            ]);
+
+            $child = Child::find($appointment->child_id);
+
+            $parent = ParentModel::find($child->parent_id);
+
+
+            DBNotification::create([
+                'parent_id' => $parent->id,
+                'message'   => 'Your appointment has been confirmed successfully.'
+            ]);
+
+            if ($parent && $parent->fcm_token) {
+
+                $message = CloudMessage::withTarget(
+                    'token',
+                    $parent->fcm_token
+                )->withNotification(
+                    FirebaseNotification::create(
+                        'Appointment Confirmed',
+                        'Your appointment has been confirmed successfully.'
+                    )
+                );
+
+                app('firebase.messaging')->send($message);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Appointment created successfully',
+                'appointment' => $appointment
+            ]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Failed to create appointment',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
-    $alreadyExists = Appointment::where('doctor_id', $appointmentData['doctor_id'])
-        ->where('date', $appointmentData['date'])
-        ->where('time', $appointmentData['time'])
-        ->exists();
+    public function testFcm()
+    {
+        $parent = ParentModel::find(1); // أو auth()->user()
 
-    if ($alreadyExists) {
-        return response()->json([
-            'message' => 'Appointment already exists'
-        ], 409);
+        $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
+            'token',
+            $parent->fcm_token
+        )->withNotification(
+            \Kreait\Firebase\Messaging\Notification::create(
+                'Test',
+                'Hello from Laravel'
+            )
+        );
+
+        $result = app('firebase.messaging')->send($message);
+
+        return response()->json($result);
     }
-
-    DB::beginTransaction();
-
-    try {
-
-        $appointment = Appointment::create([
-            'child_id'       => $appointmentData['child_id'],
-            'doctor_id'      => $appointmentData['doctor_id'],
-            'date'           => $appointmentData['date'],
-            'time'           => $appointmentData['time'],
-            'status'         => 'confirmed',
-            'payment_status' => 'paid_online',
-            'price'          => $appointmentData['price'],
-        ]);
-
-        $child = Child::find($appointment->child_id);
-
-        $parent = ParentModel::find($child->parent_id);
-
-        
-        DBNotification::create([
-    'parent_id' => $parent->id,
-    'message'   => 'Your appointment has been confirmed successfully.'
-]);
-
-if ($parent && $parent->fcm_token) {
-
-    $message = CloudMessage::withTarget(
-        'token',
-        $parent->fcm_token
-    )->withNotification(
-        FirebaseNotification::create(
-            'Appointment Confirmed',
-            'Your appointment has been confirmed successfully.'
-        )
-    );
-
-    app('firebase.messaging')->send($message);
-}
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Appointment created successfully',
-            'appointment' => $appointment
-        ]);
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return response()->json([
-            'message' => 'Failed to create appointment',
-            'error'   => $e->getMessage()
-        ], 500);
-    }
-}
-
-public function testFcm()
-{
-    $parent = ParentModel::find(1); // أو auth()->user()
-
-    $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
-        'token',
-        $parent->fcm_token
-    )->withNotification(
-        \Kreait\Firebase\Messaging\Notification::create(
-            'Test',
-            'Hello from Laravel'
-        )
-    );
-
-    $result = app('firebase.messaging')->send($message);
-
-    return response()->json($result);
-}
 }

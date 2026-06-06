@@ -11,12 +11,10 @@ class SetAppLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. قراءة اللغة من الهيدر (إذا ما بعت شي الفرونت إند، الافتراضي هو الإنكليزي en)
         $locale = $request->header('Accept-Language', config('app.locale'));
 
-        // 2. التأكد أن اللغة المدعومة هي إما عربي أو إنكليزي فقط
         if (in_array($locale, ['ar', 'en'])) {
-            App::setLocale($locale); // هون اللارافيل بيقلب لغة السيستم بالكامل!
+            App::setLocale($locale);
         }
 
         return $next($request);

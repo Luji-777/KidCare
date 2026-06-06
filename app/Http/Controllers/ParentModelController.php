@@ -274,7 +274,6 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
-
     public function saveFcmToken(Request $request)
     {
         $request->validate([

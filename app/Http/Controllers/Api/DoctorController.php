@@ -270,48 +270,48 @@ class DoctorController extends Controller
     }
 
     public function toggleFavorite($doctorId)
-{
-    $parent = auth()->user();
+    {
+        $parent = auth()->user();
 
-    $doctor = Doctor::find($doctorId);
+        $doctor = Doctor::find($doctorId);
 
-    if (!$doctor) {
+        if (!$doctor) {
+            return response()->json([
+                'message' => 'Doctor not found'
+            ], 404);
+        }
+
+        $isFavorite = $parent->favoriteDoctors()
+            ->where('doctor_id', $doctorId)
+            ->exists();
+
+        if ($isFavorite) {
+
+            $parent->favoriteDoctors()->detach($doctorId);
+
+            return response()->json([
+                'message' => 'Removed from favorites',
+                'is_favorite' => false
+            ]);
+        }
+
+        $parent->favoriteDoctors()->attach($doctorId);
+
         return response()->json([
-            'message' => 'Doctor not found'
-        ], 404);
-    }
-
-    $isFavorite = $parent->favoriteDoctors()
-        ->where('doctor_id', $doctorId)
-        ->exists();
-
-    if ($isFavorite) {
-
-        $parent->favoriteDoctors()->detach($doctorId);
-
-        return response()->json([
-            'message' => 'Removed from favorites',
-            'is_favorite' => false
+            'message' => 'Added to favorites',
+            'is_favorite' => true
         ]);
     }
 
-    $parent->favoriteDoctors()->attach($doctorId);
+    public function getFavorites()
+    {
+        $favorites = auth()->user()
+            ->favoriteDoctors()
+            ->with('department')
+            ->get();
 
-    return response()->json([
-        'message' => 'Added to favorites',
-        'is_favorite' => true
-    ]);
-}
-
-public function getFavorites()
-{
-    $favorites = auth()->user()
-        ->favoriteDoctors()
-        ->with('department')
-        ->get();
-
-    return response()->json([
-        'favorites' => $favorites
-    ]);
-}
+        return response()->json([
+            'favorites' => $favorites
+        ]);
+    }
 }
