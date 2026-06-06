@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Transaction;
-use App\Models\Notification;
+use App\Models\Notification as DBNotification;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
@@ -13,10 +13,14 @@ use Carbon\Carbon;
 use Exception;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\Doctor;
 use App\Models\Child;
+use App\Models\ParentModel;
+use App\Services\FirebaseNotificationService;
 
 
 class PaymentController extends Controller
@@ -215,6 +219,21 @@ class PaymentController extends Controller
 
                             $child = Child::find($appointment->child_id);
 
+$parent = ParentModel::find($child->parent_id);
+
+if ($parent && $parent->fcm_token) {
+
+    $firebase = new FirebaseNotificationService();
+
+    $firebase->send(
+        $parent->fcm_token,
+        'Appointment Confirmed',
+        'Your appointment has been confirmed successfully.'
+    );
+}
+
+                           
+
                             Notification::create([
                             'parent_id' => $child->parent_id,
                                  'message'   => 'Your appointment has been confirmed successfully.'
@@ -249,7 +268,7 @@ class PaymentController extends Controller
         return response()->json(['status' => 'success'], 200);
     }
 
-   /* public function testAppointment(Request $request)
+    public function testAppointment(Request $request)
 {
     $pendingAppointmentId = $request->appointment_id;
 
@@ -288,10 +307,28 @@ class PaymentController extends Controller
 
         $child = Child::find($appointment->child_id);
 
-        Notification::create([
-            'parent_id' => $child->parent_id,
-            'message'   => 'Your appointment has been confirmed successfully.'
-        ]);
+        $parent = ParentModel::find($child->parent_id);
+
+        
+        DBNotification::create([
+    'parent_id' => $parent->id,
+    'message'   => 'Your appointment has been confirmed successfully.'
+]);
+
+if ($parent && $parent->fcm_token) {
+
+    $message = CloudMessage::withTarget(
+        'token',
+        $parent->fcm_token
+    )->withNotification(
+        FirebaseNotification::create(
+            'Appointment Confirmed',
+            'Your appointment has been confirmed successfully.'
+        )
+    );
+
+    app('firebase.messaging')->send($message);
+}
 
         DB::commit();
 
@@ -305,8 +342,28 @@ class PaymentController extends Controller
         DB::rollBack();
 
         return response()->json([
-            'error' => $e->getMessage()
+            'message' => 'Failed to create appointment',
+            'error'   => $e->getMessage()
         ], 500);
     }
-}*/
+}
+
+public function testFcm()
+{
+    $parent = ParentModel::find(1); // أو auth()->user()
+
+    $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
+        'token',
+        $parent->fcm_token
+    )->withNotification(
+        \Kreait\Firebase\Messaging\Notification::create(
+            'Test',
+            'Hello from Laravel'
+        )
+    );
+
+    $result = app('firebase.messaging')->send($message);
+
+    return response()->json($result);
+}
 }

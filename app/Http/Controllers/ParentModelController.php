@@ -281,9 +281,7 @@ class ParentModelController extends Controller
         'fcm_token' => 'required'
     ]);
 
-    $parent = ParentModel::find($request->parent_id);
-
-    $parent->update([
+    auth()->user()->update([
         'fcm_token' => $request->fcm_token
     ]);
 

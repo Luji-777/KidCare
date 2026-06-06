@@ -268,4 +268,50 @@ class DoctorController extends Controller
 
         return response()->json(['message' => 'The appointment was completed and the additional costs were successfully recorded.']);
     }
+
+    public function toggleFavorite($doctorId)
+{
+    $parent = auth()->user();
+
+    $doctor = Doctor::find($doctorId);
+
+    if (!$doctor) {
+        return response()->json([
+            'message' => 'Doctor not found'
+        ], 404);
+    }
+
+    $isFavorite = $parent->favoriteDoctors()
+        ->where('doctor_id', $doctorId)
+        ->exists();
+
+    if ($isFavorite) {
+
+        $parent->favoriteDoctors()->detach($doctorId);
+
+        return response()->json([
+            'message' => 'Removed from favorites',
+            'is_favorite' => false
+        ]);
+    }
+
+    $parent->favoriteDoctors()->attach($doctorId);
+
+    return response()->json([
+        'message' => 'Added to favorites',
+        'is_favorite' => true
+    ]);
+}
+
+public function getFavorites()
+{
+    $favorites = auth()->user()
+        ->favoriteDoctors()
+        ->with('department')
+        ->get();
+
+    return response()->json([
+        'favorites' => $favorites
+    ]);
+}
 }
