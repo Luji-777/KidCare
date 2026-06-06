@@ -25,7 +25,7 @@ class StoreChildRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
-            'birth_date' => 'required|date',
+            'birth_date' => 'required|date|after_or_equal:' . now()->subYears(7)->format('Y-m-d'),
             'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
             'medical_history' => 'nullable|string',
             'allergies' => 'nullable|string',

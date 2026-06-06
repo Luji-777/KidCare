@@ -276,17 +276,58 @@ class ParentModelController extends Controller
     }
 
     public function saveFcmToken(Request $request)
-{
-    $request->validate([
-        'fcm_token' => 'required'
-    ]);
+    {
+        $request->validate([
+            'fcm_token' => 'required'
+        ]);
 
-    auth()->user()->update([
-        'fcm_token' => $request->fcm_token
-    ]);
+        auth()->user()->update([
+            'fcm_token' => $request->fcm_token
+        ]);
 
-    return response()->json([
-        'message' => 'Token saved successfully'
-    ]);
-}
+        return response()->json([
+            'message' => 'Token saved successfully'
+        ]);
+    }
+    public function updateProfile(Request $request)
+    {
+        $parent = $request->user();
+
+        if (!$parent) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $request->validate([
+
+            'email'        => 'sometimes|email|unique:users,email,' . $parent->id,
+            'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . $parent->id,
+            'address'      => 'sometimes|string|max:255',
+        ]);
+
+        $parent->update($request->only([
+
+            'email',
+            'phone_number',
+            'address'
+        ]));
+
+        $children = $parent->children()->select('image', 'first_name')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id'           => $parent->id,
+                'first_name'   => $parent->first_name,
+                'last_name'    => $parent->last_name,
+                'email'        => $parent->email,
+                'phone_number' => $parent->phone_number,
+                'address'      => $parent->address,
+                'children'     => $children
+            ]
+        ], 200);
+    }
 }
