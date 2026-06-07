@@ -350,7 +350,7 @@ if ($parent && $parent->fcm_token) {
 
 public function testFcm()
 {
-    $parent = ParentModel::find(1); // أو auth()->user()
+    $parent = ParentModel::find(1);
 
     $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
         'token',
