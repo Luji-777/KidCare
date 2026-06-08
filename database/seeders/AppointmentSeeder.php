@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Appointment;
 use App\Models\Child;
-use App\Models\Doctor; // تأكدي أن اسم الموديل Doctor حسب الميجريشن تبعك doctors
+use App\Models\Doctor;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 

@@ -92,7 +92,7 @@ class GrowthController extends Controller
         $request->validate([
             'child_id' => 'required|exists:children,id',
             'height'   => 'required|numeric|min:10|max:250',
-            'weight'   => 'required|integer|min:1|max:150',
+            'weight'   => 'required|numeric|min:1|max:150',
             'date'     => 'required|string',
         ]);
 

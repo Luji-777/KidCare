@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 
 
-
 class AppointmentController extends Controller
 {
 
@@ -95,7 +94,6 @@ class AppointmentController extends Controller
             'appointment_id' => $pendingAppointmentId,
         ], 201);
     }
-    
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
         $doctorId = $request->doctor_id ?? $appointment->doctor_id;
@@ -286,7 +284,6 @@ class AppointmentController extends Controller
     }
 
 
-
     public function upcoming()
     {
         $appointments = Appointment::whereHas('child', function ($query) {
@@ -368,10 +365,8 @@ class AppointmentController extends Controller
         ], 200);
     }
 
-
     public function upcomingByChild($childId)
     {
-
         $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
             $query->where('parent_id', auth()->id())
                 ->where('id', $childId);
@@ -384,49 +379,6 @@ class AppointmentController extends Controller
             ->orderBy('date')
             ->orderBy('time')
             ->get();
-
-
-        $formattedAppointments = $appointments->map(function ($appointment) {
-            return [
-                'id'          => $appointment->id,
-                'status'      => $appointment->status,
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
-                    'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child?->first_name,
-                    'image'      => $appointment->child?->image,
-                ],
-                'doctor' => [
-                    'id'         => $appointment->doctor_id,
-                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null, // اسم الطبيب كامل
-                ]
-            ];
-        });
-
-        return response()->json([
-            'status'       => 'success',
-            'appointments' => $formattedAppointments
-        ], 200);
-    }
-
-    public function pastByChild($childId)
-    {
-
-        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
-            $query->where('parent_id', auth()->id())
-                ->where('id', $childId);
-        })
-            ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
-            ])
-            ->whereDate('date', '<', now()->toDateString())
-            ->orderByDesc('date')
-            ->orderByDesc('time')
-            ->get();
-
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
@@ -449,6 +401,48 @@ class AppointmentController extends Controller
 
         return response()->json([
             'status'       => 'success',
+            'message'      => __('messages.upcoming_success'), // 👈 رسالة نجاح ديناميكية ومترجمة
+            'appointments' => $formattedAppointments
+        ], 200);
+    }
+
+    public function pastByChild($childId)
+    {
+        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
+            $query->where('parent_id', auth()->id())
+                ->where('id', $childId);
+        })
+            ->with([
+                'child:id,first_name,image',
+                'doctor:id,first_name,last_name'
+            ])
+            ->whereDate('date', '<', now()->toDateString())
+            ->orderByDesc('date')
+            ->orderByDesc('time')
+            ->get();
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'price'       => $appointment->price,
+                'date'        => $appointment->date,
+                'time'        => $appointment->time,
+                'child' => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                ]
+            ];
+        });
+
+        return response()->json([
+            'status'       => 'success',
+            'message'      => __('messages.past_success'), // 👈 رسالة نجاح ديناميكية ومترجمة للمواعيد السابقة
             'appointments' => $formattedAppointments
         ], 200);
     }
