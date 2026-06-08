@@ -69,14 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
-    Route::post('/doctors/{doctorId}/favorite',[DoctorController::class, 'toggleFavorite']);
-    Route::get(
-    '/favorite-doctors',
-    [DoctorController::class, 'getFavorites']
-);
+    Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
+    Route::get('/favorite-doctors',[DoctorController::class, 'getFavorites']);
+    
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
     Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
+    Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
 
 
     Route::post('/appointment', [AppointmentController::class, 'store']);
@@ -98,7 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/test-notification', [NotificationController::class, 'test']);
-
 });
 
 //Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
@@ -114,4 +112,3 @@ Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
 Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 
 Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-

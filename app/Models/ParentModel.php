@@ -29,7 +29,7 @@ class ParentModel extends Authenticatable
     }
 
     public function doctors(){
-        return $this->belongsToMany(Doctor::class,'favorite');
+        return $this->belongsToMany(Doctor::class,'favorite','parent_id','doctor_id');
 
     }
 

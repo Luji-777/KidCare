@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
+use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\Cache;
@@ -208,7 +209,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function destroy(Appointment $appointment)
+    public function destroy( Appointment $appointment,FirebaseNotificationService $firebase)
     {
 
         $isOwner = auth()->user()
@@ -270,111 +271,221 @@ class AppointmentController extends Controller
             }
 
             $appointment->update([
-                'status' => 'canceled'
+                'status' => 'cancelled'
             ]);
 
             DB::commit();
 
-            return response()->json([
-                'message' => $message,
-                'refund_amount' => $transaction ? ($transaction->amount * $refundPercentage) : 0
-            ], 200);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Cancellation and Refund failed: ' . $e->getMessage()], 500);
+            $refundAmount = $transaction
+            ? ($transaction->amount * $refundPercentage)
+            : 0;
+
+            if ($hoursRemaining < 48) {
+
+            $notificationBody =
+                "Appointment cancelled successfully. "
+                . "25% cancellation fee deducted. "
+                . "Refund amount: {$refundAmount}";
+        } else {
+
+            $notificationBody =
+                "Appointment cancelled successfully. "
+                . "Full refund initiated. "
+                . "Refund amount: {$refundAmount}";
         }
+
+        $parent = auth()->user();
+
+        if (!empty($parent->fcm_token)) {
+
+            $firebase->send(
+                $parent->fcm_token,
+                'Appointment Cancelled',
+                $notificationBody
+            );
+        }
+        return response()->json([
+            'message' => $message,
+            'refund_amount' => $refundAmount
+        ], 200);
+
+    } catch (Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'error' => 'Cancellation and Refund failed: '
+                . $e->getMessage()
+        ], 500);
     }
+         
+    }
+
+
 
     public function upcoming()
     {
         $appointments = Appointment::whereHas('child', function ($query) {
             $query->where('parent_id', auth()->id());
         })
+            ->with([
+                'child:id,first_name,image',
+                'doctor:id,first_name,last_name'
+            ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('time')
-            ->get([
-                'id',
-                'doctor_id',
-                'child_id',
-                'date',
-                'time',
-                'status',
-                'price'
-            ]);
+            ->get();
+
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'price'       => $appointment->price,
+                'date'        => $appointment->date,
+                'time'        => $appointment->time,
+                'child' => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child->first_name,
+                    'image'      => $appointment->child->image,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                ]
+            ];
+        });
 
         return response()->json([
-            'appointments' => $appointments
-        ]);
+            'status'       => 'success',
+            'appointments' => $formattedAppointments
+        ], 200);
     }
+
     public function past()
     {
+
         $appointments = Appointment::whereHas('child', function ($query) {
             $query->where('parent_id', auth()->id());
         })
+            ->with([
+                'child:id,first_name,image',
+                'doctor:id,first_name,last_name'
+            ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
             ->orderByDesc('time')
-            ->get([
-                'id',
-                'doctor_id',
-                'child_id',
-                'date',
-                'time',
-                'status',
-                'price'
-            ]);
+            ->get();
+
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'price'       => $appointment->price,
+                'date'        => $appointment->date,
+                'time'        => $appointment->time,
+                'child' => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child->first_name,
+                    'image'      => $appointment->child->image,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                ]
+            ];
+        });
 
         return response()->json([
-            'appointments' => $appointments
-        ]);
+            'status'       => 'success',
+            'appointments' => $formattedAppointments
+        ], 200);
     }
+
 
     public function upcomingByChild($childId)
     {
+
         $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
             $query->where('parent_id', auth()->id())
                 ->where('id', $childId);
         })
+            ->with([
+                'child:id,first_name,image',
+                'doctor:id,first_name,last_name'
+            ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('time')
-            ->get([
-                'id',
-                'doctor_id',
-                'child_id',
-                'date',
-                'time',
-                'status',
-                'price'
-            ]);
+            ->get();
+
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'price'       => $appointment->price,
+                'date'        => $appointment->date,
+                'time'        => $appointment->time,
+                'child' => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null, // اسم الطبيب كامل
+                ]
+            ];
+        });
 
         return response()->json([
-            'appointments' => $appointments
-        ]);
+            'status'       => 'success',
+            'appointments' => $formattedAppointments
+        ], 200);
     }
 
     public function pastByChild($childId)
     {
+
         $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
             $query->where('parent_id', auth()->id())
                 ->where('id', $childId);
         })
+            ->with([
+                'child:id,first_name,image',
+                'doctor:id,first_name,last_name'
+            ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
             ->orderByDesc('time')
-            ->get([
-                'id',
-                'doctor_id',
-                'child_id',
-                'date',
-                'time',
-                'status',
-                'price'
-            ]);
+            ->get();
+
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'price'       => $appointment->price,
+                'date'        => $appointment->date,
+                'time'        => $appointment->time,
+                'child' => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                ]
+            ];
+        });
 
         return response()->json([
-            'appointments' => $appointments
-        ]);
+            'status'       => 'success',
+            'appointments' => $formattedAppointments
+        ], 200);
     }
 }

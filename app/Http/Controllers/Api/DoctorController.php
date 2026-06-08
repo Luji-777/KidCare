@@ -270,45 +270,62 @@ class DoctorController extends Controller
     }
 
     public function toggleFavorite($doctorId)
-{
-    $parent = auth()->user();
+    {
+        $parent = auth()->user();
 
-    $doctor = Doctor::find($doctorId);
+        $doctor = Doctor::find($doctorId);
 
-    if (!$doctor) {
+        if (!$doctor) {
+            return response()->json([
+                'message' => 'Doctor not found'
+            ], 404);
+        }
+
+        $isFavorite = $parent->doctors()
+            ->where('doctor_id', $doctorId)
+            ->exists();
+
+        if ($isFavorite) {
+
+            $parent->doctors()->detach($doctorId);
+
+            return response()->json([
+                'message' => 'Removed from favorites',
+                'is_favorite' => false
+            ]);
+        }
+
+        $parent->doctors()->attach($doctorId);
+
         return response()->json([
-            'message' => 'Doctor not found'
-        ], 404);
-    }
-
-    $isFavorite = $parent->favoriteDoctors()
-        ->where('doctor_id', $doctorId)
-        ->exists();
-
-    if ($isFavorite) {
-
-        $parent->favoriteDoctors()->detach($doctorId);
-
-        return response()->json([
-            'message' => 'Removed from favorites',
-            'is_favorite' => false
+            'message' => 'Added to favorites',
+            'is_favorite' => true
         ]);
     }
 
-    $parent->favoriteDoctors()->attach($doctorId);
-
-    return response()->json([
-        'message' => 'Added to favorites',
-        'is_favorite' => true
-    ]);
-}
-
-public function getFavorites()
+    public function getFavorites()
 {
     $favorites = auth()->user()
-        ->favoriteDoctors()
-        ->with('department')
-        ->get();
+        ->doctors()
+        ->select(
+            'doctors.id',
+            'doctors.first_name',
+            'doctors.last_name',
+            'doctors.profile_picture',
+            'doctors.department_id'
+        )
+        ->with('department:id,name')
+        ->get()
+        ->map(function ($doctor) {
+            return [
+                'id' => $doctor->id,
+                'first_name' => $doctor->first_name,
+                'last_name' => $doctor->last_name,
+                'image' => $doctor->profile_picture,
+                'department' => $doctor->department?->name,
+                'is_favorite' => true,
+            ];
+        });
 
     return response()->json([
         'favorites' => $favorites
