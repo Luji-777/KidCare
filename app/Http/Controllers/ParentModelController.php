@@ -274,6 +274,7 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
+
     public function saveFcmToken(Request $request)
     {
         $request->validate([
@@ -288,6 +289,7 @@ class ParentModelController extends Controller
             'message' => 'Token saved successfully'
         ]);
     }
+
     public function updateProfile(Request $request)
     {
         $parent = $request->user();
@@ -311,6 +313,7 @@ class ParentModelController extends Controller
             'email',
             'phone_number',
             'address'
+            
         ]));
 
         $children = $parent->children()->select('image', 'first_name')->get();

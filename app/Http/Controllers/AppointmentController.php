@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
+use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\Cache;
@@ -206,7 +207,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function destroy(Appointment $appointment)
+    public function destroy( Appointment $appointment,FirebaseNotificationService $firebase)
     {
 
         $isOwner = auth()->user()
@@ -268,19 +269,54 @@ class AppointmentController extends Controller
             }
 
             $appointment->update([
-                'status' => 'canceled'
+                'status' => 'cancelled'
             ]);
 
             DB::commit();
 
-            return response()->json([
-                'message' => $message,
-                'refund_amount' => $transaction ? ($transaction->amount * $refundPercentage) : 0
-            ], 200);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Cancellation and Refund failed: ' . $e->getMessage()], 500);
+            $refundAmount = $transaction
+            ? ($transaction->amount * $refundPercentage)
+            : 0;
+
+            if ($hoursRemaining < 48) {
+
+            $notificationBody =
+                "Appointment cancelled successfully. "
+                . "25% cancellation fee deducted. "
+                . "Refund amount: {$refundAmount}";
+        } else {
+
+            $notificationBody =
+                "Appointment cancelled successfully. "
+                . "Full refund initiated. "
+                . "Refund amount: {$refundAmount}";
         }
+
+        $parent = auth()->user();
+
+        if (!empty($parent->fcm_token)) {
+
+            $firebase->send(
+                $parent->fcm_token,
+                'Appointment Cancelled',
+                $notificationBody
+            );
+        }
+        return response()->json([
+            'message' => $message,
+            'refund_amount' => $refundAmount
+        ], 200);
+
+    } catch (Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'error' => 'Cancellation and Refund failed: '
+                . $e->getMessage()
+        ], 500);
+    }
+         
     }
 
 

@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('currency', 3)->default('USD');
             $table->enum('payment_status', ['unpaid', 'paid_online', 'partially_paid', 'fully_paid'])->default('unpaid');
             $table->decimal('doctor_earnings', 8, 2)->default(0);
+            $table->boolean('reminder_24_sent')->default(false);
+            $table->boolean('reminder_2h_sent')->default(false);
+            $table->boolean('test_reminder_sent')->default(false);
             $table->timestamps();
         });
     }

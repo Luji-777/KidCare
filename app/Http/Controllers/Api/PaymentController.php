@@ -226,22 +226,23 @@ class PaymentController extends Controller
 
                             if ($parent && $parent->fcm_token) {
 
-                                $firebase = new FirebaseNotificationService();
+    $message = CloudMessage::withTarget(
+        'token',
+        $parent->fcm_token
+    )
+    ->withNotification(
+        FirebaseNotification::create(
+            'Appointment Confirmed',
+            'Your appointment has been confirmed successfully.'
+        )
+    )
+    ->withData([
+        'appointment_id' => (string) $appointment->id,
+        'sound' => 'default'
+    ]);
 
-                                $firebase->send(
-                                    $parent->fcm_token,
-                                    'Appointment Confirmed',
-                                    'Your appointment has been confirmed successfully.'
-                                );
-                            }
-
-
-
-                            Notification::create([
-                                'parent_id' => $child->parent_id,
-                                'message'   => 'Your appointment has been confirmed successfully.'
-                            ]);
-
+    app('firebase.messaging')->send($message);
+}
                             $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
                             if ($transaction) {
@@ -319,7 +320,7 @@ class PaymentController extends Controller
             ]);
 
             if ($parent && $parent->fcm_token) {
-
+               // dd($parent->fcm_token);
                 $message = CloudMessage::withTarget(
                     'token',
                     $parent->fcm_token
@@ -350,22 +351,10 @@ class PaymentController extends Controller
         }
     }
 
-    public function testFcm()
-    {
-        $parent = ParentModel::find(1); // أو auth()->user()
-
-        $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
-            'token',
-            $parent->fcm_token
-        )->withNotification(
-            \Kreait\Firebase\Messaging\Notification::create(
-                'Test',
-                'Hello from Laravel'
-            )
-        );
-
-        $result = app('firebase.messaging')->send($message);
-
-        return response()->json($result);
-    }
+    
 }
+
+
+
+
+

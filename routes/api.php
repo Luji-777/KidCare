@@ -70,10 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
     Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
-    Route::get(
-        '/favorite-doctors',
-        [DoctorController::class, 'getFavorites']
-    );
+    Route::get('/favorite-doctors',[DoctorController::class, 'getFavorites']);
+    
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
     Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);

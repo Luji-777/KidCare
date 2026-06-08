@@ -281,13 +281,13 @@ class DoctorController extends Controller
             ], 404);
         }
 
-        $isFavorite = $parent->favoriteDoctors()
+        $isFavorite = $parent->doctors()
             ->where('doctor_id', $doctorId)
             ->exists();
 
         if ($isFavorite) {
 
-            $parent->favoriteDoctors()->detach($doctorId);
+            $parent->doctors()->detach($doctorId);
 
             return response()->json([
                 'message' => 'Removed from favorites',
@@ -295,7 +295,7 @@ class DoctorController extends Controller
             ]);
         }
 
-        $parent->favoriteDoctors()->attach($doctorId);
+        $parent->doctors()->attach($doctorId);
 
         return response()->json([
             'message' => 'Added to favorites',
@@ -304,14 +304,31 @@ class DoctorController extends Controller
     }
 
     public function getFavorites()
-    {
-        $favorites = auth()->user()
-            ->favoriteDoctors()
-            ->with('department')
-            ->get();
+{
+    $favorites = auth()->user()
+        ->doctors()
+        ->select(
+            'doctors.id',
+            'doctors.first_name',
+            'doctors.last_name',
+            'doctors.profile_picture',
+            'doctors.department_id'
+        )
+        ->with('department:id,name')
+        ->get()
+        ->map(function ($doctor) {
+            return [
+                'id' => $doctor->id,
+                'first_name' => $doctor->first_name,
+                'last_name' => $doctor->last_name,
+                'image' => $doctor->profile_picture,
+                'department' => $doctor->department?->name,
+                'is_favorite' => true,
+            ];
+        });
 
-        return response()->json([
-            'favorites' => $favorites
-        ]);
-    }
+    return response()->json([
+        'favorites' => $favorites
+    ]);
+}
 }
