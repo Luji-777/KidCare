@@ -70,8 +70,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
     Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
-    Route::get('/favorite-doctors',[DoctorController::class, 'getFavorites']);
-    
+    Route::get(
+        '/favorite-doctors',
+        [DoctorController::class, 'getFavorites']
+    );
     Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
     Route::get('parentName', [ParentModelController::class, 'parentName']);
     Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
@@ -81,8 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointment', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::get('/appointments/past', [AppointmentController::class, 'past']);
-    Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
-    Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
+    //  Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
+    // Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
     Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
@@ -100,8 +102,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 //Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-//Route::apiResource('doctors', DoctorController::class);
-
 
 
 Route::apiResource('doctors', DoctorController::class);
@@ -112,3 +112,10 @@ Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
 Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 
 Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+
+
+Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
+
+    Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
+    Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
+});

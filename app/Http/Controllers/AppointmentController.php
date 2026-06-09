@@ -207,7 +207,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function destroy( Appointment $appointment,FirebaseNotificationService $firebase)
+    public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
     {
 
         $isOwner = auth()->user()
@@ -275,48 +275,46 @@ class AppointmentController extends Controller
             DB::commit();
 
             $refundAmount = $transaction
-            ? ($transaction->amount * $refundPercentage)
-            : 0;
+                ? ($transaction->amount * $refundPercentage)
+                : 0;
 
             if ($hoursRemaining < 48) {
 
-            $notificationBody =
-                "Appointment cancelled successfully. "
-                . "25% cancellation fee deducted. "
-                . "Refund amount: {$refundAmount}";
-        } else {
+                $notificationBody =
+                    "Appointment cancelled successfully. "
+                    . "25% cancellation fee deducted. "
+                    . "Refund amount: {$refundAmount}";
+            } else {
 
-            $notificationBody =
-                "Appointment cancelled successfully. "
-                . "Full refund initiated. "
-                . "Refund amount: {$refundAmount}";
+                $notificationBody =
+                    "Appointment cancelled successfully. "
+                    . "Full refund initiated. "
+                    . "Refund amount: {$refundAmount}";
+            }
+
+            $parent = auth()->user();
+
+            if (!empty($parent->fcm_token)) {
+
+                $firebase->send(
+                    $parent->fcm_token,
+                    'Appointment Cancelled',
+                    $notificationBody
+                );
+            }
+            return response()->json([
+                'message' => $message,
+                'refund_amount' => $refundAmount
+            ], 200);
+        } catch (Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Cancellation and Refund failed: '
+                    . $e->getMessage()
+            ], 500);
         }
-
-        $parent = auth()->user();
-
-        if (!empty($parent->fcm_token)) {
-
-            $firebase->send(
-                $parent->fcm_token,
-                'Appointment Cancelled',
-                $notificationBody
-            );
-        }
-        return response()->json([
-            'message' => $message,
-            'refund_amount' => $refundAmount
-        ], 200);
-
-    } catch (Exception $e) {
-
-        DB::rollBack();
-
-        return response()->json([
-            'error' => 'Cancellation and Refund failed: '
-                . $e->getMessage()
-        ], 500);
-    }
-         
     }
 
 
@@ -334,18 +332,17 @@ class AppointmentController extends Controller
             ->orderBy('time')
             ->get();
 
-
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
                 'id'          => $appointment->id,
-                'status'      => $appointment->status,
+                'status'      => __('messages.' . $appointment->status),
                 'price'       => $appointment->price,
                 'date'        => $appointment->date,
                 'time'        => $appointment->time,
                 'child' => [
                     'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child->first_name,
-                    'image'      => $appointment->child->image,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
@@ -356,13 +353,13 @@ class AppointmentController extends Controller
 
         return response()->json([
             'status'       => 'success',
+            'message'      => __('messages.upcoming_success'),
             'appointments' => $formattedAppointments
         ], 200);
     }
 
     public function past()
     {
-
         $appointments = Appointment::whereHas('child', function ($query) {
             $query->where('parent_id', auth()->id());
         })
@@ -375,18 +372,17 @@ class AppointmentController extends Controller
             ->orderByDesc('time')
             ->get();
 
-
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
                 'id'          => $appointment->id,
-                'status'      => $appointment->status,
+                'status'      => __('messages.' . $appointment->status),
                 'price'       => $appointment->price,
                 'date'        => $appointment->date,
                 'time'        => $appointment->time,
                 'child' => [
                     'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child->first_name,
-                    'image'      => $appointment->child->image,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
@@ -397,6 +393,7 @@ class AppointmentController extends Controller
 
         return response()->json([
             'status'       => 'success',
+            'message'      => __('messages.past_success'),
             'appointments' => $formattedAppointments
         ], 200);
     }
@@ -419,7 +416,7 @@ class AppointmentController extends Controller
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
                 'id'          => $appointment->id,
-                'status'      => $appointment->status,
+                'status'      => __('messages.' . $appointment->status),
                 'price'       => $appointment->price,
                 'date'        => $appointment->date,
                 'time'        => $appointment->time,
@@ -437,7 +434,7 @@ class AppointmentController extends Controller
 
         return response()->json([
             'status'       => 'success',
-            'message'      => __('messages.upcoming_success'), // 👈 رسالة نجاح ديناميكية ومترجمة
+            'message'      => __('messages.upcoming_child_success'),
             'appointments' => $formattedAppointments
         ], 200);
     }
@@ -460,7 +457,7 @@ class AppointmentController extends Controller
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
                 'id'          => $appointment->id,
-                'status'      => $appointment->status,
+                'status'      => __('messages.' . $appointment->status),
                 'price'       => $appointment->price,
                 'date'        => $appointment->date,
                 'time'        => $appointment->time,
@@ -478,7 +475,7 @@ class AppointmentController extends Controller
 
         return response()->json([
             'status'       => 'success',
-            'message'      => __('messages.past_success'), // 👈 رسالة نجاح ديناميكية ومترجمة للمواعيد السابقة
+            'message'      => __('messages.past_child_success'),
             'appointments' => $formattedAppointments
         ], 200);
     }
