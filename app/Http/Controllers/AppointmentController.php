@@ -27,7 +27,7 @@ class AppointmentController extends Controller
 
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
         if (!$child) {
-            return response()->json(['message' => 'Child not found'], 404);
+            return response()->json(['message' => __('messages.child_not_found')], 404);
         }
 
         $date = Carbon::parse($request->date)->format('Y-m-d');
@@ -37,7 +37,7 @@ class AppointmentController extends Controller
 
         if ($appointmentDateTime->isPast()) {
             return response()->json([
-                'message' => 'You cannot book an appointment in the past.'
+                'message' => __('messages.cannot_book_past')
             ], 400);
         }
 
@@ -48,14 +48,14 @@ class AppointmentController extends Controller
             ->first();
 
         if (!$availability) {
-            return response()->json(['message' => 'Doctor is not available on this day'], 400);
+            return response()->json(['message' => __('messages.doctor_not_available_day')], 400);
         }
 
         $start = Carbon::parse($availability->start_time)->format('H:i');
         $end = Carbon::parse($availability->end_time)->format('H:i');
 
         if ($time < $start || $time >= $end) {
-            return response()->json(['message' => 'Time is outside doctor working hours'], 400);
+            return response()->json(['message' => __('messages.outside_working_hours')], 400);
         }
 
         $isBooked = Appointment::where('doctor_id', $request->doctor_id)
@@ -65,12 +65,12 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($isBooked) {
-            return response()->json(['message' => 'Time already booked'], 400);
+            return response()->json(['message' => __('messages.time_already_booked')], 400);
         }
 
         $cacheKeySlot = "booked_slot_{$request->doctor_id}_{$date}_{$time}";
         if (Cache::has($cacheKeySlot)) {
-            return response()->json(['message' => 'This time is temporarily locked for payment'], 400);
+            return response()->json(['message' => __('messages.slot_temporarily_locked')], 400);
         }
 
         $doctor = \App\Models\Doctor::findOrFail($request->doctor_id);
@@ -91,12 +91,24 @@ class AppointmentController extends Controller
 
 
         return response()->json([
-            'message'        => 'Appointment locked temporarily. Proceed to checkout to pay.',
+            'status'         => 'success',
+            'message'        => __('messages.appointment_locked_success'),
             'appointment_id' => $pendingAppointmentId,
         ], 201);
     }
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
+        $isOwner = auth()->user()
+            ->children()
+            ->where('id', $appointment->child_id)
+            ->exists();
+
+        if (!$isOwner) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.unauthorized'),
+            ], 403);
+        }
         $doctorId = $request->doctor_id ?? $appointment->doctor_id;
 
         $childId = $request->child_id ?? $appointment->child_id;
@@ -117,7 +129,7 @@ class AppointmentController extends Controller
 
         if (!$availability) {
             return response()->json([
-                'message' => 'Doctor is not available on this day'
+                'message' => __('messages.doctor_not_available_day')
             ], 400);
         }
 
@@ -126,7 +138,7 @@ class AppointmentController extends Controller
 
         if ($time < $start || $time >= $end) {
             return response()->json([
-                'message' => 'Time is outside doctor working hours'
+                'message' => __('messages.outside_working_hours')
             ], 400);
         }
 
@@ -138,10 +150,10 @@ class AppointmentController extends Controller
 
         if ($isBooked) {
             return response()->json([
-                'message' => 'Time already booked'
+                'message' => __('messages.time_already_booked')
             ], 400);
         }
-        $doctor = \App\Models\Doctor::findOrFail($request->doctor_id);
+        $doctor = \App\Models\Doctor::findOrFail($doctorId);
 
 
         $appointment->update([
@@ -153,9 +165,18 @@ class AppointmentController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Appointment updated successfully',
-            'appointment' => $appointment
-        ]);
+            'status'      => 'success',
+            'message'     => __('messages.appointment_updated_success'),
+            'appointment' => [
+                'id'        => $appointment->id,
+                'doctor_id' => $appointment->doctor_id,
+                'child_id'  => $appointment->child_id,
+                'date'      => $appointment->date,
+                'time'      => $appointment->time,
+                'price'     => $appointment->price,
+                'status'    => __('messages.' . $appointment->status),
+            ]
+        ], 200);
     }
 
     public function index()
@@ -176,8 +197,19 @@ class AppointmentController extends Controller
             ]);
 
         return response()->json([
-            'appointments' => $appointments
-        ]);
+            'status'       => 'success',
+            'message'      => __('messages.index_success'),
+            'appointments' => $appointments->map(fn($app) => [
+                'id' => $app->id,
+                'doctor_id' => $app->doctor_id,
+                'child_id' => $app->child_id,
+                'date' => $app->date,
+                'time' => $app->time,
+                'price' => $app->price,
+                'created_at' => $app->created_at,
+                'status' => __('messages.' . $app->status)
+            ])
+        ], 200);
     }
 
     public function show(Appointment $appointment)
@@ -189,22 +221,24 @@ class AppointmentController extends Controller
 
         if (!$isOwner) {
             return response()->json([
-                'message' => 'Unauthorized'
+                'message'      => __('messages.unauthorized'),
             ], 403);
         }
 
 
         return response()->json([
+            'status'      => 'success',
+            'message'     => __('messages.show_success'),
             'appointment' => [
                 'id' => $appointment->id,
                 'doctor_id' => $appointment->doctor_id,
                 'child_id' => $appointment->child_id,
                 'date' => $appointment->date,
                 'time' => $appointment->time,
-                'status' => $appointment->status,
                 'price' => $appointment->price,
+                'status' => __('messages.' . $appointment->status),
             ]
-        ]);
+        ], 200);
     }
 
     public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
@@ -216,24 +250,24 @@ class AppointmentController extends Controller
             ->exists();
 
         if (!$isOwner) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => __('messages.unauthorized')], 403);
         }
 
         $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
 
         if ($appointmentDateTime->isPast()) {
-            return response()->json(['message' => 'Cannot cancel a past appointment.'], 400);
+            return response()->json(['message' => __('messages.cannot_cancel_past')], 400);
         }
 
         $hoursRemaining = now()->diffInHours($appointmentDateTime, false);
 
         $refundPercentage = 1.00;
-        $message = 'Appointment canceled. Full refund has been initiated.';
+        $message =  __('messages.cancel_full_refund');
 
         if ($hoursRemaining < 48) {
             $refundPercentage = 0.75;
-            $message = 'Appointment canceled. Refund initiated with a 25% cancellation fee deducted.';
+            $message = __('messages.cancel_fee_deducted');
         }
 
         $transaction = Transaction::where('appointment_id', $appointment->id)
@@ -281,15 +315,11 @@ class AppointmentController extends Controller
             if ($hoursRemaining < 48) {
 
                 $notificationBody =
-                    "Appointment cancelled successfully. "
-                    . "25% cancellation fee deducted. "
-                    . "Refund amount: {$refundAmount}";
+                    __('messages.notif_cancel_fee', ['amount' => $refundAmount]);
             } else {
 
                 $notificationBody =
-                    "Appointment cancelled successfully. "
-                    . "Full refund initiated. "
-                    . "Refund amount: {$refundAmount}";
+                    __('messages.notif_cancel_full', ['amount' => $refundAmount]);
             }
 
             $parent = auth()->user();

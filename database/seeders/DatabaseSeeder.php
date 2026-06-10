@@ -22,7 +22,6 @@ class DatabaseSeeder extends Seeder
             ChildSeeder::class,
             DoctorAvailabilitySeeder::class,
             ParentSeeder::class,
-
             AppointmentSeeder::class,
 
         ]);

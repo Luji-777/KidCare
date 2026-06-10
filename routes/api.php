@@ -17,105 +17,100 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::post('/register', [ParentModelController::class, 'register']);
-Route::post('/verifyOtp', [ParentModelController::class, 'verifyOtp']);
-Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
-Route::post('/login', [ParentModelController::class, 'login']);
-Route::post('/SetPassword', [ParentModelController::class, 'SetPassword']);
-Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
+Route::middleware('set.locale')->group(function () {
+
+    Route::post('/register', [ParentModelController::class, 'register']);
+    Route::post('/verifyOtp', [ParentModelController::class, 'verifyOtp']);
+    Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
+    Route::post('/login', [ParentModelController::class, 'login']);
+    Route::post('/SetPassword', [ParentModelController::class, 'SetPassword']);
+    Route::post('/logout', [ParentModelController::class, 'logout'])->middleware('auth:sanctum');
 
 
-Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
-Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+    Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+    Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+    Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+    Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 
-Route::apiResource('doctors', DoctorController::class);
-
-
-Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
-Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
-Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
+    Route::apiResource('doctors', DoctorController::class);
 
 
-Route::get(
-    '/favorite-doctors',
-    [DoctorController::class, 'getFavorites']
-);
+    Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+    Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+    Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+    Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+    Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
 
 
-Route::middleware('auth:sanctum')->group(function () {
-
-    Route::get('/children', [ChildController::class, 'index']);
-    Route::post('/children', [ChildController::class, 'store']);
-    Route::get('/children/{id}', [ChildController::class, 'show']);
-    Route::put('/children/{id}', [ChildController::class, 'update']);
-    Route::delete('/children/{id}', [ChildController::class, 'destroy']);
-    Route::get('/home-children', [ChildController::class, 'homeChildren']);
-
-    // Route::get('/childProfile/{id}', [ChildController::class, 'childProfile']);
-    // Route::get('/childAllergies/{id}', [ChildController::class, 'childAllergies']);
-
-    Route::get('/children/{child_id}/growth', [GrowthController::class, 'index']);
-    Route::post('/growth', [GrowthController::class, 'store']);
-    Route::delete('/growth/{id}', [GrowthController::class, 'destroy']);
-
-    Route::get('/departments', [DepartmentController::class, 'index']);
-    Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
-
-    Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
-    Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
-    Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
-
-    Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
     Route::get(
         '/favorite-doctors',
         [DoctorController::class, 'getFavorites']
     );
-    Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
-    Route::get('parentName', [ParentModelController::class, 'parentName']);
-    Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
-    Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
 
 
-    Route::post('/appointment', [AppointmentController::class, 'store']);
-    Route::get('/appointments', [AppointmentController::class, 'index']);
-    Route::get('/appointments/past', [AppointmentController::class, 'past']);
-    //  Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
-    // Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
-    Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
-    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
-    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
-    Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
+    Route::middleware('auth:sanctum')->group(function () {
 
-    Route::post('/test-appointment', [PaymentController::class, 'testAppointment']);
-    Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
-    Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
+        Route::get('/children', [ChildController::class, 'index']);
+        Route::post('/children', [ChildController::class, 'store']);
+        Route::get('/children/{id}', [ChildController::class, 'show']);
+        Route::put('/children/{id}', [ChildController::class, 'update']);
+        Route::delete('/children/{id}', [ChildController::class, 'destroy']);
+        Route::get('/home-children', [ChildController::class, 'homeChildren']);
+
+        // Route::get('/childProfile/{id}', [ChildController::class, 'childProfile']);
+        // Route::get('/childAllergies/{id}', [ChildController::class, 'childAllergies']);
+
+        Route::get('/children/{child_id}/growth', [GrowthController::class, 'index']);
+        Route::post('/growth', [GrowthController::class, 'store']);
+        Route::delete('/growth/{id}', [GrowthController::class, 'destroy']);
+
+        Route::get('/departments', [DepartmentController::class, 'index']);
+        Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
+
+        Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
+        Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
+        Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
+
+        Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
+        Route::get(
+            '/favorite-doctors',
+            [DoctorController::class, 'getFavorites']
+        );
+        Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
+        Route::get('parentName', [ParentModelController::class, 'parentName']);
+        Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
+        Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
+
+
+        Route::post('/appointment', [AppointmentController::class, 'store']);
+        Route::get('/appointments', [AppointmentController::class, 'index']);
+        Route::get('/appointments/past', [AppointmentController::class, 'past']);
+        Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
+        Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
+        Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
+        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
+        Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
+        Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
+
+        Route::post('/test-appointment', [PaymentController::class, 'testAppointment']);
+        Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
+        Route::post('/payment/checkout', [PaymentController::class, 'checkout']);
+        Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+        Route::get('/test-fcm', [PaymentController::class, 'testFcm']);
+
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/test-notification', [NotificationController::class, 'test']);
+    });
+
+    //Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
+
+    Route::apiResource('doctors', DoctorController::class);
+
+    Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
+    Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
+    Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
+    Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+
     Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-    Route::get('/test-fcm', [PaymentController::class, 'testFcm']);
-
-
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::get('/test-notification', [NotificationController::class, 'test']);
-});
-
-//Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-
-
-Route::apiResource('doctors', DoctorController::class);
-
-Route::post('/loginDoctor', [DoctorController::class, 'loginDoctor']);
-Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
-Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
-Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
-
-Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-
-
-Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
-
-    Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
-    Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
 });

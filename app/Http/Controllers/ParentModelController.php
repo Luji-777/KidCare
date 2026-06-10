@@ -45,10 +45,12 @@ class ParentModelController extends Controller
         );
 
         return response()->json([
-            'message'      => 'Confirmation code sent. Please verify your phone number to create your account.',
+            'status' => 'success',
+            'message'      => __('messages.otp_sent_success'),
             'otp'          => $otp,
             'phone_number' => $request->phone_number,
             'next_step'    => 'verify-otp',
+            JSON_UNESCAPED_UNICODE
         ]);
     }
     public function verifyOtp(Request $request)
@@ -65,15 +67,15 @@ class ParentModelController extends Controller
             if ($parent->otp_code !== $request->otp || now()->gt($parent->otp_expires_at)) {
                 return response()->json([
                     'status'  => 'error',
-                    'message' => 'The provided OTP is invalid or has expired for this registered account.',
+                    'message' =>  __('messages.otp_invalid_expired'),
                 ], 422);
             }
 
             $token = $parent->createToken('auth_token')->plainTextToken;
 
             return response()->json([
-                'status'       => 'success',
-                'message'      => 'Phone number verified successfully (Account already existed).',
+                'status' => 'success',
+                'message' => __('messages.phone_verified_success'),
                 'access_token' => $token,
                 'token_type'   => 'Bearer',
                 'user'         => $parent
@@ -125,7 +127,7 @@ class ParentModelController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' =>
-                'This phone number is not registered in our records. Please check the number or create a new account.'
+                __('messages.phone_not_registered')
             ], 404);
         }
 
@@ -146,7 +148,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'A new verification code has been sent to your phone.',
+            'message' =>  __('messages.otp_sent_success'),
             'otp'     => $otp
         ]);
     }
@@ -162,7 +164,7 @@ class ParentModelController extends Controller
         if (!$parent || !Hash::check($request->password, $parent->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid phone number or password.'
+                'message' => __('messages.invalid_credentials')
             ], 401);
         }
 
@@ -170,7 +172,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Login successful. Welcome back!',
+            'message' => __('messages.login_welcome_back'),
             'user'    => [
                 'id'           => $parent->id,
                 'phone_number' => $parent->phone_number,
@@ -195,23 +197,21 @@ class ParentModelController extends Controller
             return response()->json(
                 [
                     'status' => 'error',
-                    'message' => 'User not found.'
+                    'message' =>  __('messages.user_not_found'),
                 ],
                 404
             );
         }
 
-
         $parent->update([
             'password'       => Hash::make($request->password)
         ]);
-
 
         $token = $parent->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Password updated successfully.',
+            'message' =>  __('messages.password_updated_success'),
             'token'   => $token
         ], 200);
     }
@@ -222,13 +222,13 @@ class ParentModelController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Logged out successfully. Your session has been terminated.'
+                'message' => __('messages.logout_succssfuly')
             ], 200);
         }
 
         return response()->json([
             'status' => 'error',
-            'message' => 'No active session found.'
+            'message' => __('messages.no_active_session')
         ], 401);
     }
     public function showProfile(Request $request)
@@ -238,7 +238,7 @@ class ParentModelController extends Controller
         if (!$parent) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized'
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -246,6 +246,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'message' => __('messages.parent_fetched_success'),
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,
@@ -264,7 +265,7 @@ class ParentModelController extends Controller
         if (!$parent) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized'
+                'message' => __('messages.unauthorized')
             ], 401);
         }
         return response()->json([
@@ -286,7 +287,7 @@ class ParentModelController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Token saved successfully'
+            'message' => __('messages.token_saved_successfully')
         ]);
     }
 
@@ -297,7 +298,7 @@ class ParentModelController extends Controller
         if (!$parent) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized'
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -313,14 +314,14 @@ class ParentModelController extends Controller
             'email',
             'phone_number',
             'address'
-            
+
         ]));
 
         $children = $parent->children()->select('image', 'first_name')->get();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Profile updated successfully',
+            'message' => __('messages.profile_updated_successfully'),
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,

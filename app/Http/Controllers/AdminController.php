@@ -20,7 +20,7 @@ class AdminController extends Controller
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid phone number or password.'
+                'message' => __('messages.invalid_credentials')
             ], 401);
         }
 
@@ -28,7 +28,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Login successful. Welcome back!',
+            'message' => __('messages.login_welcome_back'),
             'user'    => [
                 'id'           => $admin->id,
                 'phone_number' => $admin->phone_number,

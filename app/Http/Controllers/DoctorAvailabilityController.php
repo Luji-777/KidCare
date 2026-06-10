@@ -44,7 +44,7 @@ class DoctorAvailabilityController extends Controller
 
         if ($conflict) {
             return response()->json([
-                'message' => "There is another doctor in this time"
+                'message' => __('messages.doctor_time_conflict')
             ], 422);
         }
 
@@ -56,7 +56,8 @@ class DoctorAvailabilityController extends Controller
         ]);
 
         return response()->json([
-            'message'      => 'Added successfully',
+            'status'       => 'success',
+            'message'      => __('messages.availability_added_success'),
             'availability' => $availability
         ]);
     }
@@ -65,7 +66,16 @@ class DoctorAvailabilityController extends Controller
     {
         $availabilities = DoctorAvailability::where('doctor_id', $doctorId)->get();
 
-        return response()->json($availabilities);
+        $availabilities->map(function ($item) {
+            $item->day_name_translated = __("messages.days." . strtolower($item->day_of_week));
+            return $item;
+        });
+
+        return response()->json([
+            'status'         => 'success',
+            'message'        => __('messages.availabilities_fetched_success'),
+            'availabilities' => $availabilities
+        ], 200);
     }
 
     public function availableTimes($doctorId, Request $request)
@@ -73,6 +83,7 @@ class DoctorAvailabilityController extends Controller
         $date = $request->date;
 
         $day = strtolower(Carbon::parse($date)->format('l'));
+        $translatedDay = __("messages.days.{$day}");
 
         $availability = DoctorAvailability::where('doctor_id', $doctorId)
             ->where('day_of_week', $day)
@@ -80,8 +91,10 @@ class DoctorAvailabilityController extends Controller
 
         if (!$availability) {
             return response()->json([
+                'status'  => 'success',
                 'times' => [],
-                'message' => 'No times available'
+                'day_name'      => $translatedDay,
+                'message' => __('messages.no_available_times'),
             ]);
         }
 
@@ -107,7 +120,10 @@ class DoctorAvailabilityController extends Controller
         }
 
         return response()->json([
-            'times' => $times
-        ]);
+            'status'  => 'success',
+            'message' => __('messages.available_times_fetched_success'),
+            'day_name'      => $translatedDay,
+            'times'   => $times
+        ], 200);
     }
 }

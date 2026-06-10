@@ -39,19 +39,19 @@ class PaymentController extends Controller
             $doctor = Doctor::with('department')->find($appointmentData['doctor_id']);
 
             if (!$child || !$doctor) {
-                return response()->json(['message' => 'Appointment details not found'], 404);
+                return response()->json(['message' => __('messages.appointment_details_not_found')], 404);
             }
 
 
             if ($child->parent_id !== auth()->id()) {
-                return response()->json(['message' => 'unauthorized'], 403);
+                return response()->json(['message' => __('messages.unauthorized')], 403);
             }
 
 
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_age       = Carbon::parse($child->birth_date)->age;
-            $patient_image = $child->image ?? '';
+            $patient_image = $appointment->child->image ?? '';
             $department_name   = $doctor->department->name;
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
@@ -63,12 +63,12 @@ class PaymentController extends Controller
                 ->first();
 
             if (!$appointment) {
-                return response()->json(['message' => 'Appointment is not found'], 404);
+                return response()->json(['message' => __('messages.appointment_not_found')], 404);
             }
 
 
             if ($appointment->child->parent_id !== auth()->id()) {
-                return response()->json(['message' => 'unauthorized'], 403);
+                return response()->json(['message' =>  __('messages.unauthorized')], 403);
             }
 
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
@@ -104,11 +104,11 @@ class PaymentController extends Controller
         $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
 
         if (!$appointmentData) {
-            return response()->json(['message' => 'Appointment session expired or not found.'], 404);
+            return response()->json(['message' => __('messages.appointment_session_expired')], 404);
         }
 
         if ($appointmentData['parent_id'] !== auth()->id()) {
-            return response()->json(['message' => 'Unauthorized action for this financial transaction.'], 403);
+            return response()->json(['message' => __('messages.unauthorized_transaction')], 403);
         }
 
         $cacheKeyTransaction = "transaction_for_{$pendingAppointmentId}";
@@ -124,7 +124,7 @@ class PaymentController extends Controller
 
         $lockKey = "lock_checkout_{$pendingAppointmentId}";
         if (Cache::has($lockKey)) {
-            return response()->json(['message' => 'Payment is already processing. Please wait.'], 400);
+            return response()->json(['message' => __('messages.payment_processing_wait')], 400);
         }
         Cache::put($lockKey, true, now()->addSeconds(10));
 
@@ -166,7 +166,7 @@ class PaymentController extends Controller
             ], 200);
         } catch (Exception $e) {
             Cache::forget($lockKey);
-            return response()->json(['error' => 'Stripe payment initialization failed: ' . $e->getMessage()], 500);
+            return response()->json(['error' => __('messages.stripe_init_failed') . $e->getMessage()], 500);
         }
     }
 
@@ -226,23 +226,23 @@ class PaymentController extends Controller
 
                             if ($parent && $parent->fcm_token) {
 
-    $message = CloudMessage::withTarget(
-        'token',
-        $parent->fcm_token
-    )
-    ->withNotification(
-        FirebaseNotification::create(
-            'Appointment Confirmed',
-            'Your appointment has been confirmed successfully.'
-        )
-    )
-    ->withData([
-        'appointment_id' => (string) $appointment->id,
-        'sound' => 'default'
-    ]);
+                                $message = CloudMessage::withTarget(
+                                    'token',
+                                    $parent->fcm_token
+                                )
+                                    ->withNotification(
+                                        FirebaseNotification::create(
+                                            __('messages.notification_appointment_confirmed_title'),
+                                            __('messages.notification_appointment_confirmed_body')
+                                        )
+                                    )
+                                    ->withData([
+                                        'appointment_id' => (string) $appointment->id,
+                                        'sound' => 'default'
+                                    ]);
 
-    app('firebase.messaging')->send($message);
-}
+                                app('firebase.messaging')->send($message);
+                            }
                             $transaction = Transaction::where('stripe_payment_intent_id', $paymentIntent->id)->first();
 
                             if ($transaction) {
@@ -320,7 +320,7 @@ class PaymentController extends Controller
             ]);
 
             if ($parent && $parent->fcm_token) {
-               // dd($parent->fcm_token);
+                // dd($parent->fcm_token);
                 $message = CloudMessage::withTarget(
                     'token',
                     $parent->fcm_token
@@ -350,11 +350,4 @@ class PaymentController extends Controller
             ], 500);
         }
     }
-
-    
 }
-
-
-
-
-

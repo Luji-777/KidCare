@@ -13,7 +13,7 @@ class GrowthController extends Controller
         $child = auth()->user()->children()->where('id', $child_id)->first();
 
         if (!$child) {
-            return response()->json(['message' => 'Child not found or unauthorized'], 404);
+            return response()->json(['message' => __('messages.child_not_found')], 404);
         }
 
         $growthRecords = Growth::where('child_id', $child_id)
@@ -88,7 +88,6 @@ class GrowthController extends Controller
 
     public function store(Request $request)
     {
-
         $request->validate([
             'child_id' => 'required|exists:children,id',
             'height'   => 'required|numeric|min:10|max:250',
@@ -96,25 +95,23 @@ class GrowthController extends Controller
             'date'     => 'required|string',
         ]);
 
-
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
 
         if (!$child) {
-            return response()->json(['message' => 'Child not found or unauthorized.'], 403);
+            return response()->json(['message' => __('messages.child_not_found')], 403);
         }
-
         try {
             $carbonDate = Carbon::createFromFormat('d-m-Y', $request->date);
         } catch (\Exception $e) {
             try {
                 $carbonDate = Carbon::parse($request->date);
             } catch (\Exception $ex) {
-                return response()->json(['message' => 'Invalid date format. Please use Day-Month-Year (e.g., 05-06-2026)'], 400);
+                return response()->json(['message' => __('messages.invalid_date_format')], 400);
             }
         }
 
         if ($carbonDate->isAfter(Carbon::today())) {
-            return response()->json(['message' => 'The date cannot be in the future. Please select today or a past date.'], 422);
+            return response()->json(['message' => __('messages.future_date_error')], 422);
         }
 
         $birthDate = Carbon::parse($child->birth_date);
@@ -126,7 +123,6 @@ class GrowthController extends Controller
             'weight'   => $request->weight,
             'date'     => $carbonDate->format('Y-m-d'),
         ]);
-
         $healthStatus = $this->getChildHealthStatus(
             $growth->weight,
             $growth->height,
@@ -135,7 +131,7 @@ class GrowthController extends Controller
         );
 
         return response()->json([
-            'message' => 'Growth record added successfully',
+            'message' => __('messages.growth_record_added'),
             'data'    => [
                 'id'            => $growth->id,
                 'child_name'    => $child->first_name,
@@ -169,19 +165,19 @@ class GrowthController extends Controller
         if ($bmi < $minHealthy) {
             return [
                 'bmi'   => $bmi,
-                'text'  => 'وزن أقل من الطبيعي - ينصح بمراجعة طبيب الأطفال لمتابعة التغذية المكملة.',
+                'text'  => __('messages.bmi_underweight'),
                 'color' => '#FF3B30' // أحمر 🔴
             ];
         } elseif ($bmi >= $minHealthy && $bmi <= $maxHealthy) {
             return [
                 'bmi'   => $bmi,
-                'text'  => 'وزن مثالي وصحي - نمو طفلك يسير بشكل ممتاز ومطابق للمعدلات العالمية.',
+                'text'  => __('messages.bmi_healthy'),
                 'color' => '#34C759' // أخضر 🟢
             ];
         } else {
             return [
                 'bmi'   => $bmi,
-                'text'  => 'زيادة في الوزن - ينصح بتنظيم الوجبات وتقليل السكريات والنشويات للطفل.',
+                'text'  => __('messages.bmi_overweight'),
                 'color' => '#FFCC00' // أصفر 🟡
             ];
         }

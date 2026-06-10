@@ -25,8 +25,7 @@ class DoctorController extends Controller
         if (!$doctor) {
             return response()->json([
                 'status' => 'error',
-                'message' =>
-                'This phone number is not registered in our records. Please check the number or create a new account.'
+                'message' =>  __('messages.phone_not_registered'),
             ], 404);
         }
 
@@ -47,7 +46,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'A new verification code has been sent to your phone.',
+            'message' => __('messages.otp_sent_success'),
             'otp'     => $otp
         ]);
     }
@@ -62,13 +61,13 @@ class DoctorController extends Controller
         if ($doctor->otp_code !== $request->otp || Carbon::now()->gt($doctor->otp_expires_at)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'The provided OTP is invalid or has expired.',
+                'message' => __('messages.otp_invalid_expired'),
                 'otp' => $doctor->otp_code
             ], 422);
         }
         return response()->json([
             'status' => 'success',
-            'message' => 'Phone number verified successfully.'
+            'message' => __('messages.phone_verified_success')
         ]);
     }
     public function setPasswordDoctor(Request $request)
@@ -79,19 +78,17 @@ class DoctorController extends Controller
             'password'     => 'required|string|min:6|max:255|confirmed',
         ]);
 
-
         $doctor = Doctor::where('phone_number', $request->phone_number)->first();
 
         if (!$doctor) {
             return response()->json(
                 [
                     'status' => 'error',
-                    'message' => 'User not found.'
+                    'message' =>  __('messages.doctor_not_found'),
                 ],
                 404
             );
         }
-
 
         $doctor->update([
             'password'       => Hash::make($request->password)
@@ -101,7 +98,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Password updated successfully.',
+            'message' => __('messages.password_updated_success'),
             'token'   => $token
         ], 200);
     }
@@ -117,7 +114,7 @@ class DoctorController extends Controller
         if (!$doctor || !Hash::check($request->password, $doctor->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid phone number or password.'
+                'message' => __('messages.invalid_credentials')
             ], 401);
         }
 
@@ -125,7 +122,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Login successful. Welcome back!',
+            'message' => __('messages.login_welcome_back'),
             'user'    => [
                 'id'           => $doctor->id,
                 'phone_number' => $doctor->phone_number,
@@ -135,16 +132,16 @@ class DoctorController extends Controller
             'Token'   => $token,
         ], 200);
     }
-
     public function index()
     {
-        // الترتيب الأبجدي حسب الاسم الأول ثم جلب 10 بكل صفحة
+
         $doctors = Doctor::with('department')
             ->orderBy('first_name', 'asc')
             ->paginate(10);
 
         return response()->json([
             'status' => 'success',
+            'message' => __('messages.doctors_fetched_success'),
             'data'   => $doctors
         ], 200);
     }
@@ -165,11 +162,10 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Doctor profile created successfully',
+            'message' => __('messages.doctor_created_success'),
             'data' => $doctor
         ], 201);
     }
-
 
     public function show(string $id)
     {
@@ -178,12 +174,13 @@ class DoctorController extends Controller
         if (!$doctor) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Doctor not found.'
+                'message' => __('messages.doctor_not_found'),
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
+            'message' => __('messages.doctor_fetched_success'),
             'data'   => $doctor
         ], 200);
     }
@@ -205,7 +202,7 @@ class DoctorController extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Doctor profile updated successfully.',
+                'message' => __('messages.doctor_updated_success'),
                 'data'    => $doctor
             ], 200);
         }
@@ -217,7 +214,7 @@ class DoctorController extends Controller
         if (!$doctor) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Doctor not found.'
+                'message' => __('messages.doctor_not_found')
             ], 404);
         }
 
@@ -233,7 +230,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Doctor and their related files have been deleted successfully.'
+            'message' => __('messages.doctor_deleted_success')
         ], 200);
     }
     public function addAdditions(Request $request, $appointment_id)
@@ -266,7 +263,7 @@ class DoctorController extends Controller
             'payment_status' => $totalAdditions > 0 ? 'partially_paid' : 'fully_paid'
         ]);
 
-        return response()->json(['message' => 'The appointment was completed and the additional costs were successfully recorded.']);
+        return response()->json(['message' => __('messages.additions_recorded_success')]);
     }
 
     public function toggleFavorite($doctorId)
@@ -277,7 +274,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'message' => 'Doctor not found'
+                'message' => __('messages.doctor_not_found')
             ], 404);
         }
 
@@ -290,7 +287,7 @@ class DoctorController extends Controller
             $parent->doctors()->detach($doctorId);
 
             return response()->json([
-                'message' => 'Removed from favorites',
+                'message' => __('messages.favorite_removed'),
                 'is_favorite' => false
             ]);
         }
@@ -298,37 +295,39 @@ class DoctorController extends Controller
         $parent->doctors()->attach($doctorId);
 
         return response()->json([
-            'message' => 'Added to favorites',
+            'message' => __('messages.favorite_added'),
             'is_favorite' => true
         ]);
     }
 
     public function getFavorites()
-{
-    $favorites = auth()->user()
-        ->doctors()
-        ->select(
-            'doctors.id',
-            'doctors.first_name',
-            'doctors.last_name',
-            'doctors.profile_picture',
-            'doctors.department_id'
-        )
-        ->with('department:id,name')
-        ->get()
-        ->map(function ($doctor) {
-            return [
-                'id' => $doctor->id,
-                'first_name' => $doctor->first_name,
-                'last_name' => $doctor->last_name,
-                'image' => $doctor->profile_picture,
-                'department' => $doctor->department?->name,
-                'is_favorite' => true,
-            ];
-        });
+    {
+        $favorites = auth()->user()
+            ->doctors()
+            ->select(
+                'doctors.id',
+                'doctors.first_name',
+                'doctors.last_name',
+                'doctors.profile_picture',
+                'doctors.department_id'
+            )
+            ->with('department:id,name')
+            ->get()
+            ->map(function ($doctor) {
+                return [
+                    'id' => $doctor->id,
+                    'first_name' => $doctor->first_name,
+                    'last_name' => $doctor->last_name,
+                    'image' => $doctor->profile_picture,
+                    'department' => $doctor->department?->name,
+                    'is_favorite' => true,
+                ];
+            });
 
-    return response()->json([
-        'favorites' => $favorites
-    ]);
-}
+        return response()->json([
+            'status'    => 'success',
+            'message'   => __('messages.favorites_fetched_success'),
+            'favorites' => $favorites
+        ]);
+    }
 }

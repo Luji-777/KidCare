@@ -6,6 +6,96 @@ return [
     'past_success'           => 'Past appointments fetched successfully.',
     'upcoming_child_success' => 'Child upcoming appointments fetched successfully.',
     'past_child_success'     => 'Child past appointments fetched successfully.',
+    'index_success'       => 'Appointments list fetched successfully.',
+    'show_success'        => 'Appointment details fetched successfully.',
+    'unauthorized'        => 'Unauthorized access.',
+    'cannot_cancel_past'  => 'Cannot cancel a past appointment.',
+    'cancel_full_refund'  => 'Appointment canceled. Full refund has been initiated.',
+    'cancel_fee_deducted' => 'Appointment canceled. Refund initiated with a 25% cancellation fee deducted.',
+    'notif_cancel_fee'    => 'Appointment cancelled successfully. 25% cancellation fee deducted. Refund amount: :amount',
+    'notif_cancel_full'   => 'Appointment cancelled successfully. Full refund initiated. Refund amount: :amount',
+    'cannot_book_past'             => 'You cannot book an appointment in the past.',
+    'doctor_not_available_day'     => 'Doctor is not available on this day.',
+    'outside_working_hours'        => 'Time is outside doctor working hours.',
+    'time_already_booked'          => 'This time slot is already booked.',
+    'slot_temporarily_locked'      => 'This time is temporarily locked for payment.',
+    'appointment_locked_success'   => 'Appointment locked temporarily. Proceed to checkout to pay.',
+    'appointment_updated_success'  => 'Appointment updated successfully.',
+
+    // Auth & OTP
+    'phone_not_registered'       => 'This phone number is not registered in our records. Please check the number or create a new account.',
+    'otp_sent_success'           => 'A new verification code has been sent to your phone.',
+    'otp_invalid_expired'        => 'The provided OTP is invalid or has expired.',
+    'phone_verified_success'     => 'Phone number verified successfully.',
+    'doctor_not_found'           => 'Doctor not found.',
+    'user_not_found'             => 'User not found.',
+    'password_updated_success'   => 'Password updated successfully.',
+    'invalid_credentials'        => 'Invalid phone number or password.',
+    'login_welcome_back'         => 'Login successful. Welcome back!',
+    'logout_succssfuly'          => 'Logged out successfully. Your session has been terminated.',
+    'no_active_session'          => 'No active session found.',
+
+    // Doctor CRUD
+    'doctors_fetched_success'    => 'Doctors list fetched successfully.',
+    'doctor_created_success'     => 'Doctor profile created successfully.',
+    'doctor_fetched_success'     => 'Doctor profile fetched successfully.',
+    'doctor_updated_success'     => 'Doctor profile updated successfully.',
+    'doctor_deleted_success'     => 'Doctor and their related files have been deleted successfully.',
+
+
+    // Additions & Favorites
+    'additions_recorded_success' => 'The appointment was completed and the additional costs were successfully recorded.',
+    'favorite_removed'           => 'Removed from favorites.',
+    'favorite_added'             => 'Added to favorites.',
+    'favorites_fetched_success'  => 'Favorite doctors list fetched successfully.',
+
+    // Doctor Availability
+    'doctor_time_conflict'           => 'There is another doctor available in this department during the chosen time.',
+    'availability_added_success'     => 'Working hours added successfully.',
+    'availabilities_fetched_success' => 'Doctor working hours fetched successfully.',
+    'no_available_times'             => 'No available times for booking on this day.',
+    'available_times_fetched_success' => 'Available time slots fetched successfully.',
+
+    // Appointment Summary & Checkout
+    'appointment_details_not_found'        => 'Appointment details not found.',
+    'appointment_not_found'                => 'Appointment is not found.',
+    'appointment_session_expired'          => 'Appointment session expired or not found.',
+    'unauthorized_transaction'             => 'Unauthorized action for this financial transaction.',
+    'payment_processing_wait'              => 'Payment is already processing. Please wait.',
+    'stripe_init_failed'                   => 'Stripe payment initialization failed: ',
+
+    // Firebase Push Notifications
+    'notification_appointment_confirmed_title' => 'Appointment Confirmed',
+    'notification_appointment_confirmed_body'  => 'Your appointment has been confirmed successfully.',
+
+    // Children Management
+    'child_added_success'      => 'Child profile created successfully.',
+    'child_updated_success'    => 'Child profile updated successfully.',
+    'children_fetched_success' => 'Children list fetched successfully.',
+    'child_fetched_success'    => 'Child profile fetched successfully.',
+    'child_not_found'          => 'Child profile not found or you are not authorized to view it.',
+    'child_deleted_success'    => 'Child profile deleted successfully.',
+
+    //Growth
+    'invalid_date_format'   => 'Invalid date format. Please use Day-Month-Year (e.g., 05-06-2026).',
+    'future_date_error'     => 'The date cannot be in the future. Please select today or a past date.',
+    'growth_record_added'   => 'Growth record added successfully.',
+    'bmi_underweight'       => 'Underweight - It is recommended to consult a pediatrician to follow up on supplementary nutrition.',
+    'bmi_healthy'           => 'Ideal and healthy weight - Your child\'s growth is progressing excellently and matching global rates.',
+    'bmi_overweight'        => 'Overweight - It is recommended to organize meals and reduce sugars and carbohydrates for the child.',
+    'male'   => 'Male',
+    'female' => 'Female',
+
+    // Departments & Department Doctors
+    'departments_fetched_success'        => 'Clinic departments fetched successfully.',
+    'department_not_found'               => 'The requested department was not found.',
+    'department_doctors_fetched_success' => 'Doctors of the specified department fetched successfully.',
+
+
+    // Parent
+    'parent_fetched_success' => 'Parent profile fetched successfully',
+    'token_saved_successfully'     => 'Token saved successfully.',
+    'profile_updated_successfully' => 'Profile updated successfully.',
 
     // Statuses (Values from Database)
     'pending'                => 'Pending',

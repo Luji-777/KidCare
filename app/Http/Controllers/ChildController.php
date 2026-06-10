@@ -38,7 +38,7 @@ class ChildController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Child added successfully',
+            'message' => __('messages.child_added_success'),
             'child' => $child
         ], 201);
     }
@@ -68,7 +68,7 @@ class ChildController extends Controller
         $changes = $child->getChanges();
 
         return response()->json([
-            'message' => 'Child info updated successfully',
+            'message' => __('messages.child_updated_success'),
             'updated_fields' => $changes
         ]);
     }
@@ -77,21 +77,29 @@ class ChildController extends Controller
     {
         $children = auth()->user()->children;
         return response()->json([
+            'status'   => 'success',
+            'message'  => __('messages.children_fetched_success'),
             'children' => $children
         ]);
     }
 
     public function show($id)
     {
-        $child = Child::find($id);
+
+        $child = auth()->user()->children()->find($id);
 
         if (!$child) {
             return response()->json([
-                'message' => 'not found'
+                'status'  => 'error',
+                'message' => __('messages.child_not_found')
             ], 404);
         }
 
-        return response()->json($child);
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.child_fetched_success'),
+            'data'    => $child
+        ], 200);
     }
 
     public function destroy($id)
@@ -100,7 +108,8 @@ class ChildController extends Controller
         $child->delete();
 
         return response()->json([
-            'message' => 'Child deleted successfully'
+            'status'  => 'success',
+            'message' => __('messages.child_deleted_success')
         ]);
     }
 
@@ -120,7 +129,7 @@ class ChildController extends Controller
         ]);
     }
 
-    public function childAllergies($id)
+    /*  public function childAllergies($id)
     {
         $child = auth()->user()
             ->children()
@@ -157,5 +166,5 @@ class ChildController extends Controller
             'height' => $latestGrowth?->height,
             'weight' => $latestGrowth?->weight,
         ]);
-    }
+    }*/
 }
