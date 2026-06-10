@@ -50,7 +50,6 @@ class ParentModelController extends Controller
             'otp'          => $otp,
             'phone_number' => $request->phone_number,
             'next_step'    => 'verify-otp',
-            JSON_UNESCAPED_UNICODE
         ]);
     }
     public function verifyOtp(Request $request)

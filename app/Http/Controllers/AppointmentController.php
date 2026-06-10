@@ -17,6 +17,8 @@ use Carbon\Carbon;
 use Stripe\Refund;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use App\Models\Doctor;
+
 
 
 class AppointmentController extends Controller
@@ -507,6 +509,94 @@ class AppointmentController extends Controller
             'status'       => 'success',
             'message'      => __('messages.past_child_success'),
             'appointments' => $formattedAppointments
+        ], 200);
+    }
+
+
+
+    public function getClosestAppointmentPerDoctor($departmentId)
+    {
+        $doctors = Doctor::where('department_id', $departmentId)
+            ->select('id', 'first_name', 'last_name', 'profile_picture')
+            ->get();
+
+        if ($doctors->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.no_doctors_in_department'),
+                'data'    => []
+            ], 200);
+        }
+        $result = [];
+        $maxDaysToCheck = 14;
+        $now = Carbon::now();
+
+        foreach ($doctors as $doctor) {
+            $closestAppointment = null;
+            $baseDate = Carbon::today();
+
+            for ($i = 0; $i < $maxDaysToCheck; $i++) {
+                $currentDate = $baseDate->copy()->addDays($i);
+                $dateString = $currentDate->toDateString();
+
+                $dayName = $currentDate->format('l');
+                $dayNameLower = strtolower($dayName);
+
+
+                $availability = DoctorAvailability::where('doctor_id', $doctor->id)
+                    ->where(function ($query) use ($dayName, $dayNameLower) {
+                        $query->whereRaw('TRIM(day_of_week) = ?', [$dayName])
+                            ->orWhereRaw('LOWER(TRIM(day_of_week)) = ?', [$dayNameLower]);
+                    })
+                    ->first();
+
+                if ($availability) {
+
+                    $startTimeInstance = Carbon::parse($dateString . ' ' . trim($availability->start_time));
+                    $endTimeInstance = Carbon::parse($dateString . ' ' . trim($availability->end_time));
+
+                    while ($startTimeInstance->lt($endTimeInstance)) {
+                        if ($startTimeInstance->lte($now)) {
+                            $startTimeInstance->addMinutes(30);
+                            continue;
+                        }
+
+                        $timeWithSeconds = $startTimeInstance->format('H:i:00');
+                        $timeWithoutSeconds = $startTimeInstance->format('H:i');
+
+                        $isBooked = Appointment::where('doctor_id', $doctor->id)
+                            ->where('date', $dateString)
+                            ->where('status', '!=', 'cancelled')
+                            ->where(function ($q) use ($timeWithSeconds, $timeWithoutSeconds) {
+                                $q->where('time', $timeWithoutSeconds)
+                                    ->orWhere('time', $timeWithSeconds);
+                            })
+                            ->exists();
+
+                        if (!$isBooked) {
+                            $closestAppointment = [
+                                'date'      => $dateString,
+                                'time'      => $timeWithoutSeconds,
+                                'day_name'  => __("messages.days." . $dayNameLower)
+                            ];
+                            break 2;
+                        }
+
+                        $startTimeInstance->addMinutes(30);
+                    }
+                }
+            }
+            $result[] = [
+                'doctor_id'           => $doctor->id,
+                'doctor_name'         => trim($doctor->first_name . ' ' . $doctor->last_name),
+                'profile_picture_url' => $doctor->profile_picture,
+                'closest_appointment' => $closestAppointment
+            ];
+        }
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.closest_appointments_fetched'),
+            'data'    => $result
         ], 200);
     }
 }

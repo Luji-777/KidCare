@@ -1,7 +1,7 @@
 <?php
 
 return [
-    // Messages
+    // Appointment
     'upcoming_success'       => 'Upcoming appointments fetched successfully.',
     'past_success'           => 'Past appointments fetched successfully.',
     'upcoming_child_success' => 'Child upcoming appointments fetched successfully.',
@@ -21,6 +21,8 @@ return [
     'slot_temporarily_locked'      => 'This time is temporarily locked for payment.',
     'appointment_locked_success'   => 'Appointment locked temporarily. Proceed to checkout to pay.',
     'appointment_updated_success'  => 'Appointment updated successfully.',
+    'no_doctors_in_department'     => 'There are currently no doctors registered in this department.',
+    'closest_appointments_fetched' => 'Closest available appointments per doctor fetched successfully.',
 
     // Auth & OTP
     'phone_not_registered'       => 'This phone number is not registered in our records. Please check the number or create a new account.',
@@ -102,4 +104,14 @@ return [
     'confirmed'              => 'Confirmed',
     'completed'              => 'Completed',
     'cancelled'              => 'Cancelled',
+
+    'days' => [
+        'monday'    => 'Monday',
+        'tuesday'   => 'Tuesday',
+        'wednesday' => 'Wednesday',
+        'thursday'  => 'Thursday',
+        'friday'    => 'Friday',
+        'saturday'  => 'Saturday',
+        'sunday'    => 'Sunday',
+    ],
 ];

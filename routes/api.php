@@ -92,6 +92,8 @@ Route::middleware('set.locale')->group(function () {
         Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
         Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
 
+        Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);
+
         Route::post('/test-appointment', [PaymentController::class, 'testAppointment']);
         Route::get('/appointments/{appointment_id}/summary', [PaymentController::class, 'getSummary']);
         Route::post('/payment/checkout', [PaymentController::class, 'checkout']);

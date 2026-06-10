@@ -1,7 +1,7 @@
 <?php
 
 return [
-    // Messages
+    // Appointment
     'upcoming_success'       => 'تم جلب المواعيد القادمة بنجاح.',
     'past_success'           => 'تم جلب المواعيد السابقة بنجاح.',
     'upcoming_child_success' => 'تم جلب المواعيد القادمة للطفل بنجاح.',
@@ -21,6 +21,8 @@ return [
     'slot_temporarily_locked'      => 'هذا الوقت مغلق مؤقتاً لإتمام عملية الدفع.',
     'appointment_locked_success'   => 'تم قفل الموعد مؤقتاً بنجاح، يرجى الانتقال إلى صفحة الدفع لإتمام الحجز.',
     'appointment_updated_success'  => 'تم تحديث بيانات الموعد بنجاح.',
+    'no_doctors_in_department'     => 'لا يوجد أطباء مسجلين في هذا القسم حالياً.',
+    'closest_appointments_fetched' => 'تم جلب أقرب المواعيد المتاحة لكل طبيب بنجاح.',
 
     // Auth & OTP
     'phone_not_registered'       => 'رقم الهاتف هذا غير مسجل في سجلاتنا. يرجى التحقق من الرقم أو إنشاء حساب جديد.',
