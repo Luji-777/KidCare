@@ -20,7 +20,7 @@ class DoctorController extends Controller
             'phone_number' => 'required|digits_between:9,15'
         ]);
 
-        $doctor = Doctor::where('phone_number', $request->phone_number)->firstOrFail();
+        $doctor = Doctor::where('phone_number', $request->phone_number)->first();
 
         if (!$doctor) {
             return response()->json([
