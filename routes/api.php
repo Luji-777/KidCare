@@ -125,4 +125,4 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
 
     Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
-});
+
