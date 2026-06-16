@@ -45,4 +45,15 @@ class Child extends Model
             },
         );
     }
+
+    public function vaccines()
+{
+    return $this->belongsToMany(
+        Vaccine::class,
+        'child_vaccines'
+    )->withPivot([
+        'taken_date',
+        'notes'
+    ]);
+}
 }

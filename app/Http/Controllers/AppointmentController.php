@@ -26,6 +26,8 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request)
     {
+        $doctorId = $request->type === 'vaccine' ? 1
+        : $request->doctor_id;
 
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
         if (!$child) {
@@ -45,7 +47,7 @@ class AppointmentController extends Controller
 
         $day = strtolower(Carbon::parse($date)->format('l'));
 
-        $availability = DoctorAvailability::where('doctor_id', $request->doctor_id)
+        $availability = DoctorAvailability::where('doctor_id', $doctorId)
             ->where('day_of_week', $day)
             ->first();
 
@@ -60,7 +62,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => __('messages.outside_working_hours')], 400);
         }
 
-        $isBooked = Appointment::where('doctor_id', $request->doctor_id)
+        $isBooked = Appointment::where('doctor_id',$doctorId)
             ->where('date', $date)
             ->where('time', $time)
             ->where('status', '!=', 'canceled')
@@ -70,21 +72,24 @@ class AppointmentController extends Controller
             return response()->json(['message' => __('messages.time_already_booked')], 400);
         }
 
-        $cacheKeySlot = "booked_slot_{$request->doctor_id}_{$date}_{$time}";
+        $cacheKeySlot = "booked_slot_{$doctorId}_{$date}_{$time}";
         if (Cache::has($cacheKeySlot)) {
             return response()->json(['message' => __('messages.slot_temporarily_locked')], 400);
         }
 
-        $doctor = \App\Models\Doctor::findOrFail($request->doctor_id);
+        $doctor = \App\Models\Doctor::findOrFail($doctorId);
 
         $pendingAppointmentId = (string) Str::uuid();
         $appointmentData = [
             'child_id'  => $request->child_id,
-            'doctor_id' => $request->doctor_id,
+            'doctor_id' => $doctorId,
             'date'      => $date,
             'time'      => $time,
             'price'     => $doctor->fee,
-            'parent_id' => auth()->id()
+            'parent_id' => auth()->id(),
+            'type'      => $request->type ?? 'consultation',
+            'vaccine_id'=> $request->vaccine_id ?? null,
+            
         ];
 
 
@@ -325,6 +330,11 @@ class AppointmentController extends Controller
             }
 
             $parent = auth()->user();
+
+            DBNotification::create([
+            'parent_id' => $parent->id,
+            'message'   => $notificationBody
+]);
 
             if (!empty($parent->fcm_token)) {
 
@@ -599,4 +609,68 @@ class AppointmentController extends Controller
             'data'    => $result
         ], 200);
     }
+
+    /*public function bookVaccine(Request $request)
+{
+    $request->validate([
+        'child_id' => 'required|integer',
+        'doctor_id' => 'required|integer',
+        'vaccine_id' => 'required|integer',
+        'date' => 'required',
+        'time' => 'required',
+    ]);
+
+    // 1. التأكد من الطفل
+    $child = auth()->user()
+        ->children()
+        ->where('id', $request->child_id)
+        ->first();
+
+    if (!$child) {
+        return response()->json(['message' => 'Child not found'], 404);
+    }
+
+    // 2. التأكد من اللقاح
+    $vaccine = \App\Models\Vaccine::find($request->vaccine_id);
+
+    if (!$vaccine) {
+        return response()->json(['message' => 'Vaccine not found'], 404);
+    }
+
+    // 3. تحويل التاريخ
+    $date = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
+    $time = \Carbon\Carbon::parse($request->time)->format('H:i');
+
+    // 4. التأكد من عدم التكرار
+    $exists = \App\Models\Appointment::where([
+        'doctor_id' => $request->doctor_id,
+        'date' => $date,
+        'time' => $time
+    ])->exists();
+
+    if ($exists) {
+        return response()->json(['message' => 'Slot already booked'], 400);
+    }
+
+    // 5. إنشاء الموعد (نفس نظامك الحالي)
+    $appointment = \App\Models\Appointment::create([
+        'child_id' => $request->child_id,
+        'doctor_id' => $request->doctor_id,
+        'date' => $date,
+        'time' => $time,
+        'price' => 0, // أو سعر اللقاح إذا بدك
+        'status' => 'confirmed',
+        'payment_status' => 'pending',
+
+        // ⭐ أهم سطرين
+        'type' => 'vaccine',
+        'vaccine_id' => $request->vaccine_id,
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Vaccine appointment booked successfully',
+        'appointment' => $appointment
+    ]);
+}*/
 }

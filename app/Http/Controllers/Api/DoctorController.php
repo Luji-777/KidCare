@@ -330,4 +330,98 @@ class DoctorController extends Controller
             'favorites' => $favorites
         ]);
     }
+
+    public function home()
+{
+    $doctor = auth()->user();
+
+    return response()->json([
+        'id' => $doctor->id,
+        'name' => $doctor->first_name . ' ' . $doctor->last_name,
+        'specialization' => $doctor->department?->name,
+        'image' => $doctor->profile_picture,
+    ]);
+}
+
+public function todayAppointmentsCount()
+{
+    $doctor = auth()->user();
+
+    $count = Appointment::where('doctor_id', $doctor->id)
+        ->whereDate('date', today())
+        ->where('status', 'confirmed')
+        ->count();
+
+    return response()->json([
+        'count' => $count
+    ]);
+}
+
+public function nextPatient()
+{
+    $doctor = auth()->user();
+
+    $appointment = Appointment::with('child')
+        ->where('doctor_id', $doctor->id)
+        ->whereDate('date', today())
+        ->where('status', 'confirmed')
+        ->whereTime('time', '>=', now()->format('H:i:s'))
+        ->orderBy('time')
+        ->first();
+
+    if (!$appointment) {
+        return response()->json([
+            'message' => 'No upcoming patients'
+        ]);
+    }
+
+    return response()->json([
+        'id' => $appointment->child->id,
+        'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+        'age' => Carbon::parse($appointment->child->birth_date)->age,
+        'gender' => $appointment->child->gender,
+        'image' => $appointment->child->image,
+        'appointment_time' => $appointment->time,
+    ]);
+}
+
+public function remainingPatients()
+{
+    $doctor = auth()->user();
+
+    $appointments = Appointment::with('child')
+        ->where('doctor_id', $doctor->id)
+        ->whereDate('date', today())
+        ->where('status', 'confirmed')
+        ->whereTime('time', '>=', now()->format('H:i:s'))
+        ->orderBy('time')
+        ->get();
+
+    return response()->json(
+        $appointments->map(function ($appointment) {
+            return [
+                'id' => $appointment->child->id,
+                'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+                'age' => Carbon::parse($appointment->child->birth_date)->age,
+                'gender' => $appointment->child->gender,
+                'image' => $appointment->child->image,
+                'appointment_time' => $appointment->time,
+            ];
+        })
+    );
+}
+
+    public function completedAppointmentsToday()
+{
+    $doctor = auth()->user();
+
+    $count = Appointment::where('doctor_id', $doctor->id)
+        ->where('status', 'completed')
+        ->whereDate('date', today())
+        ->count();
+
+    return response()->json([
+        'completed_appointments' => $count
+    ]);
+}
 }

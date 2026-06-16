@@ -10,6 +10,7 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
+use App\Http\Controllers\VaccineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,13 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
     Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
     Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
+    Route::get('/doctor/home', [DoctorController::class, 'home']);//home page
+    Route::get('/doctor/today-appointments-count', [DoctorController::class, 'todayAppointmentsCount']);//home page
+    Route::get('/doctor/next-patient', [DoctorController::class, 'nextPatient']);//home page
+    Route::get('/doctor/remaining-patients', [DoctorController::class, 'remainingPatients']);//home page
+    Route::get('/doctor/completed-appointments-today', [DoctorController::class, 'completedAppointmentsToday']);//home page
+});
+
 
     Route::apiResource('doctors', DoctorController::class);
 
@@ -103,6 +111,8 @@ Route::middleware('set.locale')->group(function () {
 
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/test-notification', [NotificationController::class, 'test']);
+
+        Route::get('/child/{id}/vaccines', [VaccineController::class, 'getChildVaccines']);
     });
 
     //Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
