@@ -32,11 +32,7 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/sendOtpDoctor', [DoctorController::class, 'sendOtpDoctor']);
     Route::post('/verifyOtpDoctor', [DoctorController::class, 'verifyOtpDoctor']);
     Route::post('/SetPasswordDoctor', [DoctorController::class, 'setPasswordDoctor']);
-    Route::get('/doctor/home', [DoctorController::class, 'home']);//home page
-    Route::get('/doctor/today-appointments-count', [DoctorController::class, 'todayAppointmentsCount']);//home page
-    Route::get('/doctor/next-patient', [DoctorController::class, 'nextPatient']);//home page
-    Route::get('/doctor/remaining-patients', [DoctorController::class, 'remainingPatients']);//home page
-    Route::get('/doctor/completed-appointments-today', [DoctorController::class, 'completedAppointmentsToday']);//home page
+  
 });
 
 
@@ -80,14 +76,19 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
 
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
-        Route::get(
-            '/favorite-doctors',
-            [DoctorController::class, 'getFavorites']
-        );
+        Route::get('/favorite-doctors',[DoctorController::class, 'getFavorites'] );
         Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
         Route::get('parentName', [ParentModelController::class, 'parentName']);
         Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
         Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
+
+        Route::get('/doctor/home', [DoctorController::class, 'home']);//home page
+        Route::get('/doctor/today-appointments-count', [DoctorController::class, 'todayAppointmentsCount']);//home page
+        Route::get('/doctor/next-patient', [DoctorController::class, 'nextPatient']);//home page
+        Route::get('/doctor/remaining-patients', [DoctorController::class, 'remainingPatients']);//home page
+        Route::get('/doctor/completed-appointments-today', [DoctorController::class, 'completedAppointmentsToday']);//home page
+        Route::get('/doctor/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);//home page
+         Route::get('/doctors/{id}/completeAppointment', [DoctorController::class, 'completeAppointment']);
 
 
         Route::post('/appointment', [AppointmentController::class, 'store']);

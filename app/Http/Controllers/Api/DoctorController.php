@@ -424,4 +424,37 @@ class DoctorController extends Controller
             'completed_appointments' => $count
         ]);
     }
+
+    public function completeAppointment($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+
+        $appointment->status = 'completed';
+
+        $doctor = Doctor::find($appointment->doctor_id);
+
+        $appointment->doctor_earnings =
+            $appointment->price * ($doctor->commission_percentage / 100);
+
+        $appointment->save();
+
+        return response()->json([
+            'message' => 'Appointment completed'
+        ]);
+    }
+
+    public function monthlyRevenue()
+    {
+        $doctor = auth()->user();
+
+        $revenue = Appointment::where('doctor_id', $doctor->id)
+            ->where('status', 'completed')
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            ->sum('doctor_earnings');
+
+        return response()->json([
+            'monthly_revenue' => $revenue
+        ]);
+    }
 }
