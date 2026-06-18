@@ -366,8 +366,8 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,doctor.department:id,name'
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -408,8 +408,8 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id','doctor.department:id,name'
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -451,8 +451,8 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,doctor.department:id,name'
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -494,8 +494,8 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,gitdoctor.department:id,name'
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
