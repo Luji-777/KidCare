@@ -385,10 +385,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -425,10 +427,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -466,10 +470,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -507,10 +513,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -620,7 +628,7 @@ class AppointmentController extends Controller
         'time' => 'required',
     ]);
 
-    // 1. التأكد من الطفل
+   
     $child = auth()->user()
         ->children()
         ->where('id', $request->child_id)
@@ -630,18 +638,18 @@ class AppointmentController extends Controller
         return response()->json(['message' => 'Child not found'], 404);
     }
 
-    // 2. التأكد من اللقاح
+    
     $vaccine = \App\Models\Vaccine::find($request->vaccine_id);
 
     if (!$vaccine) {
         return response()->json(['message' => 'Vaccine not found'], 404);
     }
 
-    // 3. تحويل التاريخ
+   
     $date = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
     $time = \Carbon\Carbon::parse($request->time)->format('H:i');
 
-    // 4. التأكد من عدم التكرار
+    
     $exists = \App\Models\Appointment::where([
         'doctor_id' => $request->doctor_id,
         'date' => $date,
@@ -652,17 +660,17 @@ class AppointmentController extends Controller
         return response()->json(['message' => 'Slot already booked'], 400);
     }
 
-    // 5. إنشاء الموعد (نفس نظامك الحالي)
+    
     $appointment = \App\Models\Appointment::create([
         'child_id' => $request->child_id,
         'doctor_id' => $request->doctor_id,
         'date' => $date,
         'time' => $time,
-        'price' => 0, // أو سعر اللقاح إذا بدك
+        'price' => 0, 
         'status' => 'confirmed',
         'payment_status' => 'pending',
 
-        // ⭐ أهم سطرين
+       
         'type' => 'vaccine',
         'vaccine_id' => $request->vaccine_id,
     ]);
