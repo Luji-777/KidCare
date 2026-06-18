@@ -246,6 +246,14 @@ class AppointmentController extends Controller
     public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
     {
 
+        $isOwner = auth()->user()
+            ->children()
+            ->where('id', $appointment->child_id)
+            ->exists();
+
+        if (!$isOwner) {
+            return response()->json(['message' => __('messages.unauthorized')], 403);
+        }
 
         $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
@@ -367,12 +375,10 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -409,12 +415,10 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -452,12 +456,10 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -495,12 +497,10 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -598,71 +598,4 @@ class AppointmentController extends Controller
             'data'    => $result
         ], 200);
     }
-<<<<<<< HEAD
-=======
-
-    /*public function bookVaccine(Request $request)
-{
-    $request->validate([
-        'child_id' => 'required|integer',
-        'doctor_id' => 'required|integer',
-        'vaccine_id' => 'required|integer',
-        'date' => 'required',
-        'time' => 'required',
-    ]);
-
-   
-    $child = auth()->user()
-        ->children()
-        ->where('id', $request->child_id)
-        ->first();
-
-    if (!$child) {
-        return response()->json(['message' => 'Child not found'], 404);
-    }
-
-    
-    $vaccine = \App\Models\Vaccine::find($request->vaccine_id);
-
-    if (!$vaccine) {
-        return response()->json(['message' => 'Vaccine not found'], 404);
-    }
-
-   
-    $date = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
-    $time = \Carbon\Carbon::parse($request->time)->format('H:i');
-
-    
-    $exists = \App\Models\Appointment::where([
-        'doctor_id' => $request->doctor_id,
-        'date' => $date,
-        'time' => $time
-    ])->exists();
-
-    if ($exists) {
-        return response()->json(['message' => 'Slot already booked'], 400);
-    }
-
-    
-    $appointment = \App\Models\Appointment::create([
-        'child_id' => $request->child_id,
-        'doctor_id' => $request->doctor_id,
-        'date' => $date,
-        'time' => $time,
-        'price' => 0, 
-        'status' => 'confirmed',
-        'payment_status' => 'pending',
-
-       
-        'type' => 'vaccine',
-        'vaccine_id' => $request->vaccine_id,
-    ]);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Vaccine appointment booked successfully',
-        'appointment' => $appointment
-    ]);
-}*/
->>>>>>> bee0e4fcd6520bd52e181da46f929ffc5608edd0
 }
