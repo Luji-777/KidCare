@@ -364,7 +364,9 @@ class AppointmentController extends Controller
             ->with([
                 'child:id,first_name,image,gender',
                 'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name'
+    'doctor.department:id,name',
+                
+               
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -382,10 +384,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -405,7 +409,8 @@ class AppointmentController extends Controller
             ->with([
                 'child:id,first_name,image,gender',
                 'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name'
+    'doctor.department:id,name',
+                
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -424,10 +429,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -447,7 +454,9 @@ class AppointmentController extends Controller
         })
             ->with([
                 'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,doctor.department:id,name'
+                'doctor:id,first_name,last_name,department_id',
+    'doctor.department:id,name',
+                
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -465,10 +474,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -488,7 +499,9 @@ class AppointmentController extends Controller
         })
             ->with([
                 'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,gitdoctor.department:id,name'
+                'doctor:id,first_name,last_name,department_id',
+    'doctor.department:id,name',
+                
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -506,10 +519,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
