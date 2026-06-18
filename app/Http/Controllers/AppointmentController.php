@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
+use App\Models\Notification as DBNotification;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\Cache;
@@ -318,6 +319,11 @@ class AppointmentController extends Controller
 
             $parent = auth()->user();
 
+            DBNotification::create([
+    'parent_id' => $parent->id,
+    'message'   => $notificationBody,
+]);
+
             if (!empty($parent->fcm_token)) {
 
                 $firebase->send(
@@ -598,8 +604,7 @@ class AppointmentController extends Controller
             'data'    => $result
         ], 200);
     }
-<<<<<<< HEAD
-=======
+
 
     /*public function bookVaccine(Request $request)
 {
@@ -664,5 +669,5 @@ class AppointmentController extends Controller
         'appointment' => $appointment
     ]);
 }*/
->>>>>>> bee0e4fcd6520bd52e181da46f929ffc5608edd0
+
 }

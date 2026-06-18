@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\Notification;
+//use Kreait\Firebase\Messaging\Notification;
+use App\Models\Notification;
 
 use Illuminate\Http\Request;
 
