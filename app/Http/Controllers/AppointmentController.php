@@ -363,7 +363,8 @@ class AppointmentController extends Controller
         })
             ->with([
                 'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,doctor.department:id,name'
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name'
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -410,6 +411,7 @@ class AppointmentController extends Controller
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->get();
+
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
