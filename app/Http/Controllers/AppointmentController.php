@@ -26,8 +26,6 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request)
     {
-        $doctorId = $request->type === 'vaccine' ? 1
-        : $request->doctor_id;
 
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
         if (!$child) {
@@ -47,7 +45,7 @@ class AppointmentController extends Controller
 
         $day = strtolower(Carbon::parse($date)->format('l'));
 
-        $availability = DoctorAvailability::where('doctor_id', $doctorId)
+        $availability = DoctorAvailability::where('doctor_id', $request->doctor_id)
             ->where('day_of_week', $day)
             ->first();
 
@@ -62,7 +60,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => __('messages.outside_working_hours')], 400);
         }
 
-        $isBooked = Appointment::where('doctor_id',$doctorId)
+        $isBooked = Appointment::where('doctor_id', $request->doctor_id)
             ->where('date', $date)
             ->where('time', $time)
             ->where('status', '!=', 'canceled')
@@ -72,24 +70,21 @@ class AppointmentController extends Controller
             return response()->json(['message' => __('messages.time_already_booked')], 400);
         }
 
-        $cacheKeySlot = "booked_slot_{$doctorId}_{$date}_{$time}";
+        $cacheKeySlot = "booked_slot_{$request->doctor_id}_{$date}_{$time}";
         if (Cache::has($cacheKeySlot)) {
             return response()->json(['message' => __('messages.slot_temporarily_locked')], 400);
         }
 
-        $doctor = \App\Models\Doctor::findOrFail($doctorId);
+        $doctor = \App\Models\Doctor::findOrFail($request->doctor_id);
 
         $pendingAppointmentId = (string) Str::uuid();
         $appointmentData = [
             'child_id'  => $request->child_id,
-            'doctor_id' => $doctorId,
+            'doctor_id' => $request->doctor_id,
             'date'      => $date,
             'time'      => $time,
             'price'     => $doctor->fee,
-            'parent_id' => auth()->id(),
-            'type'      => $request->type ?? 'consultation',
-            'vaccine_id'=> $request->vaccine_id ?? null,
-            
+            'parent_id' => auth()->id()
         ];
 
 
@@ -251,14 +246,6 @@ class AppointmentController extends Controller
     public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
     {
 
-        $isOwner = auth()->user()
-            ->children()
-            ->where('id', $appointment->child_id)
-            ->exists();
-
-        if (!$isOwner) {
-            return response()->json(['message' => __('messages.unauthorized')], 403);
-        }
 
         $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
@@ -330,11 +317,6 @@ class AppointmentController extends Controller
             }
 
             $parent = auth()->user();
-
-            DBNotification::create([
-            'parent_id' => $parent->id,
-            'message'   => $notificationBody
-]);
 
             if (!empty($parent->fcm_token)) {
 
@@ -531,7 +513,6 @@ class AppointmentController extends Controller
     }
 
 
-
     public function getClosestAppointmentPerDoctor($departmentId)
     {
         $doctors = Doctor::where('department_id', $departmentId)
@@ -617,6 +598,8 @@ class AppointmentController extends Controller
             'data'    => $result
         ], 200);
     }
+<<<<<<< HEAD
+=======
 
     /*public function bookVaccine(Request $request)
 {
@@ -681,4 +664,5 @@ class AppointmentController extends Controller
         'appointment' => $appointment
     ]);
 }*/
+>>>>>>> bee0e4fcd6520bd52e181da46f929ffc5608edd0
 }

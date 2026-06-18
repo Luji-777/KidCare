@@ -80,6 +80,7 @@ class GrowthController extends Controller
 
         return [
             'age_in_months' => $month,
+            'child_gender'       => $gender === 'male' ? __('messages.male') : __('messages.female'),
             'who_min_weight' => round($minWeight, 1),
             'who_ideal'     => round($idealWeight, 1),
             'who_max_weight' => round($maxWeight, 1),
