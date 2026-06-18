@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
+use App\Models\Notification as DBNotification;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\Cache;
@@ -326,6 +327,11 @@ class AppointmentController extends Controller
 
             $parent = auth()->user();
 
+            DBNotification::create([
+                'parent_id' => $parent->id,
+                'message'   => $notificationBody,
+            ]);
+
             if (!empty($parent->fcm_token)) {
 
                 $firebase->send(
@@ -356,8 +362,8 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,doctor.department:id,name'
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -396,8 +402,9 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name'
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -437,8 +444,8 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,doctor.department:id,name'
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -478,8 +485,8 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,gitdoctor.department:id,name'
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -598,4 +605,69 @@ class AppointmentController extends Controller
             'data'    => $result
         ], 200);
     }
+
+
+    /*public function bookVaccine(Request $request)
+{
+    $request->validate([
+        'child_id' => 'required|integer',
+        'doctor_id' => 'required|integer',
+        'vaccine_id' => 'required|integer',
+        'date' => 'required',
+        'time' => 'required',
+    ]);
+
+
+    $child = auth()->user()
+        ->children()
+        ->where('id', $request->child_id)
+        ->first();
+
+    if (!$child) {
+        return response()->json(['message' => 'Child not found'], 404);
+    }
+
+
+    $vaccine = \App\Models\Vaccine::find($request->vaccine_id);
+
+    if (!$vaccine) {
+        return response()->json(['message' => 'Vaccine not found'], 404);
+    }
+
+
+    $date = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
+    $time = \Carbon\Carbon::parse($request->time)->format('H:i');
+
+
+    $exists = \App\Models\Appointment::where([
+        'doctor_id' => $request->doctor_id,
+        'date' => $date,
+        'time' => $time
+    ])->exists();
+
+    if ($exists) {
+        return response()->json(['message' => 'Slot already booked'], 400);
+    }
+
+
+    $appointment = \App\Models\Appointment::create([
+        'child_id' => $request->child_id,
+        'doctor_id' => $request->doctor_id,
+        'date' => $date,
+        'time' => $time,
+        'price' => 0,
+        'status' => 'confirmed',
+        'payment_status' => 'pending',
+
+
+        'type' => 'vaccine',
+        'vaccine_id' => $request->vaccine_id,
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Vaccine appointment booked successfully',
+        'appointment' => $appointment
+    ]);
+}*/
 }
