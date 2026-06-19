@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
+use App\Models\Notifications as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Stripe\Stripe;
@@ -27,7 +28,7 @@ class AppointmentController extends Controller
     public function store(StoreAppointmentRequest $request)
     {
         $doctorId = $request->type === 'vaccine' ? 1
-        : $request->doctor_id;
+            : $request->doctor_id;
 
         $child = auth()->user()->children()->where('id', $request->child_id)->first();
         if (!$child) {
@@ -62,7 +63,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => __('messages.outside_working_hours')], 400);
         }
 
-        $isBooked = Appointment::where('doctor_id',$doctorId)
+        $isBooked = Appointment::where('doctor_id', $doctorId)
             ->where('date', $date)
             ->where('time', $time)
             ->where('status', '!=', 'canceled')
@@ -88,8 +89,8 @@ class AppointmentController extends Controller
             'price'     => $doctor->fee,
             'parent_id' => auth()->id(),
             'type'      => $request->type ?? 'consultation',
-            'vaccine_id'=> $request->vaccine_id ?? null,
-            
+            'vaccine_id' => $request->vaccine_id ?? null,
+
         ];
 
 
@@ -332,9 +333,9 @@ class AppointmentController extends Controller
             $parent = auth()->user();
 
             DBNotification::create([
-            'parent_id' => $parent->id,
-            'message'   => $notificationBody
-]);
+                'parent_id' => $parent->id,
+                'message'   => $notificationBody
+            ]);
 
             if (!empty($parent->fcm_token)) {
 
