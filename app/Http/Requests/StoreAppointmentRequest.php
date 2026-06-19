@@ -22,13 +22,13 @@ class StoreAppointmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-        'doctor_id' => 'nullable|exists:doctors,id',
-        'child_id' => 'required|exists:children,id',
-        'date' => 'required|date|after_or_equal:today',
-        'time' => 'required|date_format:H:i',
-        'price' => 'nullable|numeric|min:0',
-        'type'      => 'nullable|in:consultation,vaccine',
-        'vaccine_id'=> 'required_if:type,vaccine|exists:vaccines,id',
+            'doctor_id' => 'required|exists:doctors,id',
+            'child_id' => 'required|exists:children,id',
+            'date' => 'required|date|after_or_equal:today',
+            'time' => 'required|date_format:H:i',
+            'price' => 'nullable|numeric|min:0',
+            //'type'      => 'nullable|in:consultation,vaccine',
+            //  'vaccine_id'=> 'required_if:type,vaccine|exists:vaccines,id',
         ];
     }
 }

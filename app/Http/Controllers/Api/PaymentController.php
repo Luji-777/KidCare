@@ -218,8 +218,8 @@ class PaymentController extends Controller
                                 'status'         => 'confirmed',
                                 'payment_status' => 'paid_online',
                                 'price'          => $appointmentData['price'],
-                                'type'           => $appointmentData['type'],
-                                'vaccine_id'     => $appointmentData['vaccine_id'],
+                                //    'type'           => $appointmentData['type'],
+                                //    'vaccine_id'     => $appointmentData['vaccine_id'],
                             ]);
 
                             $child = Child::find($appointment->child_id);
@@ -227,8 +227,8 @@ class PaymentController extends Controller
                             $parent = ParentModel::find($child->parent_id);
 
                             DBNotification::create([
-                            'parent_id' => $parent->id,
-                            'message'   => 'Your appointment has been confirmed successfully.'
+                                'parent_id' => $parent->id,
+                                'message'   => 'Your appointment has been confirmed successfully.'
                             ]);
 
                             if ($parent && $parent->fcm_token) {
@@ -327,7 +327,7 @@ class PaymentController extends Controller
             ]);
 
             if ($parent && $parent->fcm_token) {
-               
+
                 $message = CloudMessage::withTarget(
                     'token',
                     $parent->fcm_token
