@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
-use App\Models\Notifications as DBNotification;
+use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Stripe\Stripe;
