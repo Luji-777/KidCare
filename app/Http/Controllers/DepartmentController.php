@@ -11,10 +11,17 @@ class DepartmentController extends Controller
     {
         $departments = Department::select('id', 'name', 'description')->get();
 
+        $formattedDepartments = $departments->map(function ($dept) {
+            return [
+                'id'          => $dept->id,
+                'name'        => __("messages.departments_names.{$dept->name}"),
+                //'description' => __("messages.departments_descriptions.{$dept->name}"),
+            ];
+        });
         return response()->json([
             'status'      => 'success',
             'message'     => __('messages.departments_fetched_success'),
-            'departments' => $departments
+            'departments' => $formattedDepartments
         ], 200);
     }
 

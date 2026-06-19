@@ -116,4 +116,10 @@ return [
         'saturday'  => 'السبت',
         'sunday'    => 'الأحد',
     ],
+
+    'departments_names' => [
+        'Pediatrics' => 'قسم الأطفال',
+        'Dentistry'  => 'طب الأسنان',
+        'Psychiatry' => 'الطب النفسي',
+    ],
 ];

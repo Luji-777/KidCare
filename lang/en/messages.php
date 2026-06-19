@@ -114,4 +114,10 @@ return [
         'saturday'  => 'Saturday',
         'sunday'    => 'Sunday',
     ],
+
+    'departments_names' => [
+        'Pediatrics' => 'Pediatrics',
+        'Dentistry'  => 'Dentistry',
+        'Psychiatry' => 'Psychiatry',
+    ],
 ];
