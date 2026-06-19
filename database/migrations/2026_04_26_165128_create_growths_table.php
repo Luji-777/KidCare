@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('child_id')->constrained('children')->cascadeOnDelete();
             $table->float('height');
-            $table->integer('weight');
+            $table->float('weight');
             $table->date('date');
             $table->timestamps();
         });

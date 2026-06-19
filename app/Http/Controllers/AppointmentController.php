@@ -364,10 +364,12 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name',
             ])
             ->whereDate('date', '>=', now()->toDateString())
+            // ->where('status', '!=', 'Cancelled')
             ->orderBy('date')
             ->orderBy('time')
             ->get();
@@ -383,10 +385,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -404,8 +408,9 @@ class AppointmentController extends Controller
             $query->where('parent_id', auth()->id());
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name',
             ])
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
@@ -423,10 +428,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -445,8 +452,9 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name',
             ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
@@ -464,10 +472,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -486,10 +496,12 @@ class AppointmentController extends Controller
                 ->where('id', $childId);
         })
             ->with([
-                'child:id,first_name,image',
-                'doctor:id,first_name,last_name'
+                'child:id,first_name,image,gender',
+                'doctor:id,first_name,last_name,department_id',
+                'doctor.department:id,name',
             ])
             ->whereDate('date', '<', now()->toDateString())
+            // ->where('status', '!=', 'Cancelled')
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->get();
@@ -505,10 +517,12 @@ class AppointmentController extends Controller
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
                 ],
                 'doctor' => [
                     'id'         => $appointment->doctor_id,
                     'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
                 ]
             ];
         });
@@ -519,8 +533,6 @@ class AppointmentController extends Controller
             'appointments' => $formattedAppointments
         ], 200);
     }
-
-
 
     public function getClosestAppointmentPerDoctor($departmentId)
     {

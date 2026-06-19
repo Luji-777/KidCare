@@ -82,6 +82,15 @@ class DoctorAvailabilityController extends Controller
     {
         $date = $request->date;
 
+        if (Carbon::parse($date)->isPast() && !Carbon::parse($date)->isToday()) {
+            return response()->json([
+                'status'   => 'success',
+                'times'    => [],
+                'day_name' => __("messages.days." . strtolower(Carbon::parse($date)->format('l'))),
+                'message'  => __('messages.no_available_times'),
+            ]);
+        }
+
         $day = strtolower(Carbon::parse($date)->format('l'));
         $translatedDay = __("messages.days.{$day}");
 
@@ -103,13 +112,22 @@ class DoctorAvailabilityController extends Controller
 
         $times = [];
 
-        while ($start < $end) {
+        $isToday = Carbon::parse($date)->isToday();
 
+        while ($start < $end) {
+            $slotDateTime = Carbon::parse("$date " . $start->format('H:i'));
+
+
+            if ($isToday && $slotDateTime->isPast()) {
+                $start->addMinutes(30);
+                continue;
+            }
             $formatted = $start->format('H:i');
 
             $isBooked = Appointment::where('doctor_id', $doctorId)
                 ->where('date', $date)
                 ->where('time', $formatted)
+                ->where('status', '!=', 'Cancelled')
                 ->exists();
 
             if (!$isBooked) {
