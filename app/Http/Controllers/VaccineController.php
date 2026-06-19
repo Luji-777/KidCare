@@ -8,7 +8,7 @@ use App\Models\Vaccine;
 
 class VaccineController extends Controller
 {
-    public function getChildVaccines($childId)
+    /* public function getChildVaccines($childId)
     {
         // 1. نتأكد أن الطفل تابع للمستخدم الحالي
         $child = auth()->user()
@@ -56,5 +56,5 @@ class VaccineController extends Controller
             'child_age_months' => $ageMonths,
             'vaccines' => $result
         ]);
-    } 
+    } */
 }

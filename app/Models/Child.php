@@ -46,7 +46,7 @@ class Child extends Model
         );
     }
 
-    public function vaccines()
+    /* public function vaccines()
 {
     return $this->belongsToMany(
         Vaccine::class,
@@ -55,5 +55,5 @@ class Child extends Model
         'taken_date',
         'notes'
     ]);
-}
+}*/
 }

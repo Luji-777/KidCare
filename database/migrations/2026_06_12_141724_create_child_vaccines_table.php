@@ -13,14 +13,13 @@ return new class extends Migration
     {
         Schema::create('child_vaccines', function (Blueprint $table) {
             $table->id();
-             $table->foreignId('child_id')->constrained('children')->cascadeOnDelete();
-            $table->foreignId('vaccine_id') ->constrained('vaccines') ->cascadeOnDelete();
+            $table->foreignId('child_id')->constrained('children')->cascadeOnDelete();
+            $table->foreignId('vaccine_id')->constrained('vaccines')->cascadeOnDelete();
             $table->date('taken_date')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
-
     /**
      * Reverse the migrations.
      */

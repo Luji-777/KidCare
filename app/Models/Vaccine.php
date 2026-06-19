@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vaccine extends Model
 {
-    public function children()
+    /* public function children()
 {
     return $this->belongsToMany(
         Child::class,
         'child_vaccines'
     );
-}
+}*/
 }
