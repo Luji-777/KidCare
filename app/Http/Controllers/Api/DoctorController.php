@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
 use App\Models\Appointment;
+use App\Models\MedicalRecord;
+use App\Models\Medication;
+use App\Models\Growth;
 use Carbon\Carbon;
 
 class DoctorController extends Controller
@@ -457,4 +460,90 @@ class DoctorController extends Controller
             'monthly_revenue' => $revenue
         ]);
     }
+
+    public function addDiagnosis(Request $request, $appointmentId)
+ {
+    $request->validate([
+        'diagnosis' => 'required|string',
+        'doctor_notes' => 'nullable|string',
+    ]);
+
+     $doctor = auth()->user();
+
+    $appointment = Appointment::where('id', $appointmentId)
+        ->where('doctor_id', $doctor->id)
+        ->firstOrFail();
+
+    $record = MedicalRecord::updateOrCreate(
+        [
+            'appointment_id' => $appointment->id
+        ],
+        [
+            'diagnosis' => $request->diagnosis,
+            'doctor_notes' => $request->doctor_notes
+        ]
+    );
+
+    return response()->json([
+        'message' => __('messages.Diagnosis_add_success'),
+        'record' => $record
+    ]);
+ }
+
+ public function addMedication(Request $request, $recordId)
+{
+    $request->validate([
+        'name' => 'required|string',
+        'dosage' => 'required|string',
+        'frequency' => 'required|string',
+        'timing' => 'required|string',
+        'duration' => 'required|string',
+    ]);
+
+     $doctor = auth()->user();
+
+    $record = MedicalRecord::whereHas('appointment', function ($q) use ($doctor) {
+        $q->where('doctor_id', $doctor->id);
+    })->findOrFail($recordId);
+
+    $medication = $record->medications()->create([
+        'name' => $request->name,
+        'dosage' => $request->dosage,
+        'frequency' => $request->frequency,
+        'timing' => $request->timing,
+        'duration' => $request->duration,
+    ]);
+
+    return response()->json([
+        'message' =>  __('messages.Medication_add_success'),
+        'medication' => $medication
+    ]);
+}
+
+public function addGrowthRecord(Request $request, $appointmentId)
+{
+    $request->validate([
+        'height' => 'nullable|numeric|min:10|max:250|required_with:weight',
+        'weight' => 'nullable|numeric|min:1|max:150|required_with:height',
+    ]);
+
+    $doctor = auth()->user();
+
+    $appointment = Appointment::where('id', $appointmentId)
+        ->where('doctor_id', $doctor->id)
+        ->firstOrFail();
+
+    $growth = Growth::create([
+        'child_id' => $appointment->child_id,
+        'height'   => $request->height,
+        'weight'   => $request->weight,
+        'date'     => now()->toDateString(),
+    ]);
+
+    return response()->json([
+        'message' => __('messages.Growth_add_success'),
+        'data' => $growth
+    ]);
+}
+    
 }

@@ -99,6 +99,12 @@ return [
     'token_saved_successfully'     => 'Token saved successfully.',
     'profile_updated_successfully' => 'Profile updated successfully.',
 
+    //Diadnosis and Reciept
+    'Diagnosis_add_success' => 'Diagnosis added successfully',
+    'Medication_add_success' => 'Medication added successfully',
+    'Growth_add_success' => 'Growth record added successfully',
+
+
     // Statuses (Values from Database)
     'pending'                => 'Pending',
     'confirmed'              => 'Confirmed',

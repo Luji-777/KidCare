@@ -97,6 +97,11 @@ return [
     'token_saved_successfully'     => 'تم حفظ رمز Firebase بنجاح.',
     'profile_updated_successfully' => 'تم تحديث البيانات الشخصية بنجاح.',
 
+    //Diadnosis and Reciept
+    'Diagnosis_add_success' => 'تم اضافة التشخيص بنجاح.',
+    'Medication_add_success' => 'تم اضافة الوصفة بنجاح.',
+    'Growth_add_success' => 'تم اضافة تقرير النمو بنجاح.',
+
     // Statuses (Values from Database)
     'pending'                => 'قيد الانتظار',
     'confirmed'              => 'مؤكد',
