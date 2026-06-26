@@ -33,7 +33,7 @@ Route::middleware('set.locale')->group(function () {
     //Auth dashboard
     Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
 
-    // Open
+    // Open routes
     Route::apiResource('doctors', DoctorController::class)->only(['index', 'show']);
     Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 
@@ -81,7 +81,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
         Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
         Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);
-        Route::apiResource('appointments', AppointmentController::class)->except(['index']);
+        Route::apiResource('appointment', AppointmentController::class)->except(['index']);
 
         // Doctor app
         Route::prefix('doctor')->group(function () {

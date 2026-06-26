@@ -17,10 +17,10 @@ return new class extends Migration
             if (!Schema::hasColumn('transactions', 'appointment_id')) {
                 $table->foreignId('appointment_id')->nullable()->constrained()->onDelete('cascade');
             } else {
-                // إذا كان موجوداً، يقوم فقط بتعديله ليقبل NULL
+
                 $table->foreignId('appointment_id')->nullable()->change();
             }
-            $table->string('stripe_payment_intent_id')->unique(); // الـ ID من سترايب
+            $table->string('stripe_payment_intent_id')->unique();
             $table->decimal('amount', 8, 2);
             $table->string('currency', 3);
             $table->string('status'); // requires_payment_method, succeeded, failed
