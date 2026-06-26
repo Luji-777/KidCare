@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('cv')->nullable();
             $table->string('fee');
             $table->unsignedInteger('commission_percentage')->default(100);
-            //$table->enum('gender', ['male', 'female']);
+            $table->enum('gender', ['male', 'female']);
 
             $table->string('otp_code')->nullable(); // رمز التحقق
             $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق

@@ -37,6 +37,7 @@ class StoreDoctorRequest extends FormRequest
             'fee' => 'required|numeric|min:0',
             'commission_percentage' => 'required|numeric|min:0|max:100',
             'cv' => 'nullable|file|mimes:pdf|max:5120',
+            'gender' => 'required|string',
         ];
     }
 }

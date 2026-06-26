@@ -26,10 +26,10 @@ class Doctor extends Authenticatable
     }
     public function appointments()
     {
-        return $this->hasMany(Appointment::class);
+        return $this->hasMany(Appointment::class, 'doctor_id');
     }
-    public function availability()
+    public function availabilities()
     {
-        return $this->hasMany(DoctorAvailability::class);
+        return $this->hasMany(DoctorAvailability::class, 'doctor_id');
     }
 }

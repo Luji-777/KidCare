@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
 use App\Models\Appointment;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
@@ -132,19 +133,6 @@ class DoctorController extends Controller
             'Token'   => $token,
         ], 200);
     }
-    public function index()
-    {
-
-        $doctors = Doctor::with('department')
-            ->orderBy('first_name', 'asc')
-            ->paginate(10);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => __('messages.doctors_fetched_success'),
-            'data'   => $doctors
-        ], 200);
-    }
 
     public function store(StoreDoctorRequest $request)
     {
@@ -166,25 +154,6 @@ class DoctorController extends Controller
             'data' => $doctor
         ], 201);
     }
-
-    public function show(string $id)
-    {
-        $doctor = Doctor::with('department')->find($id);
-
-        if (!$doctor) {
-            return response()->json([
-                'status' => 'error',
-                'message' => __('messages.doctor_not_found'),
-            ], 404);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => __('messages.doctor_fetched_success'),
-            'data'   => $doctor
-        ], 200);
-    }
-
     public function update(UpdateDoctorRequest $request, string $id)
     { {
             $doctor = Doctor::findOrFail($id);
@@ -456,5 +425,304 @@ class DoctorController extends Controller
         return response()->json([
             'monthly_revenue' => $revenue
         ]);
+    }
+
+    //----------------------Dashboard--------------------------------
+
+    //doctors
+    public function getDoctorsCount()
+    {
+
+        $count = Doctor::count();
+
+        return response()->json([
+            'status' => 'success',
+            'doctors_count' => $count
+        ], 200);
+    }
+
+    public function getDoctorsCountByDepartment($department_id)
+    {
+
+        $count = Doctor::where('department_id', $department_id)->count();
+
+        return response()->json([
+            'status' => 'success',
+            'department_id' => (int) $department_id,
+            'doctors_count' => $count
+        ], 200);
+    }
+
+    public function getTopDoctorThisWeek()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $topDoctor = Doctor::select(
+            'doctors.id',
+            DB::raw("CONCAT(doctors.first_name, ' ', doctors.last_name) as full_name"),
+            DB::raw('COUNT(appointments.id) as appointments_count')
+        )
+            ->join('appointments', 'doctors.id', '=', 'appointments.doctor_id')
+            ->whereBetween('appointments.date', [$startOfWeek, $endOfWeek])
+            ->whereIn('appointments.status', ['confirmed', 'completed'])
+            ->groupBy('doctors.id', 'doctors.first_name', 'doctors.last_name')
+            ->orderBy('appointments_count', 'desc')
+            ->first();
+
+        if (!$topDoctor) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No confirmed or completed appointments booked for any doctor during this period.',
+                'doctor' => null,
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ], 200);
+        }
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'doctor_id' => $topDoctor->id,
+                'doctor_name' => $topDoctor->full_name,
+                'appointments_count' => $topDoctor->appointments_count,
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ]
+        ], 200);
+    }
+
+    public function index()
+    {
+
+        $todayName = Carbon::now()->locale('en')->dayName;
+        $todayDate = Carbon::now()->format('Y-m-d');
+
+
+        $doctorsPaginator = Doctor::with(['department'])
+            ->withCount([
+
+                'appointments as unique_patients_count' => function ($query) {
+                    $query->whereIn('status', ['confirmed', 'completed'])
+                        ->select(DB::raw('count(distinct(child_id))'));
+                },
+
+                'availabilities as is_working_today' => function ($query) use ($todayName) {
+                    $query->where('day_of_week', $todayName);
+                },
+
+                'appointments as today_appointments_count' => function ($query) use ($todayDate) {
+                    $query->where('date', $todayDate)->where('status', 'confirmed');
+                }
+            ])
+            ->orderBy('id', 'asc')
+            ->paginate(10);
+
+
+        $transformedDoctors = $doctorsPaginator->getCollection()->map(function ($doctor) {
+
+
+            if ($doctor->is_working_today == 0) {
+                $statusText = 'Out of Schedule';
+            } else {
+                $statusText = $doctor->today_appointments_count > 0 ? 'Busy' : 'Available';
+            }
+
+            return [
+                'id'               => $doctor->id,
+                'image'            => $doctor->profile_picture,
+                'full_name'        => $doctor->first_name . ' ' . $doctor->last_name,
+                'department'       => $doctor->department ? $doctor->department->name : null,
+                'phone'            => $doctor->phone_number,
+                'experience_years' => $doctor->experience_years,
+                'patients_count'   => $doctor->unique_patients_count,
+                'current_status'   => $statusText
+            ];
+        });
+
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.doctors_fetched_success'),
+            'data'    => $transformedDoctors,
+            'pagination' => [
+                'current_page' => $doctorsPaginator->currentPage(),
+                'last_page'    => $doctorsPaginator->lastPage(),
+                'per_page'     => $doctorsPaginator->perPage(),
+                'total'        => $doctorsPaginator->total(),
+            ]
+        ], 200);
+    }
+
+    public function show(string $id)
+    {
+
+        $doctor = Doctor::with(['department', 'availabilities'])->find($id);
+
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.doctor_not_found'),
+            ], 404);
+        }
+
+        $availabilities = $doctor->availabilities->map(function ($slot) {
+            return [
+                'day_of_week' => $slot->day_of_week,
+                'start_time'  => $slot->start_time,
+                'end_time'    => $slot->end_time,
+            ];
+        });
+
+
+        $customData = [
+            'id'                    => $doctor->id,
+            'first_name'            => $doctor->first_name,
+            'last_name'             => $doctor->last_name,
+            'full_name'             => $doctor->first_name . ' ' . $doctor->last_name,
+            'address'               => $doctor->address,
+            'email'                 => $doctor->email,
+            'phone_number'          => $doctor->phone_number,
+            'experience_years'      => $doctor->experience_years,
+            'education'             => $doctor->education,
+            'profile_picture'       => $doctor->profile_picture,
+            'cv'                    => $doctor->cv,
+            'fee'                   => $doctor->fee,
+            'commission_percentage' => $doctor->commission_percentage,
+            'gender'                => $doctor->gender,
+            'department' => $doctor->department ? [
+                'id'   => $doctor->department->id,
+                'name' => $doctor->department->name,
+            ] : null,
+            'availabilities'        => $availabilities
+        ];
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.doctor_fetched_success'),
+            'data'    => $customData
+        ], 200);
+    }
+    public function getActiveDoctorsCountThisWeek()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $activeDoctorsCount = Doctor::whereHas('appointments', function ($query) use ($startOfWeek, $endOfWeek) {
+            $query->whereBetween('date', [$startOfWeek, $endOfWeek])
+                ->whereIn('status', ['confirmed', 'completed']);
+        })->count();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'active_doctors_count' => $activeDoctorsCount,
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ]
+        ], 200);
+    }
+    public function getDoctorWeeklyStats(string $id)
+    {
+
+        $doctor = Doctor::find($id);
+
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.doctor_not_found'),
+            ], 404);
+        }
+
+        // 2. حساب نطاق الأسبوع الحالي (من السبت إلى الخميس) بناءً على اليوم الحالي
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $appointmentsQuery = $doctor->appointments()
+            ->whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', ['confirmed', 'completed']);
+
+        $appointmentsCount = $appointmentsQuery->count();
+
+        $patientsCount = $appointmentsQuery->clone()
+            ->distinct('child_id')
+            ->count('child_id');
+
+        $availabilities = $doctor->availabilities;
+        $totalWorkingHours = 0;
+
+        foreach ($availabilities as $slot) {
+            $startTime = Carbon::parse($slot->start_time);
+            $endTime = Carbon::parse($slot->end_time);
+
+            $durationInHours = $startTime->diffInMinutes($endTime) / 60;
+
+            $totalWorkingHours += $durationInHours;
+        }
+
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'doctor_id'            => $doctor->id,
+                'department_id' => $doctor->department_id,
+                'doctor_name'          => $doctor->first_name . ' ' . $doctor->last_name,
+                'experience_years'     => $doctor->experience_years,
+                'weekly_appointments'  => $appointmentsCount,
+                'weekly_patients'      => $patientsCount,
+                'weekly_working_hours' => round($totalWorkingHours, 2),
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ]
+        ], 200);
     }
 }

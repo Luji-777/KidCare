@@ -10,7 +10,6 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
-use App\Http\Controllers\VaccineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,9 +32,6 @@ Route::middleware('set.locale')->group(function () {
     //Auth dashboard
     Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
 
-    // Open routes
-    Route::apiResource('doctors', DoctorController::class)->only(['index', 'show']);
-    Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 
     //Sanctum
     Route::middleware('auth:sanctum')->group(function () {
@@ -101,5 +97,17 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/test-fcm', [PaymentController::class, 'testFcm']);
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/test-notification', [NotificationController::class, 'test']);
+
+        //Doctor dashboard
+        Route::get('/doctors/count', [DoctorController::class, 'getDoctorsCount']);
+        Route::get('/doctors/count/department/{department_id}', [DoctorController::class, 'getDoctorsCountByDepartment']);
+        Route::get('/doctors/top-this-week', [DoctorController::class, 'getTopDoctorThisWeek']);
+        Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
+        Route::get('/doctors/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
+        Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     });
+
+    // Open routes
+
+    Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 });

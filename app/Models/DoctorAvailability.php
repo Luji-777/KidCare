@@ -7,8 +7,9 @@ use App\Models\Doctor;
 
 class DoctorAvailability extends Model
 {
-    protected $guarded=[];
-    public function doctor(){
+    protected $guarded = [];
+    public function doctor()
+    {
         return $this->belongsTo(Doctor::class);
     }
 }
