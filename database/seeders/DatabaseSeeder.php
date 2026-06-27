@@ -12,18 +12,13 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
-    {
-        // User::factory(10)->create();
-
-        $this->call([
-            AdminSeeder::class,
-            DepartmentSeeder::class,
-            DoctorSeeder::class,
-            ChildSeeder::class,
-            DoctorAvailabilitySeeder::class,
-            ParentSeeder::class,
-            AppointmentSeeder::class,
-
-        ]);
-    }
+{
+    $this->call([
+        DepartmentSeeder::class,
+        DoctorSeeder::class,
+        DoctorAvailabilitySeeder::class,
+        ChildSeeder::class, // <--- تأكدي إنه شغال هون وموجود قبل المواعيد
+        AppointmentSeeder::class,
+    ]);
+}
 }

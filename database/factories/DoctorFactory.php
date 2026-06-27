@@ -22,7 +22,7 @@ class DoctorFactory extends Factory
             'fee' => fake()->randomElement([30000, 45000, 50000, 70000]),
             'commission_percentage' => 60,
             'profile_picture' => null,
-            'rating' => null,
+           
             'cv' => null,
         ];
     }
