@@ -81,7 +81,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
         Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
         Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);
-        Route::apiResource('appointments', AppointmentController::class)->except(['index']);
+        Route::apiResource('appointment', AppointmentController::class)->except(['index']);
 
         // Doctor app
         Route::prefix('doctor')->group(function () {
@@ -95,6 +95,13 @@ Route::middleware('set.locale')->group(function () {
             Route::post('/{appointmentId}/diagnosis',[DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);
             Route::post('/{appointmentId}/growth',[DoctorController::class, 'addGrowthRecord']);
+
+            Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
+            Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);
+            Route::get('patients', [DoctorController::class, 'Allpatients']);
+
+
+            Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);
         });
         Route::get('/doctors/{id}/completeAppointment', [DoctorController::class, 'completeAppointment']);
 

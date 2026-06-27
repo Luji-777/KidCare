@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
 use App\Models\Appointment;
 use App\Models\MedicalRecord;
+use App\Models\DoctorAvailability;
 use App\Models\Medication;
 use App\Models\Growth;
+use App\Models\Child;
 use Carbon\Carbon;
 
 class DoctorController extends Controller
@@ -543,6 +545,117 @@ public function addGrowthRecord(Request $request, $appointmentId)
     return response()->json([
         'message' => __('messages.Growth_add_success'),
         'data' => $growth
+    ]);
+}
+
+public function upcomingWorkingDays()
+{
+    $doctor = auth()->user();
+
+    $workingDays = DoctorAvailability::where('doctor_id', $doctor->id)
+        ->pluck('day_of_week')
+        ->map(fn($day) => strtolower($day))
+        ->toArray();
+
+    $dates = [];
+
+    $currentDate = Carbon::today();
+
+    while (count($dates) < 6) {
+
+        $dayName = strtolower($currentDate->format('l'));
+
+        if (in_array($dayName, $workingDays)) {
+
+            $dates[] = [
+                'date' => $currentDate->toDateString(),
+                'day_name' => __("messages.days.$dayName"),
+            ];
+        }
+
+        $currentDate->addDay();
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'days' => $dates
+    ]);
+}
+
+public function appointmentsByDate(Request $request)
+{
+   
+    $request->validate([
+        'date' => 'required|date',
+    ]);
+
+    $doctor = auth()->user();
+
+    $date = $request->date;
+
+
+    $appointments = Appointment::with('child')
+        ->where('doctor_id', $doctor->id)
+        ->whereDate('date', $date)
+        ->orderBy('time')
+        ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'total_appointments' => $appointments->count(),
+            'appointments' => $appointments->map(function ($appointment) {
+
+                $child = $appointment->child;
+
+                $age = Carbon::parse($child->birth_date)->age;
+
+                return [
+                    'id' => $appointment->id,
+                    'patient_name' => $child->first_name . ' ' . $child->last_name,
+                    'age' => $age,
+                    'gender' => $child->gender,
+                    'image' => $child->image,
+                    'time' => Carbon::parse($appointment->time)->format('H:i'),
+                    'status' => $appointment->status,
+                ];
+            })
+        ]
+    ]);
+}
+
+public function allPatients(Request $request)
+{
+    $doctor = auth()->user();
+
+    $patients = Child::with('parent')
+        ->whereHas('appointments', function ($q) use ($doctor) {
+            $q->where('doctor_id', $doctor->id);
+        })
+        ->when($request->search, function ($q) use ($request) {
+            $search = $request->search;
+
+            $q->where(function ($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            });
+        })
+        ->get()
+        ->unique('id')
+        ->values();
+
+    return response()->json([
+        'status' => true,
+        'patients' => $patients->map(function ($child) {
+            return [
+                'id' => $child->id,
+                'name' => $child->first_name . ' ' . $child->last_name,
+                'age' => Carbon::parse($child->birth_date)->age,
+                'gender' => $child->gender,
+                'image' => $child->image,
+                'parent_phone' => $child->parent->phone_number,
+            ];
+        }),
     ]);
 }
     

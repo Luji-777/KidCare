@@ -620,6 +620,37 @@ class AppointmentController extends Controller
         ], 200);
     }
 
+     public function appointmentDetails($id)
+    {
+        $doctor = auth()->user();
+
+        $appointment = Appointment::with('child')
+            ->where('doctor_id', $doctor->id)
+            ->findOrFail($id);
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'appointment_id' => $appointment->id,
+                'date' => $appointment->date,
+                'day' => Carbon::parse($appointment->date)->format('l'),
+                'time' => $appointment->time,
+                'status' => $appointment->status,
+                'consultation_fee' => $appointment->price,
+                'currency' => $appointment->currency,
+                'payment_status' => $appointment->payment_status,
+
+                'child' => [
+                    'id' => $appointment->child->id,
+                    'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+                    'image' => $appointment->child->image,
+                    'gender' => $appointment->child->gender,
+                    'age' => Carbon::parse($appointment->child->birth_date)->age,
+                ],
+            ]
+        ]);
+    }
+
     /*public function bookVaccine(Request $request)
 {
     $request->validate([
