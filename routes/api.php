@@ -96,9 +96,13 @@ Route::middleware('set.locale')->group(function () {
             Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);
             Route::post('/{appointmentId}/growth',[DoctorController::class, 'addGrowthRecord']);
 
+            Route::post('/{appointment}/medicalRequests', [AppointmentController::class, 'addMedicalRequests']);
+
             Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
             Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);
-            Route::get('patients', [DoctorController::class, 'Allpatients']);
+            Route::get('/patients', [DoctorController::class, 'Allpatients']);
+
+             Route::get('/income', [DoctorController::class, 'monthlyIncome']);
 
 
             Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);

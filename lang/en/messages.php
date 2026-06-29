@@ -103,6 +103,8 @@ return [
     'Diagnosis_add_success' => 'Diagnosis added successfully',
     'Medication_add_success' => 'Medication added successfully',
     'Growth_add_success' => 'Growth record added successfully',
+    'Medical_requests'  => 'Medical requests added successfully',
+
 
 
     // Statuses (Values from Database)

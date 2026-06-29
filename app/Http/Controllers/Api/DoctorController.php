@@ -659,4 +659,20 @@ public function allPatients(Request $request)
     ]);
 }
     
+public function monthlyIncome()
+{
+    $doctor = auth()->user();
+
+    $income = Appointment::where('doctor_id', $doctor->id)
+        ->whereMonth('date', now()->month)
+        ->whereYear('date', now()->year)
+       // ->where('status', 'completed')
+        ->whereIn('payment_status', ['paid_online', 'fully_paid'])
+        ->sum('doctor_earnings');
+
+    return response()->json([
+        'monthly_income' => $income
+    ]);
+}
+    
 }

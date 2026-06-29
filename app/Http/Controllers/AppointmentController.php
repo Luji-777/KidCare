@@ -651,6 +651,26 @@ class AppointmentController extends Controller
         ]);
     }
 
+    public function addMedicalRequests(Request $request, $appointmentId)
+{
+    $request->validate([
+        'required_tests' => 'nullable|string',
+        'required_imaging' => 'nullable|string',
+    ]);
+
+    $appointment = Appointment::findOrFail($appointmentId);
+
+    $appointment->update([
+        'required_tests' => $request->required_tests,
+        'required_imaging' => $request->required_imaging,
+    ]);
+
+    return response()->json([
+        'message' =>  __('messages.Medical_requests'),
+        //'appointment' => $appointment
+    ]);
+}
+
     /*public function bookVaccine(Request $request)
 {
     $request->validate([

@@ -101,6 +101,7 @@ return [
     'Diagnosis_add_success' => 'تم اضافة التشخيص بنجاح.',
     'Medication_add_success' => 'تم اضافة الوصفة بنجاح.',
     'Growth_add_success' => 'تم اضافة تقرير النمو بنجاح.',
+    'Medical_requests'  => 'تم اضافة المتطلبات الطبية بنجاح.',
 
     // Statuses (Values from Database)
     'pending'                => 'قيد الانتظار',

@@ -17,8 +17,9 @@ class DatabaseSeeder extends Seeder
         DepartmentSeeder::class,
         DoctorSeeder::class,
         DoctorAvailabilitySeeder::class,
-        ChildSeeder::class, // <--- تأكدي إنه شغال هون وموجود قبل المواعيد
+        ChildSeeder::class, 
         AppointmentSeeder::class,
+        AdminSeeder::class,
     ]);
 }
 }
