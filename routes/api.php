@@ -115,6 +115,8 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
 
+        Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
+
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);

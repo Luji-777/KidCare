@@ -46,7 +46,7 @@ class AdminController extends Controller
         ], 200);
     }
 
-    //--------home--------
+    //----------------Home------------------
     public function getPatientsCount()
     {
         $count = Child::count();
@@ -303,6 +303,74 @@ class AdminController extends Controller
                     'end_thursday'   => $endOfWeek
                 ]
             ]
+        ], 200);
+    }
+
+    //----------------Departments------------------
+    public function getDepartmentsDashboardReport()
+    {
+
+        $today = Carbon::today();
+        $startOfToday = $today->copy()->startOfDay()->format('Y-m-d H:i:s');
+        $endOfToday   = $today->copy()->endOfDay()->format('Y-m-d H:i:s');
+        $dayOfWeek    = $today->format('l');
+        $excludedStatuses = ['cancelled'];
+        $appointmentDurationMinutes = 30;
+
+        $departments = Department::with('doctors')->get();
+        $report = [];
+
+        foreach ($departments as $department) {
+
+            $doctorsCount = $department->doctors->count();
+            $appointmentsCount = Appointment::whereHas('doctor', function ($query) use ($department) {
+                $query->where('department_id', $department->id);
+            })
+                ->whereBetween('date', [$startOfToday, $endOfToday])
+                ->whereNotIn('status', $excludedStatuses)
+                ->count();
+
+            $totalPatientsCount = Appointment::whereHas('doctor', function ($query) use ($department) {
+                $query->where('department_id', $department->id);
+            })
+                ->distinct('child_id')
+                ->count('child_id');
+
+            $maxDepartmentCapacity = 0;
+            $availabilities = DoctorAvailability::where('day_of_week', $dayOfWeek)
+                ->whereIn('doctor_id', $department->doctors->pluck('id'))
+                ->get();
+
+            foreach ($availabilities as $availability) {
+                $startTime = Carbon::parse($availability->start_time);
+                $endTime   = Carbon::parse($availability->end_time);
+                $totalMinutes = $startTime->diffInMinutes($endTime);
+
+                if ($appointmentDurationMinutes > 0) {
+                    $maxDepartmentCapacity += floor($totalMinutes / $appointmentDurationMinutes);
+                }
+            }
+
+            $occupancyPercentage = 0;
+            if ($maxDepartmentCapacity > 0) {
+                $percentage = ($appointmentsCount / $maxDepartmentCapacity) * 100;
+                $occupancyPercentage = min(round($percentage, 1), 100);
+            }
+            $report[] = [
+                'department_id'            => $department->id,
+                'department_name'          => $department->name,
+                'doctors'            => $doctorsCount,
+                'patients'     => $totalPatientsCount,
+                'today_appointments' => $appointmentsCount,
+                'max_available_slots'      => $maxDepartmentCapacity,
+                'occupancy_percentage'     => $occupancyPercentage . '%'
+            ];
+        }
+        return response()->json([
+            'status' => 'success',
+            'date'   => $today->format('Y-m-d'),
+            'day'    => $dayOfWeek,
+            'data'   => $report
         ], 200);
     }
 }
