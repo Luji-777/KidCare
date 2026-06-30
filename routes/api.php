@@ -103,6 +103,7 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/patients', [DoctorController::class, 'Allpatients']);
 
              Route::get('/income', [DoctorController::class, 'monthlyIncome']);
+             Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
 
 
             Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);

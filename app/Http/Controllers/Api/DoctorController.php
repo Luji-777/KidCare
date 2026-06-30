@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -673,6 +674,47 @@ public function monthlyIncome()
     return response()->json([
         'monthly_income' => $income
     ]);
+}
+
+public function yearlyIncome()
+{
+    $doctorId = auth()->id();
+
+    $months = [
+        1 => 'January',
+        2 => 'February',
+        3 => 'March',
+        4 => 'April',
+        5 => 'May',
+        6 => 'June',
+        7 => 'July',
+        8 => 'August',
+        9 => 'September',
+        10 => 'October',
+        11 => 'November',
+        12 => 'December',
+    ];
+
+    $income = Appointment::where('doctor_id', $doctorId)
+        ->where('status', ['completed','confirmed','pending'])
+        ->whereYear('date', now()->year)
+        ->select(
+            DB::raw('MONTH(date) as month'),
+            DB::raw('SUM(doctor_earnings) as total_income')
+        )
+        ->groupBy('month')
+        ->pluck('total_income', 'month');
+
+    $result = [];
+
+    foreach ($months as $monthNumber => $monthName) {
+        $result[] = [
+            'month' => $monthName,
+            'total_income' => (float) ($income[$monthNumber] ?? 0),
+        ];
+    }
+
+    return response()->json($result);
 }
     
 }
