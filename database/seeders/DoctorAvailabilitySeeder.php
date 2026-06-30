@@ -11,16 +11,13 @@ class DoctorAvailabilitySeeder extends Seeder
 
     public function run(): void
     {
-
         $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-
 
         $timeSlots = [
             ['start' => '09:00:00', 'end' => '12:00:00'],
             ['start' => '12:00:00', 'end' => '15:00:00'],
             ['start' => '15:00:00', 'end' => '18:00:00'],
         ];
-
         $departments = Department::with('doctors')->get();
 
         foreach ($departments as $department) {
@@ -30,14 +27,11 @@ class DoctorAvailabilitySeeder extends Seeder
                 continue;
             }
 
-
             $slotIndex = 0;
             $dayIndex = 0;
 
-
             for ($i = 0; $i < 3; $i++) {
                 foreach ($doctors as $doctor) {
-
 
                     $currentDay = $days[$dayIndex];
                     $currentSlot = $timeSlots[$slotIndex];
@@ -49,15 +43,11 @@ class DoctorAvailabilitySeeder extends Seeder
                         'end_time'    => $currentSlot['end'],
                         'is_booked'   => false,
                     ]);
-
-
                     $slotIndex++;
-
 
                     if ($slotIndex >= count($timeSlots)) {
                         $slotIndex = 0;
                         $dayIndex++;
-
 
                         if ($dayIndex >= count($days)) {
                             $dayIndex = 0;

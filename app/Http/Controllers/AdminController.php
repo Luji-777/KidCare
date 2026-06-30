@@ -5,6 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Child;
+use App\Models\Doctor;
+use Carbon\Carbon;
+use App\Models\Appointment;
+use App\Models\Transaction;
+use App\Models\Department;
+use App\Models\DoctorAvailability;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -35,6 +43,266 @@ class AdminController extends Controller
                 'name'   => $admin->name,
             ],
             'Token'   => $token,
+        ], 200);
+    }
+
+    //--------home--------
+    public function getPatientsCount()
+    {
+        $count = Child::count();
+
+        return response()->json([
+            'status' => 'success',
+            'patients_count' => $count
+        ], 200);
+    }
+
+    public function getPresentDoctorsCount()
+    {
+        $now = Carbon::now();
+        $todayName = $now->locale('en')->dayName;
+        $currentTime = $now->format('H:i:s');
+
+        $presentDoctorsCount = Doctor::whereHas('availabilities', function ($query) use ($todayName, $currentTime) {
+            $query->where('day_of_week', $todayName)
+                ->where('start_time', '<=', $currentTime)
+                ->where('end_time', '>=', $currentTime);
+        })->count();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'present_doctors_count' => $presentDoctorsCount,
+                'checked_at' => [
+                    'day'  => $todayName,
+                    'time' => $now->format('g:i A')
+                ]
+            ]
+        ], 200);
+    }
+
+    public function getAppointmentsCount()
+    {
+        $todayDate = Carbon::now()->format('Y-m-d');
+
+        $todayAppointmentsCount = Appointment::where('date', $todayDate)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->count();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'today_appointments_count' => $todayAppointmentsCount,
+                'date'                     => $todayDate
+            ]
+        ], 200);
+    }
+
+    public function getMonthlyRevenueReport()
+    {
+        $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d H:i:s');
+        $endOfMonth   = Carbon::now()->endOfMonth()->format('Y-m-d H:i:s');
+        $monthlyTransactions = Transaction::where('status', 'succeeded')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->get();
+
+        $totalRevenue    = $monthlyTransactions->sum('amount');
+        $stripeRevenue   = $monthlyTransactions->where('payment_method', 'stripe')->sum('amount');
+        $cashRevenue     = $monthlyTransactions->where('payment_method', 'cash')->sum('amount');
+        $fixedTypeTotal  = $monthlyTransactions->where('type', 'fixed')->sum('amount');
+        $additionsTotal  = $monthlyTransactions->where('type', 'additions')->sum('amount');
+
+        $doctorsCommission = DB::table('transactions')
+            ->join('appointments', 'transactions.appointment_id', '=', 'appointments.id')
+            ->join('doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->where('transactions.status', 'succeeded')
+            ->where('transactions.type', 'fixed')
+            ->whereBetween('transactions.created_at', [$startOfMonth, $endOfMonth])
+            ->sum(DB::raw('transactions.amount * (doctors.commission_percentage / 100)'));
+
+        $clinicNetProfit = $fixedTypeTotal - $doctorsCommission;
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'period' => Carbon::now()->format('F Y'),
+                'financials' => [
+                    'total_revenue'         => round($totalRevenue, 2),
+                    'clinic_net_profit'     => round($clinicNetProfit, 2),
+                    'clinic_additions_profit'   => round($additionsTotal, 2),
+                    'doctors_total_payout'  => round($doctorsCommission, 2),
+                ],
+                'breakdown_by_method' => [
+                    'online_stripe' => round($stripeRevenue, 2),
+                    'cash_reception' => round($cashRevenue, 2),
+                ],
+                'breakdown_by_type' => [
+                    'fixed_appointments' => round($fixedTypeTotal, 2),
+                    'additions_total'    => round($additionsTotal, 2),
+                ]
+            ]
+        ], 200);
+    }
+
+    public function getDailyRevenueReport()
+    {
+        $startOfToday = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
+        $endOfToday   = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
+
+
+        $todayTransactions = Transaction::where('status', 'succeeded')
+            ->whereBetween('created_at', [$startOfToday, $endOfToday])
+            ->get();
+
+        $totalRevenue    = $todayTransactions->sum('amount');
+        $stripeRevenue   = $todayTransactions->where('payment_method', 'stripe')->sum('amount');
+        $cashRevenue     = $todayTransactions->where('payment_method', 'cash')->sum('amount');
+        $fixedTypeTotal  = $todayTransactions->where('type', 'fixed')->sum('amount');
+        $additionsTotal  = $todayTransactions->where('type', 'additions')->sum('amount');
+
+        $doctorsCommission = DB::table('transactions')
+            ->join('appointments', 'transactions.appointment_id', '=', 'appointments.id')
+            ->join('doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->where('transactions.status', 'succeeded')
+            ->where('transactions.type', 'fixed')
+            ->whereBetween('transactions.created_at', [$startOfToday, $endOfToday])
+            ->sum(DB::raw('transactions.amount * (doctors.commission_percentage / 100)'));
+
+        $clinicNetProfit = $fixedTypeTotal - $doctorsCommission;
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'date' => Carbon::today()->format('Y-m-d'),
+                'financials' => [
+                    'total_revenue'         => round($totalRevenue, 2),
+                    'clinic_net_profit'     => round($clinicNetProfit, 2),
+                    'clinic_additions_profit'   => round($additionsTotal, 2),
+                    'doctors_total_payout'  => round($doctorsCommission, 2),
+                ],
+                'breakdown_by_method' => [
+                    'online_stripe' => round($stripeRevenue, 2),
+                    'cash_reception' => round($cashRevenue, 2),
+                ],
+                'breakdown_by_type' => [
+                    'fixed_appointments' => round($fixedTypeTotal, 2),
+                    'additions_total'    => round($additionsTotal, 2),
+                ]
+            ]
+        ], 200);
+    }
+    public function getDailyClinicOccupancy()
+    {
+        $today = Carbon::today();
+        $startOfToday = $today->copy()->startOfDay()->format('Y-m-d H:i:s');
+        $endOfToday   = $today->copy()->endOfDay()->format('Y-m-d H:i:s');
+        $dayOfWeek    = $today->format('l');
+
+        $excludedStatuses = ['cancelled', 'pending'];
+        $totalTodayAppointments = Appointment::whereBetween('date', [$startOfToday, $endOfToday])
+            ->whereNotIn('status', $excludedStatuses)
+            ->count();
+
+        $appointmentDurationMinutes = 30;
+        $availabilities = DoctorAvailability::where('day_of_week', $dayOfWeek)->get();
+
+        $maxClinicCapacity = 0;
+
+        foreach ($availabilities as $availability) {
+
+            $startTime = Carbon::parse($availability->start_time);
+            $endTime   = Carbon::parse($availability->end_time);
+            $totalMinutesInSlot = $startTime->diffInMinutes($endTime);
+
+            if ($appointmentDurationMinutes > 0) {
+                $slotsCount = floor($totalMinutesInSlot / $appointmentDurationMinutes);
+                $maxClinicCapacity += $slotsCount;
+            }
+        }
+
+        if ($maxClinicCapacity <= 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No available slots calculated for today.',
+                'data' => [
+                    'date' => $today->format('Y-m-d'),
+                    'day' => $dayOfWeek,
+                    'clinic_occupancy_percentage' => '0%'
+                ]
+            ]);
+        }
+
+        $occupancyPercentage = ($totalTodayAppointments / $maxClinicCapacity) * 100;
+        $occupancyPercentage = min(round($occupancyPercentage, 1), 100);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'date'                        => $today->format('Y-m-d'),
+                'day'                         => $dayOfWeek,
+                'booked_appointments'         => $totalTodayAppointments,
+                'max_available_slots'         => $maxClinicCapacity,
+                'clinic_occupancy_percentage' => $occupancyPercentage . '%'
+            ]
+        ], 200);
+    }
+
+    public function getTopDepartmentThisWeek()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $topDepartment = Department::select(
+            'departments.id',
+            'departments.name as department_name',
+            DB::raw('COUNT(appointments.id) as appointments_count')
+        )
+
+            ->join('doctors', 'departments.id', '=', 'doctors.department_id')
+            ->join('appointments', 'doctors.id', '=', 'appointments.doctor_id')
+            ->whereBetween('appointments.date', [$startOfWeek, $endOfWeek])
+            ->whereIn('appointments.status', ['confirmed', 'completed'])
+            ->groupBy('departments.id', 'departments.name')
+            ->orderBy('appointments_count', 'desc')
+            ->first();
+
+        if (!$topDepartment) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No confirmed or completed appointments booked for any department during this period.',
+                'department' => null,
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'department_id'      => $topDepartment->id,
+                'department_name'    => $topDepartment->department_name,
+                'appointments_count' => $topDepartment->appointments_count,
+                'week_range' => [
+                    'start_saturday' => $startOfWeek,
+                    'end_thursday'   => $endOfWeek
+                ]
+            ]
         ], 200);
     }
 }

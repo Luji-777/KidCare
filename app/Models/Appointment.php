@@ -24,8 +24,22 @@ class Appointment extends Model
     {
         return $this->hasOne(medicalRecord::class);
     }
-    public function transaction()
+    public function transactions()
     {
-        return $this->hasOne(Transaction::class);
+        return $this->hasMany(Transaction::class);
+    }
+    public function additions()
+    {
+        return $this->hasMany(Appointment_additions::class);
+    }
+
+    public function getAdditionsTotalAttribute()
+    {
+        return $this->additions()->sum('price');
+    }
+
+    public function getTotalPaidAttribute()
+    {
+        return $this->transactions()->where('status', 'succeeded')->sum('amount');
     }
 }

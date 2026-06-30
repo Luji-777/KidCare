@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
 
@@ -20,10 +17,12 @@ return new class extends Migration
 
                 $table->foreignId('appointment_id')->nullable()->change();
             }
-            $table->string('stripe_payment_intent_id')->unique();
+            $table->string('stripe_payment_intent_id')->unique()->nullable();
             $table->decimal('amount', 8, 2);
-            $table->string('currency', 3);
+            $table->string('currency', 3)->default('USD');
             $table->string('status'); // requires_payment_method, succeeded, failed
+            $table->enum('payment_method', ['cash', 'stripe'])->default('stripe');
+            $table->enum('type', ['fixed', 'additions'])->default('fixed');
             $table->timestamps();
         });
     }

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
 use App\Models\Appointment;
+use App\Models\Child;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -429,7 +430,7 @@ class DoctorController extends Controller
 
     //----------------------Dashboard--------------------------------
 
-    //doctors
+    //--------doctors--------
     public function getDoctorsCount()
     {
 
@@ -475,12 +476,14 @@ class DoctorController extends Controller
         $topDoctor = Doctor::select(
             'doctors.id',
             DB::raw("CONCAT(doctors.first_name, ' ', doctors.last_name) as full_name"),
+            'departments.name as department_name',
             DB::raw('COUNT(appointments.id) as appointments_count')
         )
             ->join('appointments', 'doctors.id', '=', 'appointments.doctor_id')
+            ->join('departments', 'doctors.department_id', '=', 'departments.id')
             ->whereBetween('appointments.date', [$startOfWeek, $endOfWeek])
             ->whereIn('appointments.status', ['confirmed', 'completed'])
-            ->groupBy('doctors.id', 'doctors.first_name', 'doctors.last_name')
+            ->groupBy('doctors.id', 'doctors.first_name', 'doctors.last_name', 'departments.name')
             ->orderBy('appointments_count', 'desc')
             ->first();
 
@@ -500,6 +503,7 @@ class DoctorController extends Controller
             'data' => [
                 'doctor_id' => $topDoctor->id,
                 'doctor_name' => $topDoctor->full_name,
+                'department_name'    => $topDoctor->department_name,
                 'appointments_count' => $topDoctor->appointments_count,
                 'week_range' => [
                     'start_saturday' => $startOfWeek,
@@ -511,12 +515,18 @@ class DoctorController extends Controller
 
     public function index()
     {
-
+        $now = Carbon::now();
         $todayName = Carbon::now()->locale('en')->dayName;
         $todayDate = Carbon::now()->format('Y-m-d');
+        $currentTime = $now->format('H:i:s');
 
 
-        $doctorsPaginator = Doctor::with(['department'])
+        $doctorsPaginator = Doctor::with([
+            'department',
+            'availabilities' => function ($query) use ($todayName) {
+                $query->where('day_of_week', $todayName);
+            }
+        ])
             ->withCount([
 
                 'appointments as unique_patients_count' => function ($query) {
@@ -536,13 +546,23 @@ class DoctorController extends Controller
             ->paginate(10);
 
 
-        $transformedDoctors = $doctorsPaginator->getCollection()->map(function ($doctor) {
+        $transformedDoctors = $doctorsPaginator->getCollection()->map(function ($doctor) use ($currentTime) {
+            $todayAvailability = $doctor->availabilities->first();
+            if (!$todayAvailability) {
 
-
-            if ($doctor->is_working_today == 0) {
                 $statusText = 'Out of Schedule';
             } else {
-                $statusText = $doctor->today_appointments_count > 0 ? 'Busy' : 'Available';
+                $startTime = $todayAvailability->start_time;
+                $endTime   = $todayAvailability->end_time;
+
+
+                if ($currentTime >= $startTime && $currentTime <= $endTime) {
+
+                    $statusText = $doctor->today_appointments_count > 0 ? 'Busy' : 'Available';
+                } else {
+
+                    $statusText = 'Out of Schedule';
+                }
             }
 
             return [
@@ -570,7 +590,6 @@ class DoctorController extends Controller
             ]
         ], 200);
     }
-
     public function show(string $id)
     {
 
@@ -666,8 +685,6 @@ class DoctorController extends Controller
                 'message' => __('messages.doctor_not_found'),
             ], 404);
         }
-
-        // 2. حساب نطاق الأسبوع الحالي (من السبت إلى الخميس) بناءً على اليوم الحالي
         $today = Carbon::now();
         $dayOfWeek = $today->dayOfWeek;
 

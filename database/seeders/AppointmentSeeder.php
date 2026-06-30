@@ -57,6 +57,7 @@ class AppointmentSeeder extends Seeder
                 'currency'        => 'USD',
                 'payment_status'  => $paymentStatus,
                 'doctor_earnings' => $doctorEarnings,
+                'booking_source'  => Arr::random(['online', 'reception']),
                 'created_at'      => Carbon::now(),
                 'updated_at'      => Carbon::now(),
             ]);

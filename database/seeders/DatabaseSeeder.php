@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             DoctorAvailabilitySeeder::class,
             ParentSeeder::class,
             AppointmentSeeder::class,
+            Appointment_additionsSeeder::class,
+            TransactionSeeder::class,
 
         ]);
     }

@@ -28,6 +28,7 @@ use App\Services\FirebaseNotificationService;
 
 class PaymentController extends Controller
 {
+    //--------------Patient--------------
     public function getSummary($appointment_id)
     {
 
@@ -279,6 +280,109 @@ class PaymentController extends Controller
         return response()->json(['status' => 'success'], 200);
     }
 
+
+    //-----------Dashboard--------------
+    public function completePayment($appointment_id)
+    {
+
+        return DB::transaction(function () use ($appointment_id) {
+
+            $appointment = Appointment::with('additions')->findOrFail($appointment_id);
+            $additionsTotal = $appointment->additions->sum('price');
+
+            if ($appointment->booking_source == 'online') {
+
+                if ($additionsTotal > 0) {
+                    $appointment->transactions()->create([
+                        'amount'         => $additionsTotal,
+                        'payment_method' => 'cash',
+                        'type'           => 'additions',
+                        'status'         => 'succeeded',
+                    ]);
+                }
+            } elseif ($appointment->booking_source == 'reception') {
+
+                $appointment->transactions()->create([
+                    'amount'         => $appointment->price,
+                    'payment_method' => 'cash',
+                    'type'           => 'fixed',
+                    'status'         => 'succeeded',
+                ]);
+
+                if ($additionsTotal > 0) {
+                    $appointment->transactions()->create([
+                        'amount'         => $additionsTotal,
+                        'payment_method' => 'cash',
+                        'type'           => 'additions',
+                        'status'         => 'succeeded',
+                    ]);
+                }
+            }
+
+            $appointment->update(['status' => 'completed']);
+            $appointment->update(['payment_status' => 'fully_paid']);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.payment_completed_successfully'),
+            ], 200);
+        });
+    }
+
+    public function getSummaryForReception($appointment_id)
+    {
+
+        $appointment = Appointment::with(['additions', 'transactions', 'doctor', 'child'])
+            ->findOrFail($appointment_id);
+
+        $fixedPrice = $appointment->price;
+        $additionsTotal = $appointment->additions->sum('price');
+
+        $amountPaidOnline = $appointment->transactions()
+            ->where('payment_method', 'stripe')
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        if ($appointment->booking_source == 'online') {
+
+            $amountToPayCash = $additionsTotal;
+            $fixedPriceStatus = 'Paid Online';
+        } else {
+
+            $amountToPayCash = $fixedPrice + $additionsTotal;
+            $fixedPriceStatus = 'Pending Cash Payment';
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'appointment_id'   => $appointment->id,
+                'booking_source'   => $appointment->booking_source,
+                'appointment_date' => $appointment->date,
+                'patient_name'     => $appointment->child ? $appointment->child->first_name . ' ' . $appointment->child->last_name : null,
+                'doctor_name'      => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+
+                'fixed_price'        => $fixedPrice,
+                'fixed_price_status' => $fixedPriceStatus,
+
+                'additions' => $appointment->additions->map(function ($addition) {
+                    return [
+                        'item_name' => $addition->item_name,
+                        'price'     => $addition->price
+                    ];
+                }),
+
+                'totals' => [
+                    'fixed_price_total' => $fixedPrice,
+                    'additions_total'   => $additionsTotal,
+                    'already_paid_online' => $amountPaidOnline,
+                    'required_cash_now'  => $amountToPayCash
+                ]
+            ]
+        ], 200);
+    }
+
+    //---------------Test----------------
     public function testAppointment(Request $request)
     {
         $pendingAppointmentId = $request->appointment_id;

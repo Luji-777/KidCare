@@ -105,6 +105,19 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
         Route::get('/doctors/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
         Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+
+        // Home dashboard
+        Route::get('/home/patients-count', [AdminController::class, 'getPatientsCount']);
+        Route::get('/home/present-doctors-count', [AdminController::class, 'getPresentDoctorsCount']);
+        Route::get('/home/appointments-count', [AdminController::class, 'getAppointmentsCount']);
+        Route::get('/home/clinic-occupancy', [AdminController::class, 'getDailyClinicOccupancy']);
+        Route::get('/monthly-revenue', [AdminController::class, 'getMonthlyRevenueReport']);
+        Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
+        Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
+
+        //reseption
+        Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
+        Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
     });
 
     // Open routes
