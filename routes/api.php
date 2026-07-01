@@ -104,7 +104,6 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/count/department/{department_id}', [DoctorController::class, 'getDoctorsCountByDepartment']);
         Route::get('/doctors/top-this-week', [DoctorController::class, 'getTopDoctorThisWeek']);
         Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
-        Route::get('/doctors/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
         Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 
         // Home dashboard
@@ -116,7 +115,12 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
 
+        // Departments dashboard
         Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
+
+        // Reports
+        Route::get('/reports/children-age-distribution', [AdminController::class, 'getChildrenAgeDistribution']);
+        Route::get('/reports/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
 
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);

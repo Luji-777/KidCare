@@ -406,4 +406,50 @@ class AdminController extends Controller
             'data'   => $report
         ], 200);
     }
+
+    //----------------Statistics-----------------
+    public function getChildrenAgeDistribution()
+    {
+        $ageCounts = DB::table('children')
+            ->select(DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) as age, COUNT(*) as count'))
+            ->whereRaw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) <= 6')
+            ->groupBy('age')
+            ->pluck('count', 'age')
+            ->toArray();
+
+        $report = [
+            [
+                'age_range' => '0 - 1',
+                'children_count' => $ageCounts[0] ?? 0
+            ],
+            [
+                'age_range' => '1 - 2',
+                'children_count' => $ageCounts[1] ?? 0
+            ],
+            [
+                'age_range' => '2 - 3',
+                'children_count' => $ageCounts[2] ?? 0
+            ],
+            [
+                'age_range' => '3 - 4',
+                'children_count' => $ageCounts[3] ?? 0
+            ],
+            [
+                'age_range' => '4 - 5',
+                'children_count' => $ageCounts[4] ?? 0
+            ],
+            [
+                'age_range' => '5 - 6',
+                'children_count' => $ageCounts[5] ?? 0
+            ],
+        ];
+
+        $totalChildrenInRanges = array_sum(array_column($report, 'children_count'));
+
+        return response()->json([
+            'status' => 'success',
+            'total_monitored_children' => $totalChildrenInRanges,
+            'data' => $report
+        ], 200);
+    }
 }
