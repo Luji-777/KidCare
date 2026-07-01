@@ -13,79 +13,134 @@ use Illuminate\Support\Carbon;
 class AppointmentSeeder extends Seeder
 {
     public function run(): void
+    
     {
         $childIds = Child::pluck('id')->toArray();
         if (empty($childIds)) $childIds = [1, 2, 3];
 
-        // 1. جلب الأوقات المتاحة للدكتور رقم 1 حصراً من الداتابيز
+        // 1. جلب جدول دوام الدكتور رقم 1 (أحمد العلي)
         $doctor1Availabilities = DoctorAvailability::where('doctor_id', 1)->get();
 
         if ($doctor1Availabilities->isNotEmpty()) {
             
-            // نمشي على الـ 10 أيام القادمة (ابتداءً من اليوم)
-            for ($dayOffset = 0; $dayOffset < 10; $dayOffset++) {
+            // --- أولاً: ملء بيانات اليوم الحالي (Today) بشكل ديناميكي ذكي ---
+            $today = Carbon::today();
+            $now = Carbon::now();
+
+            // أ) موعد مكتمل (في الماضي بالنسبة للساعة الحالية من اليوم) -> لتعبئة خانة Completed و Revenue
+            Appointment::create([
+                'child_id'        => Arr::random($childIds),
+                'doctor_id'       => 1,
+                'date'            => $today->toDateString(),
+                'time'            => $now->copy()->subHours(2)->format('H:i:s'), // دائماً قبل ساعتين من تشغيل السيدر
+                'status'          => 'completed',
+                'price'           => 100,
+                'currency'        => 'USD',
+                'payment_status'  => 'paid_online',
+                'doctor_earnings' => 60,
+            ]);
+
+            // ب) موعد قادم فوراً (Next Patient) -> يظهر مباشرة كأول مريض قادم
+            Appointment::create([
+                'child_id'        => Arr::random($childIds),
+                'doctor_id'       => 1,
+                'date'            => $today->toDateString(),
+                'time'            => $now->copy()->addMinutes(30)->format('H:i:s'), // دائماً بعد نصف ساعة من تشغيل السيدر
+                'status'          => 'confirmed',
+                'price'           => 100,
+                'currency'        => 'USD',
+                'payment_status'  => 'paid_online',
+                'doctor_earnings' => 60,
+            ]);
+
+            // ج) موعد متبقي لاحقاً اليوم (Remaining Patient) -> ليملأ القائمة السفلية لليوم
+            Appointment::create([
+                'child_id'        => Arr::random($childIds),
+                'doctor_id'       => 1,
+                'date'            => $today->toDateString(),
+                'time'            => $now->copy()->addHours(3)->format('H:i:s'), // دائماً بعد 3 ساعات من تشغيل السيدر
+                'status'          => 'confirmed',
+                'price'           => 100,
+                'currency'        => 'USD',
+                'payment_status'  => 'paid_online',
+                'doctor_earnings' => 60,
+            ]);
+
+
+            // --- ثانياً: توليد مواعيد حقيقية للأيام القادمة والماضية لتعبئة الإحصائيات العامة ---
+            
+            // 1. مواعيد ماضية (خلال الـ 15 يوماً السابقة) لزيادة الأرباح الشهرية والسنوية بشكل منطقي
+            for ($dayOffset = 1; $dayOffset <= 15; $dayOffset++) {
+                $pastDate = Carbon::today()->subDays($dayOffset);
                 
-                $currentCarbonDate = Carbon::today()->addDays($dayOffset);
-                $dayOfWeekName = $currentCarbonDate->format('l'); // بيعطينا اسم اليوم مثل 'Sunday' أو 'Monday'
+                // ننشئ موعدين مكتملين في كل يوم مضى
+                for ($i = 0; $i < 2; $i++) {
+                    Appointment::create([
+                        'child_id'        => Arr::random($childIds),
+                        'doctor_id'       => 1,
+                        'date'            => $pastDate->toDateString(),
+                        'time'            => sprintf('%02d:00:00', rand(9, 16)), // بين الـ 9 صباحاً والـ 4 عصراً
+                        'status'          => 'completed',
+                        'price'           => 100,
+                        'currency'        => 'USD',
+                        'payment_status'  => 'fully_paid',
+                        'doctor_earnings' => 60,
+                    ]);
+                }
+            }
 
-                // بنجيب الأوقات المتاحة للدكتور يلي بتوافق هاد اليوم من الأسبوع
+            // 2. مواعيد مستقبلية (خلال الـ 15 يوماً القادمة) لكي يجد الطبيب مواعيد عند تصفح الأيام القادمة
+            for ($dayOffset = 1; $dayOffset <= 15; $dayOffset++) {
+                $futureDate = Carbon::today()->addDays($dayOffset);
+                $dayOfWeekName = $futureDate->format('l');
+
+                // مطابقة الأوقات مع جدول دوامه الفعلي
                 $availabilitiesForToday = $doctor1Availabilities->where('day_of_week', $dayOfWeekName);
-
-                // إذا الدكتور ما عنده دوام بهاد اليوم (مثلاً الجمعة أو السبت)، بنعمل خيار بديل 
-                // أو بناخد أي وقتين عشوائيين من الأوقات المتاحة عنده كرمال ما نضيع اليوم
                 if ($availabilitiesForToday->isEmpty()) {
                     $availabilitiesForToday = $doctor1Availabilities;
                 }
 
-                // بناخد وقتين متاحين (بشكل عشوائي أو أول وقتين) كرمال ننشئ الموعدين
                 $chosenSlots = $availabilitiesForToday->random(min(2, $availabilitiesForToday->count()));
 
-                // توليد الموعدين لهذا اليوم
                 foreach ($chosenSlots as $slot) {
                     Appointment::create([
                         'child_id'        => Arr::random($childIds),
                         'doctor_id'       => 1,
-                        'date'            => $currentCarbonDate->toDateString(), // نفس اليوم
-                        'time'            => $slot->start_time,                 // الوقت المطابق لدوامه
+                        'date'            => $futureDate->toDateString(),
+                        'time'            => $slot->start_time,
                         'status'          => 'confirmed',
                         'price'           => 100,
                         'currency'        => 'USD',
                         'payment_status'  => 'paid_online',
-                        'doctor_earnings' => 80,
+                        'doctor_earnings' => 60,
                     ]);
                 }
             }
         }
 
-        // 2. باقي المواعيد العشوائية لباقي الدكاترة (كما هي بدون تغيير)
+        // 3. مواعيد عشوائية لباقي الدكاترة لضمان حيوية قاعدة البيانات بالكامل
         $doctorIds = Doctor::where('id', '>', 1)->pluck('id')->toArray();
+        if (!empty($doctorIds)) {
+            for ($i = 1; $i <= 40; $i++) {
+                $isPast = $i % 2 === 0;
+                $date = $isPast 
+                    ? Carbon::now()->subDays(rand(1, 20))->toDateString()
+                    : Carbon::now()->addDays(rand(1, 20))->toDateString();
 
-        for ($i = 1; $i <= 20; $i++) {
-            $isPast = $i % 2 === 0;
+                $price = rand(50, 150);
 
-            if ($isPast) {
-                $date = Carbon::now()->subDays(rand(1, 30))->toDateString();
-                $status = Arr::random(['completed', 'cancelled']);
-                $paymentStatus = Arr::random(['paid_online', 'fully_paid']);
-            } else {
-                $date = Carbon::now()->addDays(rand(1, 30))->toDateString();
-                $status = Arr::random(['pending', 'confirmed']);
-                $paymentStatus = Arr::random(['unpaid', 'partially_paid']);
+                Appointment::create([
+                    'child_id'        => Arr::random($childIds),
+                    'doctor_id'       => Arr::random($doctorIds),
+                    'date'            => $date,
+                    'time'            => sprintf('%02d:00:00', rand(9, 17)),
+                    'status'          => $isPast ? 'completed' : 'confirmed',
+                    'price'           => $price,
+                    'currency'        => 'USD',
+                    'payment_status'  => $isPast ? 'fully_paid' : 'paid_online',
+                    'doctor_earnings' => $price * 0.6,
+                ]);
             }
-
-            $price = rand(50, 200);
-
-            Appointment::create([
-                'child_id'        => Arr::random($childIds),
-                'doctor_id'       => Arr::random($doctorIds),
-                'date'            => $date,
-                'time'            => sprintf('%02d:00:00', rand(9, 17)),
-                'status'          => $status,
-                'price'           => $price,
-                'currency'        => 'USD',
-                'payment_status'  => $paymentStatus,
-                'doctor_earnings' => $price * 0.8,
-            ]);
         }
     }
 }
