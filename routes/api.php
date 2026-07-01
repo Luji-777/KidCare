@@ -31,6 +31,7 @@ Route::middleware('set.locale')->group(function () {
 
     //Auth dashboard
     Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
+    Route::post('/SetAdminPassword', [AdminController::class, 'SetAdminPassword']);
 
 
     //Sanctum

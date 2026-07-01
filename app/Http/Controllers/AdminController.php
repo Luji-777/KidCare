@@ -45,6 +45,39 @@ class AdminController extends Controller
             'Token'   => $token,
         ], 200);
     }
+    public function SetAdminPassword(Request $request)
+    {
+
+        $request->validate([
+            'phone_number' => 'required',
+            'password'     => 'required|string|min:6|max:255|confirmed',
+        ]);
+
+
+        $admin = Admin::where('phone_number', $request->phone_number)->first();
+
+        if (!$admin) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' =>  __('messages.user_not_found'),
+                ],
+                404
+            );
+        }
+
+        $admin->update([
+            'password'       => Hash::make($request->password)
+        ]);
+
+        $token = $admin->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' =>  __('messages.password_updated_success'),
+            'token'   => $token
+        ], 200);
+    }
 
     //----------------Home------------------
     public function getPatientsCount()
