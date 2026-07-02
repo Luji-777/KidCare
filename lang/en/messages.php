@@ -43,6 +43,7 @@ return [
     'doctor_fetched_success'     => 'Doctor profile fetched successfully.',
     'doctor_updated_success'     => 'Doctor profile updated successfully.',
     'doctor_deleted_success'     => 'Doctor and their related files have been deleted successfully.',
+    'account_permanently_deleted' => 'Account deleted successfully',
 
 
     // Additions & Favorites

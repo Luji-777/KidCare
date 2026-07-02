@@ -51,6 +51,8 @@ Route::middleware('set.locale')->group(function () {
         Route::put('updateparentProfile', [ParentModelController::class, 'updateProfile']);
         Route::get('parentName', [ParentModelController::class, 'parentName']);
         Route::post('/parent/save-fcm-token', [ParentModelController::class, 'saveFcmToken']);
+        Route::delete('parent/account/terminate', [ParentModelController::class, 'destroyAccount']);
+
 
         // Children
         Route::get('/home-children', [ChildController::class, 'homeChildren']);
@@ -71,6 +73,7 @@ Route::middleware('set.locale')->group(function () {
         // Favorites & doctor availability
         Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
+        Route::put('/doctor/{id}/availabilities', [DoctorAvailabilityController::class, 'updateAvailability']);   
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
@@ -91,10 +94,14 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/remaining-patients', [DoctorController::class, 'remainingPatients']);
             Route::get('/completed-appointments-today', [DoctorController::class, 'completedAppointmentsToday']);
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
+            Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
 
             Route::post('/{appointmentId}/diagnosis',[DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);
             Route::post('/{appointmentId}/growth',[DoctorController::class, 'addGrowthRecord']);
+
+            Route::get('/profile', [DoctorController::class, 'showProfile']);
+            Route::put('/updateProfile', [DoctorController::class, 'updateProfile']);
 
             Route::post('/{appointment}/medicalRequests', [AppointmentController::class, 'addMedicalRequests']);
 

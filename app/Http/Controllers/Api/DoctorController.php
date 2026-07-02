@@ -716,5 +716,109 @@ public function yearlyIncome()
 
     return response()->json($result);
 }
+
+ public function showProfile(Request $request)
+{
+    $doctor = $request->user();
+
+    if (!$doctor) {
+        return response()->json([
+            'status' => 'error',
+            'message' => __('messages.unauthorized')
+        ], 401);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => __('messages.doctor_fetched_success'),
+        'user' => [
+            'first_name'            => $doctor->first_name,
+            'last_name'             => $doctor->last_name,
+            'email'                 => $doctor->email,
+            'phone_number'          => $doctor->phone_number,
+            'address'               => $doctor->address,
+            'experience_years'      => $doctor->experience_years,
+            'education'             => $doctor->education,
+            'profile_picture'       => $doctor->profile_picture ? asset('storage/' . $doctor->profile_picture) : null,
+            'cv'                    => $doctor->cv ? asset('storage/' . $doctor->cv) : null,
+        ]
+    ], 200);
+}
+ public function updateProfile(Request $request)
+{
+    $doctor = $request->user();
+
+    if (!$doctor) {
+        return response()->json([
+            'status' => 'error',
+            'message' => __('messages.unauthorized')
+        ], 401);
+    }
+
+  
+    $request->validate([
+        'first_name'       => 'sometimes|string|max:255',
+        'last_name'        => 'sometimes|string|max:255',
+        'email'            => 'sometimes|email|unique:doctors,email,' . $doctor->id,
+        'phone_number'     => 'sometimes|string|max:20|unique:doctors,phone_number,' . $doctor->id,
+        'address'          => 'sometimes|string|max:255',
+        'experience_years' => 'sometimes|integer|min:0',       
+        'profile_picture'  => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048', 
+        'cv'               => 'sometimes|mimes:pdf,doc,docx|max:5120',          
+    ]);
+
+
+    $data = $request->only([
+        'first_name', 'last_name', 'email', 'phone_number', 
+        'address', 'experience_years'
+    ]);
+
+    
+    if ($request->hasFile('profile_picture')) {
+        if ($doctor->profile_picture) {
+            Storage::disk('public')->delete($doctor->profile_picture);
+        }
+        $data['profile_picture'] = $request->file('profile_picture')->store('doctors/profiles', 'public');
+    }
+
+    
+    if ($request->hasFile('cv')) {
+        if ($doctor->cv) {
+            Storage::disk('public')->delete($doctor->cv);
+        }
+        $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
+    }
+
+    
+    $doctor->update($data);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => __('messages.profile_updated_successfully'),
+        'user' => [
+            
+            'first_name'            => $doctor->first_name,
+            'last_name'             => $doctor->last_name,
+            'email'                 => $doctor->email,
+            'phone_number'          => $doctor->phone_number,
+            'address'               => $doctor->address,
+            'experience_years'      => $doctor->experience_years,
+            'profile_picture'       => $doctor->profile_picture ? asset('storage/' . $doctor->profile_picture) : null,
+            'cv'                    => $doctor->cv ? asset('storage/' . $doctor->cv) : null,
+        ]
+    ], 200);
+}
+
+public function destroyAccount(Request $request)
+{
+    $doctor = auth()->user(); 
+    $doctor->tokens()->delete(); 
+    $doctor->forceDelete(); 
+    
+    return response()->json([
+        'status'  => 'success',
+        'message' => __('messages.account_permanently_deleted')
+    ], 200);
+}
     
 }

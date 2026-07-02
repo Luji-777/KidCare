@@ -332,4 +332,24 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
+    public function destroyAccount(Request $request)
+{
+  
+    $parent = $request->user();
+
+    if (!$parent) {
+        return response()->json([
+            'status' => 'error',
+            'message' => __('messages.unauthorized')
+        ], 401);
+    }
+
+    
+    $parent->tokens()->delete(); 
+    $parent->forceDelete(); 
+    return response()->json([
+        'status'  => 'success',
+        'message' => __('messages.account_permanently_deleted')
+    ], 200);
+}
 }

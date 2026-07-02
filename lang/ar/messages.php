@@ -43,6 +43,7 @@ return [
     'doctor_fetched_success'     => 'تم جلب بيانات الطبيب بنجاح.',
     'doctor_updated_success'     => 'تم تحديث الملف الشخصي للطبيب بنجاح.',
     'doctor_deleted_success'     => 'تم حذف الطبيب والملفات المتعلقة به بنجاح.',
+    'account_permanently_deleted' => 'تم حذف الحساب بنجاح',
 
     // Additions & Favorites
     'additions_recorded_success' => 'تم إنهاء الموعد وتسجيل التكاليف الإضافية بنجاح.',
