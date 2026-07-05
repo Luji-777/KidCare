@@ -382,6 +382,7 @@ class DoctorController extends Controller
         }
 
         return response()->json([
+            'appointment_id' => $appointment->id,
             'id' => $appointment->child->id,
             'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
             'age' => Carbon::parse($appointment->child->birth_date)->age,
@@ -406,6 +407,7 @@ class DoctorController extends Controller
         return response()->json(
             $appointments->map(function ($appointment) {
                 return [
+                    'appointment_id' => $appointment->id,
                     'id' => $appointment->child->id,
                     'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
                     'age' => Carbon::parse($appointment->child->birth_date)->age,
