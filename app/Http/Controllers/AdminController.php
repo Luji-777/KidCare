@@ -452,4 +452,123 @@ class AdminController extends Controller
             'data' => $report
         ], 200);
     }
+
+    public function getAppointmentsCountPerDayOfWeek()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $allowedStatuses = ['confirmed', 'completed'];
+
+        $appointmentsPerDay = Appointment::select(
+            DB::raw('DAYNAME(date) as day_name'),
+            DB::raw('COUNT(*) as count')
+        )
+            ->whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->groupBy('day_name')
+            ->pluck('count', 'day_name')
+            ->toArray();
+
+        $weekDays = [
+            'Saturday',
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday'
+        ];
+
+        $report = [];
+        $totalWeeklyAppointments = 0;
+
+        foreach ($weekDays as $day) {
+            $count = $appointmentsPerDay[$day] ?? 0;
+            $totalWeeklyAppointments += $count;
+
+            $report[] = [
+                'day_name'           => $day,
+                'appointments_count' => $count
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'week_range' => [
+                'start_saturday' => $startOfWeek,
+                'end_thursday'   => $endOfWeek
+            ],
+            'total_confirmed_and_completed' => $totalWeeklyAppointments,
+            'data' => $report
+        ], 200);
+    }
+    public function getTopThreeDepartmentsShare()
+    {
+        $allowedStatuses = ['confirmed', 'completed'];
+        $departments = Department::take(3)->get();
+
+        $totalAppointmentsForTopThree = Appointment::whereHas('doctor', function ($query) use ($departments) {
+            $query->whereIn('department_id', $departments->pluck('id'));
+        })
+            ->whereIn('status', $allowedStatuses)
+            ->count();
+
+        if ($totalAppointmentsForTopThree == 0) {
+            $report = $departments->map(function ($department) {
+                return [
+                    'department_id'   => $department->id,
+                    'department_name' => $department->name,
+                    'appointments_count' => 0,
+                    'share_percentage'   => '0%'
+                ];
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'total_appointments' => 0,
+                'data' => $report
+            ], 200);
+        }
+
+        $report = [];
+
+        foreach ($departments as $department) {
+            $departmentAppointmentsCount = Appointment::whereHas('doctor', function ($query) use ($department) {
+                $query->where('department_id', $department->id);
+            })
+                ->whereIn('status', $allowedStatuses)
+                ->count();
+
+            $sharePercentage = ($departmentAppointmentsCount / $totalAppointmentsForTopThree) * 100;
+
+            $report[] = [
+                'department_id'      => $department->id,
+                'department_name'    => $department->name,
+                'appointments_count' => $departmentAppointmentsCount,
+                'share_percentage'   => round($sharePercentage, 1) . '%'
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'total_appointments' => $totalAppointmentsForTopThree,
+            'data' => $report
+        ], 200);
+    }
+    
 }
