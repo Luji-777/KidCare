@@ -210,6 +210,8 @@ class PaymentController extends Controller
 
                         DB::beginTransaction();
                         try {
+                            $doctor = Doctor::find($appointmentData['doctor_id']);
+                            $doctorEarnings = $appointmentData['price'] * ($doctor->commission_percentage / 100);
 
                             $appointment = Appointment::create([
                                 'child_id'       => $appointmentData['child_id'],
@@ -219,6 +221,7 @@ class PaymentController extends Controller
                                 'status'         => 'confirmed',
                                 'payment_status' => 'paid_online',
                                 'price'          => $appointmentData['price'],
+                                'doctor_earnings' => $doctorEarnings,
                                 //    'type'           => $appointmentData['type'],
                                 //    'vaccine_id'     => $appointmentData['vaccine_id'],
                             ]);

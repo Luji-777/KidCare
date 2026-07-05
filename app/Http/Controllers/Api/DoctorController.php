@@ -4,15 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Doctor;
 use App\Models\Appointment;
+use App\Models\MedicalRecord;
+use App\Models\DoctorAvailability;
+use App\Models\Medication;
+use App\Models\Growth;
 use App\Models\Child;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
@@ -346,6 +350,7 @@ class DoctorController extends Controller
         }
 
         return response()->json([
+            'appointment_id' => $appointment->id,
             'id' => $appointment->child->id,
             'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
             'age' => Carbon::parse($appointment->child->birth_date)->age,
@@ -370,6 +375,7 @@ class DoctorController extends Controller
         return response()->json(
             $appointments->map(function ($appointment) {
                 return [
+                    'appointment_id' => $appointment->id,
                     'id' => $appointment->child->id,
                     'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
                     'age' => Carbon::parse($appointment->child->birth_date)->age,
@@ -740,6 +746,366 @@ class DoctorController extends Controller
                     'end_thursday'   => $endOfWeek
                 ]
             ]
+        ], 200);
+    }
+    public function addDiagnosis(Request $request, $appointmentId)
+    {
+        $request->validate([
+            'diagnosis' => 'required|string',
+            'doctor_notes' => 'nullable|string',
+        ]);
+
+        $doctor = auth()->user();
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('doctor_id', $doctor->id)
+            ->firstOrFail();
+
+        $record = MedicalRecord::updateOrCreate(
+            [
+                'appointment_id' => $appointment->id
+            ],
+            [
+                'diagnosis' => $request->diagnosis,
+                'doctor_notes' => $request->doctor_notes
+            ]
+        );
+
+        return response()->json([
+            'message' => __('messages.Diagnosis_add_success'),
+            'record' => $record
+        ]);
+    }
+
+    public function addMedication(Request $request, $recordId)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'dosage' => 'required|string',
+            'frequency' => 'required|string',
+            'timing' => 'required|string',
+            'duration' => 'required|string',
+        ]);
+
+        $doctor = auth()->user();
+
+        $record = MedicalRecord::whereHas('appointment', function ($q) use ($doctor) {
+            $q->where('doctor_id', $doctor->id);
+        })->findOrFail($recordId);
+
+        $medication = $record->medications()->create([
+            'name' => $request->name,
+            'dosage' => $request->dosage,
+            'frequency' => $request->frequency,
+            'timing' => $request->timing,
+            'duration' => $request->duration,
+        ]);
+
+        return response()->json([
+            'message' =>  __('messages.Medication_add_success'),
+            'medication' => $medication
+        ]);
+    }
+
+    public function addGrowthRecord(Request $request, $appointmentId)
+    {
+        $request->validate([
+            'height' => 'nullable|numeric|min:10|max:250|required_with:weight',
+            'weight' => 'nullable|numeric|min:1|max:150|required_with:height',
+        ]);
+
+        $doctor = auth()->user();
+
+        $appointment = Appointment::where('id', $appointmentId)
+            ->where('doctor_id', $doctor->id)
+            ->firstOrFail();
+
+        $growth = Growth::create([
+            'child_id' => $appointment->child_id,
+            'height'   => $request->height,
+            'weight'   => $request->weight,
+            'date'     => now()->toDateString(),
+        ]);
+
+        return response()->json([
+            'message' => __('messages.Growth_add_success'),
+            'data' => $growth
+        ]);
+    }
+
+    public function upcomingWorkingDays()
+    {
+        $doctor = auth()->user();
+
+        $workingDays = DoctorAvailability::where('doctor_id', $doctor->id)
+            ->pluck('day_of_week')
+            ->map(fn($day) => strtolower($day))
+            ->toArray();
+
+        $dates = [];
+
+        $currentDate = Carbon::today();
+
+        while (count($dates) < 6) {
+
+            $dayName = strtolower($currentDate->format('l'));
+
+            if (in_array($dayName, $workingDays)) {
+
+                $dates[] = [
+                    'date' => $currentDate->toDateString(),
+                    'day_name' => __("messages.days.$dayName"),
+                ];
+            }
+
+            $currentDate->addDay();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'days' => $dates
+        ]);
+    }
+
+    public function appointmentsByDate(Request $request)
+    {
+
+        $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $doctor = auth()->user();
+
+        $date = $request->date;
+
+
+        $appointments = Appointment::with('child')
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('date', $date)
+            ->orderBy('time')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'total_appointments' => $appointments->count(),
+                'appointments' => $appointments->map(function ($appointment) {
+
+                    $child = $appointment->child;
+
+                    $age = Carbon::parse($child->birth_date)->age;
+
+                    return [
+                        'id' => $appointment->id,
+                        'patient_name' => $child->first_name . ' ' . $child->last_name,
+                        'age' => $age,
+                        'gender' => $child->gender,
+                        'image' => $child->image,
+                        'time' => Carbon::parse($appointment->time)->format('H:i'),
+                        'status' => $appointment->status,
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    public function allPatients(Request $request)
+    {
+        $doctor = auth()->user();
+
+        $patients = Child::with('parent')
+            ->whereHas('appointments', function ($q) use ($doctor) {
+                $q->where('doctor_id', $doctor->id);
+            })
+            ->when($request->search, function ($q) use ($request) {
+                $search = $request->search;
+
+                $q->where(function ($query) use ($search) {
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                });
+            })
+            ->get()
+            ->unique('id')
+            ->values();
+
+        return response()->json([
+            'status' => true,
+            'patients' => $patients->map(function ($child) {
+                return [
+                    'id' => $child->id,
+                    'name' => $child->first_name . ' ' . $child->last_name,
+                    'age' => Carbon::parse($child->birth_date)->age,
+                    'gender' => $child->gender,
+                    'image' => $child->image,
+                    'parent_phone' => $child->parent->phone_number,
+                ];
+            }),
+        ]);
+    }
+
+    public function monthlyIncome()
+    {
+        $doctor = auth()->user();
+
+        $income = Appointment::where('doctor_id', $doctor->id)
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            // ->where('status', 'completed')
+            ->whereIn('payment_status', ['paid_online', 'fully_paid'])
+            ->sum('doctor_earnings');
+
+        return response()->json([
+            'monthly_income' => $income
+        ]);
+    }
+
+    public function yearlyIncome()
+    {
+        $doctorId = auth()->id();
+
+        $months = [
+            1 => 'January',
+            2 => 'February',
+            3 => 'March',
+            4 => 'April',
+            5 => 'May',
+            6 => 'June',
+            7 => 'July',
+            8 => 'August',
+            9 => 'September',
+            10 => 'October',
+            11 => 'November',
+            12 => 'December',
+        ];
+
+        $income = Appointment::where('doctor_id', $doctorId)
+            ->where('status', ['completed', 'confirmed', 'pending'])
+            ->whereYear('date', now()->year)
+            ->select(
+                DB::raw('MONTH(date) as month'),
+                DB::raw('SUM(doctor_earnings) as total_income')
+            )
+            ->groupBy('month')
+            ->pluck('total_income', 'month');
+
+        $result = [];
+
+        foreach ($months as $monthNumber => $monthName) {
+            $result[] = [
+                'month' => $monthName,
+                'total_income' => (float) ($income[$monthNumber] ?? 0),
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function showProfile(Request $request)
+    {
+        $doctor = $request->user();
+
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => __('messages.doctor_fetched_success'),
+            'user' => [
+                'first_name'            => $doctor->first_name,
+                'last_name'             => $doctor->last_name,
+                'email'                 => $doctor->email,
+                'phone_number'          => $doctor->phone_number,
+                'address'               => $doctor->address,
+                'experience_years'      => $doctor->experience_years,
+                'education'             => $doctor->education,
+                'profile_picture'       => $doctor->profile_picture ? asset('storage/' . $doctor->profile_picture) : null,
+                'cv'                    => $doctor->cv ? asset('storage/' . $doctor->cv) : null,
+            ]
+        ], 200);
+    }
+    public function updateProfile(Request $request)
+    {
+        $doctor = $request->user();
+
+        if (!$doctor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+
+
+        $request->validate([
+            'first_name'       => 'sometimes|string|max:255',
+            'last_name'        => 'sometimes|string|max:255',
+            'email'            => 'sometimes|email|unique:doctors,email,' . $doctor->id,
+            'phone_number'     => 'sometimes|string|max:20|unique:doctors,phone_number,' . $doctor->id,
+            'address'          => 'sometimes|string|max:255',
+            'experience_years' => 'sometimes|integer|min:0',
+            'profile_picture'  => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cv'               => 'sometimes|mimes:pdf,doc,docx|max:5120',
+        ]);
+
+
+        $data = $request->only([
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'address',
+            'experience_years'
+        ]);
+
+
+        if ($request->hasFile('profile_picture')) {
+            if ($doctor->profile_picture) {
+                Storage::disk('public')->delete($doctor->profile_picture);
+            }
+            $data['profile_picture'] = $request->file('profile_picture')->store('doctors/profiles', 'public');
+        }
+
+
+        if ($request->hasFile('cv')) {
+            if ($doctor->cv) {
+                Storage::disk('public')->delete($doctor->cv);
+            }
+            $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
+        }
+
+
+        $doctor->update($data);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => __('messages.profile_updated_successfully'),
+            'user' => [
+
+                'first_name'            => $doctor->first_name,
+                'last_name'             => $doctor->last_name,
+                'email'                 => $doctor->email,
+                'phone_number'          => $doctor->phone_number,
+                'address'               => $doctor->address,
+                'experience_years'      => $doctor->experience_years,
+                'profile_picture'       => $doctor->profile_picture ? asset('storage/' . $doctor->profile_picture) : null,
+                'cv'                    => $doctor->cv ? asset('storage/' . $doctor->cv) : null,
+            ]
+        ], 200);
+    }
+
+    public function destroyAccount(Request $request)
+    {
+        $doctor = auth()->user();
+        $doctor->tokens()->delete();
+        $doctor->forceDelete();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.account_permanently_deleted')
         ], 200);
     }
 }

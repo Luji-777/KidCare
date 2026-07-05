@@ -43,6 +43,7 @@ return [
     'doctor_fetched_success'     => 'Doctor profile fetched successfully.',
     'doctor_updated_success'     => 'Doctor profile updated successfully.',
     'doctor_deleted_success'     => 'Doctor and their related files have been deleted successfully.',
+    'account_permanently_deleted' => 'Account deleted successfully',
 
 
     // Additions & Favorites
@@ -98,6 +99,14 @@ return [
     'parent_fetched_success' => 'Parent profile fetched successfully',
     'token_saved_successfully'     => 'Token saved successfully.',
     'profile_updated_successfully' => 'Profile updated successfully.',
+
+    //Diadnosis and Reciept
+    'Diagnosis_add_success' => 'Diagnosis added successfully',
+    'Medication_add_success' => 'Medication added successfully',
+    'Growth_add_success' => 'Growth record added successfully',
+    'Medical_requests'  => 'Medical requests added successfully',
+
+
 
     // Statuses (Values from Database)
     'pending'                => 'Pending',

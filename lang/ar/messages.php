@@ -43,6 +43,7 @@ return [
     'doctor_fetched_success'     => 'تم جلب بيانات الطبيب بنجاح.',
     'doctor_updated_success'     => 'تم تحديث الملف الشخصي للطبيب بنجاح.',
     'doctor_deleted_success'     => 'تم حذف الطبيب والملفات المتعلقة به بنجاح.',
+    'account_permanently_deleted' => 'تم حذف الحساب بنجاح',
 
     // Additions & Favorites
     'additions_recorded_success' => 'تم إنهاء الموعد وتسجيل التكاليف الإضافية بنجاح.',
@@ -96,6 +97,12 @@ return [
     'parent_fetched_success' => 'تم جلب بيانات الأهل بنجاح.',
     'token_saved_successfully'     => 'تم حفظ رمز Firebase بنجاح.',
     'profile_updated_successfully' => 'تم تحديث البيانات الشخصية بنجاح.',
+
+    //Diadnosis and Reciept
+    'Diagnosis_add_success' => 'تم اضافة التشخيص بنجاح.',
+    'Medication_add_success' => 'تم اضافة الوصفة بنجاح.',
+    'Growth_add_success' => 'تم اضافة تقرير النمو بنجاح.',
+    'Medical_requests'  => 'تم اضافة المتطلبات الطبية بنجاح.',
 
     // Statuses (Values from Database)
     'pending'                => 'قيد الانتظار',

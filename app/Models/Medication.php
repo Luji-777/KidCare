@@ -7,8 +7,10 @@ use App\Models\medicalRecord;
 
 
 class Medication extends Model
-{
+{   
+    protected $guarded=[];
+
     public function record(){
-        return $this->belongsTo(medicalRecord::class);
+        return $this->belongsTo(medicalRecord::class, 'record_id');
     }
 }
