@@ -63,10 +63,11 @@ class DoctorAvailabilityController extends Controller
         ]);
     }
 
-    public function updateAvailability(UpdateDoctorAvailabilityRequest $request, $id)
+    public function deleteAvailability($id)
 {
     $doctor = auth()->user();
 
+    
     $availability = DoctorAvailability::where('id', $id)
         ->where('doctor_id', $doctor->id)
         ->first();
@@ -78,42 +79,37 @@ class DoctorAvailabilityController extends Controller
         ], 404);
     }
 
-    // القيم النهائية بعد التعديل
-    $dayOfWeek = $request->input('day_of_week', $availability->day_of_week);
-    $startTime = $request->input('start_time', $availability->start_time);
-    $endTime   = $request->input('end_time', $availability->end_time);
+   
+    $day = strtolower($availability->day_of_week);
 
-    $doctorIds = Doctor::where('department_id', $doctor->department_id)
-        ->pluck('id');
-
-    $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
-        ->where('id', '!=', $availability->id)
-        ->where('day_of_week', $dayOfWeek)
-        ->where(function ($query) use ($startTime, $endTime) {
-            $query->where('start_time', '<', $endTime)
-                  ->where('end_time', '>', $startTime);
-        })
+    
+    $hasAppointments = Appointment::where('doctor_id', $doctor->id)
+        ->whereDate('date', '>=', now()->toDateString())
+        ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
+        ->whereBetween('time', [
+            $availability->start_time,
+            Carbon::parse($availability->end_time)->subMinute()->format('H:i:s')
+        ])
+        ->whereNotIn('status', ['cancelled'])
         ->exists();
 
-    if ($conflict) {
+    if ($hasAppointments) {
         return response()->json([
             'status' => 'error',
-            'message' => __('messages.doctor_time_conflict')
+            'message' => __('messages.cannot_delete_availability_with_appointments')
         ], 422);
     }
 
-    $availability->update([
-        'day_of_week' => $dayOfWeek,
-        'start_time'  => $startTime,
-        'end_time'    => $endTime,
-    ]);
+    
+    $availability->delete();
 
     return response()->json([
-        'status'       => 'success',
-        'message'      => __('messages.availability_updated_success'),
-        'availability' => $availability->fresh()
-    ]);
-    }
+        'status' => 'success',
+        'message' => __('messages.availability_deleted_success')
+    ], 200);
+}
+
+    
 
     public function availableTimes($doctorId, Request $request)
     {

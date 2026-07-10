@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Growth;
 use App\Models\Child;
-use App\Models\Carbon;
+use Carbon\Carbon;
 use App\Models\Appointment;
 
 class MedicalRecordController extends Controller
@@ -48,12 +48,12 @@ class MedicalRecordController extends Controller
         $heightStatus = $this->getHeightStatus($growth->height,$age);
     }
 
-    
+    $doctor = auth()->user();
     $lastAppointment = Appointment::where('child_id',$child->id)
         ->where('doctor_id', $doctor->id)
         ->where('status','completed')
         ->latest('date')
-        ->with(['doctor','medicalRecord'])
+        ->with(['doctor','record'])
         ->first();
 
 
@@ -65,7 +65,7 @@ class MedicalRecordController extends Controller
 
         })
         ->latest('date')
-        ->with(['doctor','medicalRecord'])
+        ->with(['doctor','record'])
         ->get();
 
     return response()->json([
@@ -83,14 +83,14 @@ class MedicalRecordController extends Controller
             'last_visit'=>$lastAppointment ? [
                 'date'=>$lastAppointment->date,
                 'doctor_name'=>$lastAppointment->doctor->first_name.' '.$lastAppointment->doctor->last_name,
-                'diagnosis'=>$lastAppointment->medicalRecord->diagnosis ?? null,
+                'diagnosis'=>$lastAppointment->record->diagnosis ?? null,
             ] : null,
 
             'previous_visits'=>$previousVisits->map(function($visit){
                 return [
                     'date'=>$visit->date,
                     'doctor_name'=>$visit->doctor->first_name.' '.$visit->doctor->last_name,
-                    'diagnosis'=>$visit->medicalRecord->diagnosis ?? null,
+                    'diagnosis'=>$visit->record->diagnosis ?? null,
                 ];
             }),
         ]

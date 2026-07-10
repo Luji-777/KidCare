@@ -4,6 +4,7 @@ use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
@@ -70,7 +71,7 @@ Route::middleware('set.locale')->group(function () {
         // Favorites & doctor availability
         Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
-        Route::put('/doctor/{id}/availabilities', [DoctorAvailabilityController::class, 'updateAvailability']);   
+       Route::delete('/doctor/availability/{id}', [DoctorAvailabilityController::class, 'deleteAvailability']);
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
@@ -108,6 +109,8 @@ Route::middleware('set.locale')->group(function () {
 
              Route::get('/income', [DoctorController::class, 'monthlyIncome']);
              Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
+
+             Route::get('/{childId}/medicalRecord', [MedicalRecordController::class, 'medicalRecord']);
 
 
             Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);
