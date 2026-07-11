@@ -748,6 +748,9 @@ class DoctorController extends Controller
             ]
         ], 200);
     }
+    
+    //App
+
     public function addDiagnosis(Request $request, $appointmentId)
     {
         $request->validate([

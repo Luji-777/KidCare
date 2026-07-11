@@ -408,6 +408,91 @@ class AdminController extends Controller
     }
 
     //----------------Statistics-----------------
+
+    public function getWeeklyClinicSummary()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $allowedStatuses = ['confirmed', 'completed'];
+        $appointmentDurationMinutes = 30;
+
+        $totalDoctorsCount = Doctor::count();
+
+        $activeDoctorsThisWeekCount = Appointment::whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->distinct('doctor_id')
+            ->count('doctor_id');
+
+        $bookedAppointmentsCount = Appointment::whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->count();
+
+        $availabilities = DoctorAvailability::get();
+        $maxWeeklyCapacity = 0;
+
+        $startDate = Carbon::parse($startOfWeek);
+        for ($i = 0; $i <= 5; $i++) {
+            $currentDate = $startDate->copy()->addDays($i);
+            $currentDayName = $currentDate->format('l');
+
+            $dayAvailabilities = $availabilities->where('day_of_week', $currentDayName);
+
+            foreach ($dayAvailabilities as $availability) {
+                $startTime = Carbon::parse($availability->start_time);
+                $endTime   = Carbon::parse($availability->end_time);
+                $totalMinutes = $startTime->diffInMinutes($endTime);
+
+                if ($appointmentDurationMinutes > 0) {
+                    $maxWeeklyCapacity += floor($totalMinutes / $appointmentDurationMinutes);
+                }
+            }
+        }
+        $availableSlotsRemaining = max(0, $maxWeeklyCapacity - $bookedAppointmentsCount);
+        $busiestDayQuery = Appointment::select(
+            DB::raw('DAYNAME(date) as day_name'),
+            DB::raw('COUNT(*) as count')
+        )
+            ->whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->groupBy('day_name')
+            ->orderBy('count', 'desc')
+            ->first();
+
+        $busiestDay = $busiestDayQuery ? $busiestDayQuery->day_name : 'No appointments this week';
+        $busiestDayCount = $busiestDayQuery ? $busiestDayQuery->count : 0;
+
+        return response()->json([
+            'status' => 'success',
+            'week_range' => [
+                'start_date' => $startOfWeek,
+                'end_date'   => $endOfWeek
+            ],
+            'data' => [
+                'total_doctors'               => $totalDoctorsCount,
+                'active_doctors_this_week'    => $activeDoctorsThisWeekCount,
+                'available_appointments_left' => $availableSlotsRemaining,
+                'busiest_day_of_week'         => [
+                    'day_name'           => $busiestDay,
+                    'appointments_count' => $busiestDayCount
+                ]
+            ]
+        ], 200);
+    }
     public function getChildrenAgeDistribution()
     {
         $ageCounts = DB::table('children')
@@ -570,5 +655,4 @@ class AdminController extends Controller
             'data' => $report
         ], 200);
     }
-    
 }

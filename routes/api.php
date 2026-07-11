@@ -70,7 +70,7 @@ Route::middleware('set.locale')->group(function () {
         // Favorites & doctor availability
         Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
-        Route::put('/doctor/{id}/availabilities', [DoctorAvailabilityController::class, 'updateAvailability']);   
+        Route::put('/doctor/{id}/availabilities', [DoctorAvailabilityController::class, 'updateAvailability']);
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
@@ -93,21 +93,21 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
 
-            Route::post('/{appointmentId}/diagnosis',[DoctorController::class, 'addDiagnosis']);
-            Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);
-            Route::post('/{appointmentId}/growth',[DoctorController::class, 'addGrowthRecord']);
+            Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
+            Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
+            Route::post('/{appointmentId}/growth', [DoctorController::class, 'addGrowthRecord']);
 
             Route::get('/profile', [DoctorController::class, 'showProfile']);
             Route::put('/updateProfile', [DoctorController::class, 'updateProfile']);
 
             Route::post('/{appointment}/medicalRequests', [AppointmentController::class, 'addMedicalRequests']);
 
-            Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
-            Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);
+            Route::get('/upcomingWorkingDays', [DoctorController::class, 'upcomingWorkingDays']);
+            Route::get('/appointmentsByDate', [DoctorController::class, 'appointmentsByDate']);
             Route::get('/patients', [DoctorController::class, 'Allpatients']);
 
-             Route::get('/income', [DoctorController::class, 'monthlyIncome']);
-             Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
+            Route::get('/income', [DoctorController::class, 'monthlyIncome']);
+            Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
 
 
             Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);
@@ -146,6 +146,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
         Route::get('/reports/appointments-per-weekday', [AdminController::class, 'getAppointmentsCountPerDayOfWeek']);
         Route::get('/reports/top-three-departments-share', [AdminController::class, 'getTopThreeDepartmentsShare']);
+        Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
 
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
