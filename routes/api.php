@@ -10,6 +10,7 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
+use App\Http\Controllers\ReceptionistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,7 +33,8 @@ Route::middleware('set.locale')->group(function () {
     //Auth dashboard
     Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
     Route::post('/SetAdminPassword', [AdminController::class, 'SetAdminPassword']);
-
+    Route::post('/loginReceptionist', [ReceptionistController::class, 'loginReceptionist']);
+    Route::post('/SetReceptionistPassword', [ReceptionistController::class, 'SetReceptionistPassword']);
 
     //Sanctum
     Route::middleware('auth:sanctum')->group(function () {
