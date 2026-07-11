@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class AppointmentSeeder extends Seeder
 {
-    public function run(): void
+    /* public function run(): void
 
     {
         $childIds = Child::pluck('id')->toArray();
@@ -141,6 +141,43 @@ class AppointmentSeeder extends Seeder
                     'doctor_earnings' => $price * 0.6,
                 ]);
             }
+        }
+    }*/
+
+
+    public function run(): void
+    {
+        // جلب معرفات الأطفال والأطباء المتاحين في التطبيق
+        $childIds = Child::pluck('id')->toArray();
+        $doctorIds = Doctor::pluck('id')->toArray();
+
+        // تأكيد وجود أطباء وأطفال لتجنب الأخطاء
+        if (empty($doctorIds) || empty($childIds)) {
+            $this->command->warn('يرجى التأكد من وجود أطباء وأطفال في قاعدة البيانات أولاً!');
+            return;
+        }
+
+        // توليد 20 موعداً فقط لكل التطبيق
+        for ($i = 1; $i <= 20; $i++) {
+
+            // تحديد نوع الموعد (نصفها ماضي مكتمل ونصفها مستقبلي مؤكد)
+            $isPast = $i <= 10;
+
+            $date = $isPast
+                ? Carbon::today()->subDays(rand(1, 20))->toDateString()  // تاريخ في الماضي
+                : Carbon::today()->addDays(rand(1, 20))->toDateString(); // تاريخ في المستقبل
+
+            Appointment::create([
+                'child_id'        => Arr::random($childIds),  // طفل عشوائي
+                'doctor_id'       => Arr::random($doctorIds), // طبيب عشوائي من أطباء التطبيق
+                'date'            => $date,
+                'time'            => sprintf('%02d:00:00', rand(9, 16)), // وقت عشوائي بين 9 و 4
+                'status'          => $isPast ? 'completed' : 'confirmed',
+                'price'           => 100.00, // السعر ثابت 100
+                'currency'        => 'USD',
+                'payment_status'  => $isPast ? 'fully_paid' : 'paid_online',
+                'doctor_earnings' => 50.00, // الأرباح ثابتة 50%
+            ]);
         }
     }
 }

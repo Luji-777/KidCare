@@ -655,4 +655,70 @@ class AdminController extends Controller
             'data' => $report
         ], 200);
     }
+
+    public function getMonthlyBudgetReport()
+    {
+        $startOfYear = Carbon::now()->startOfYear();
+        $currentDate = Carbon::now()->endOfDay();
+        $allowedStatuses = ['completed'];
+
+        $appointments = Appointment::with('additions')
+            ->whereIn('status', $allowedStatuses)
+            ->whereBetween('date', [$startOfYear->format('Y-m-d'), $currentDate->format('Y-m-d')])
+            ->get();
+
+        $monthlyReport = [];
+        $startMonth = $startOfYear->copy();
+        while ($startMonth->lte($currentDate)) {
+            $monthName = $startMonth->format('F');
+            $year = $startMonth->year;
+
+            $currentMonthAppointments = $appointments->filter(function ($appointment) use ($startMonth) {
+                $appointmentDate = Carbon::parse($appointment->date);
+                return $appointmentDate->month === $startMonth->month && $appointmentDate->year === $startMonth->year;
+            });
+
+            $appointmentsRevenue = $currentMonthAppointments->sum('price');
+
+            $additionsRevenue = 0;
+            foreach ($currentMonthAppointments as $appointment) {
+                if ($appointment->additions) {
+                    $additionsRevenue += $appointment->additions->sum('price');
+                }
+            }
+
+            $doctorEarningsExpense = $currentMonthAppointments->sum('doctor_earnings');
+            $materialsCostExpense = $additionsRevenue;
+
+            $totalIncome = $appointmentsRevenue + $additionsRevenue;
+            $totalExpense = $doctorEarningsExpense + $materialsCostExpense;
+            $netProfit = $totalIncome - $totalExpense;
+
+            $monthlyReport[] = [
+
+                'month_number' => $startMonth->month,
+                'month_name' => $monthName,
+                'income_details' => [
+                    'appointments_revenue' => round($appointmentsRevenue, 2),
+                    'additions_revenue'    => round($additionsRevenue, 2),
+                    'total_income'         => round($totalIncome, 2)
+                ],
+                'expense_details' => [
+                    'doctor_earnings'  => round($doctorEarningsExpense, 2),
+                    'materials_cost'   => round($materialsCostExpense, 2),
+                    'total_expense'    => round($totalExpense, 2)
+                ],
+                'net_profit' => round($netProfit, 2)
+            ];
+
+            $startMonth->addMonth();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'currency' => 'USD',
+            'year' => $year,
+            'data' => $monthlyReport
+        ], 200);
+    }
 }

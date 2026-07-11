@@ -147,6 +147,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/appointments-per-weekday', [AdminController::class, 'getAppointmentsCountPerDayOfWeek']);
         Route::get('/reports/top-three-departments-share', [AdminController::class, 'getTopThreeDepartmentsShare']);
         Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
+        Route::get('/reports/monthly-budget', [AdminController::class, 'getMonthlyBudgetReport']);
 
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
