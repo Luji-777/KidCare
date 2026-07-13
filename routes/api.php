@@ -154,6 +154,7 @@ Route::middleware('set.locale')->group(function () {
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
+        Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
     });
 
     // Open routes

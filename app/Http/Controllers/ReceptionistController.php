@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Receptionist;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
+use App\Models\Child;
 
 use Illuminate\Http\Request;
 
@@ -69,6 +71,15 @@ class ReceptionistController extends Controller
             'status' => 'success',
             'message' =>  __('messages.password_updated_success'),
             'token'   => $token
+        ], 200);
+    }
+    public function getTodayAddedChildrenCount()
+    {
+        $todayCount = Child::whereDate('created_at', Carbon::today())->count();
+
+        return response()->json([
+            'status' => 'success',
+            'today_added_children_count' => $todayCount
         ], 200);
     }
 }
