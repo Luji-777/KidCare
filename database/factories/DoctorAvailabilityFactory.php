@@ -15,13 +15,13 @@ class DoctorAvailabilityFactory extends Factory
     public function definition(): array
     {
 
-        $startTime = fake()->dateTimeBetween('09:00:00', '15:00:00')->format('H:i:00');
+        $startTime = $this->faker->dateTimeBetween('09:00:00', '15:00:00')->format('H:i:00');
 
 
         $endTime = date('H:i:00', strtotime($startTime) + 3 * 3600);
 
         return [
-            'day_of_week' => fake()->randomElement(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']),
+            'day_of_week' => $this->faker->randomElement(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']),
             'start_time'  => $startTime,
             'end_time'    => $endTime,
             'is_booked'   => false,
