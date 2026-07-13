@@ -10,19 +10,20 @@ class DoctorFactory extends Factory
 
     public function definition(): array
     {
+        $faker = \Faker\Factory::create();
         return [
-            'first_name' => $this->faker->firstName(),
-            'last_name' => $this->faker->lastName(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'phone_number' => '9639' . $this->faker->numerify('########'),
+            'first_name' => $faker->firstName(),
+            'last_name' => $faker->lastName(),
+            'email' => $faker->unique()->safeEmail(),
+            'phone_number' => '9639' . $faker->numerify('########'),
             'password' => Hash::make('doctor123'),
-            'address' => $this->faker->randomElement(['Damascus, Mezzeh', 'Damascus, Abu Rummaneh', 'Homs', 'Latakia']),
-            'experience_years' => $this->faker->numberBetween(3, 20),
-            'education' => $this->faker->randomElement(['PhD in Pediatrics', 'Master of Child Psychology', 'Board Certified Pediatric Surgeon', 'General Practitioner']),
-            'fee' => $this->faker->randomElement([30000, 45000, 50000, 70000]),
+            'address' => $faker->randomElement(['Damascus, Mezzeh', 'Damascus, Abu Rummaneh', 'Homs', 'Latakia']),
+            'experience_years' => $faker->numberBetween(3, 20),
+            'education' => $faker->randomElement(['PhD in Pediatrics', 'Master of Child Psychology', 'Board Certified Pediatric Surgeon', 'General Practitioner']),
+            'fee' => $faker->randomElement([30000, 45000, 50000, 70000]),
             'commission_percentage' => 60,
             'profile_picture' => null,
-            'gender' => $this->faker->randomElement(['male', 'female']),
+            'gender' => $faker->randomElement(['male', 'female']),
             'cv' => null,
         ];
     }
