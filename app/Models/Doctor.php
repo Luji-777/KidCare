@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\ParentModel;
 use App\Models\Appointment;
 use App\Models\DoctorAvailability;
+use App\Models\DoctorNotification;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -31,5 +32,8 @@ class Doctor extends Authenticatable
     public function availabilities()
     {
         return $this->hasMany(DoctorAvailability::class, 'doctor_id');
+    }
+     public function notification(){
+        return $this->hasMany(DoctorNotification::class);
     }
 }

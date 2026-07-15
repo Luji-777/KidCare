@@ -19,12 +19,23 @@ class FirebaseNotificationService
     }
 
     public function send($token, $title, $body)
-    {
-        $message = CloudMessage::withTarget('token', $token)
-            ->withNotification(
-                Notification::create($title, $body)
-            );
+{
+    $message = CloudMessage::withTarget('token', $token)
+        ->withNotification(Notification::create($title, $body))
+        ->withData([
+            'click_action' => 'FLUTTER_NOTIFICATION_CLICK', 
+            'title' => $title,
+            'body' => $body,
+            'type' => 'appointment_cancelled' 
+        ]);
 
-        return $this->messaging->send($message);
+    try {
+        $result = $this->messaging->send($message);
+        \Log::info("FCM Sent: " . json_encode($result));
+        return $result;
+    } catch (\Throwable $e) {
+        \Log::error("FCM Error: " . $e->getMessage());
+        return null;
     }
+}
 }

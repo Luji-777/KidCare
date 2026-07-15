@@ -7,6 +7,8 @@ use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
+use App\Models\DoctorNotification;
+use App\Models\Child;
 use App\Models\Appointment;
 use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
@@ -247,115 +249,151 @@ class AppointmentController extends Controller
     }
 
     public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
-    {
+{
+    $isOwner = auth()->user()
+        ->children()
+        ->where('id', $appointment->child_id)
+        ->exists();
 
-        $isOwner = auth()->user()
-            ->children()
-            ->where('id', $appointment->child_id)
-            ->exists();
+    if (!$isOwner) {
+        return response()->json([
+            'message' => __('messages.unauthorized')
+        ], 403);
+    }
 
-        if (!$isOwner) {
-            return response()->json(['message' => __('messages.unauthorized')], 403);
+    $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
+
+    if ($appointmentDateTime->isPast()) {
+        return response()->json([
+            'message' => __('messages.cannot_cancel_past')
+        ], 400);
+    }
+
+    $hoursRemaining = now()->diffInHours($appointmentDateTime, false);
+
+    $refundPercentage = 1.00;
+    $message = __('messages.cancel_full_refund');
+
+    if ($hoursRemaining < 48) {
+        $refundPercentage = 0.75;
+        $message = __('messages.cancel_fee_deducted');
+    }
+
+    $transaction = Transaction::where('appointment_id', $appointment->id)
+        ->where('status', 'succeeded')
+        ->first();
+
+    Stripe::setApiKey(config('services.stripe.secret'));
+
+    DB::beginTransaction();
+
+    try {
+
+        if ($transaction) {
+
+            $refundAmountInCents = round(($transaction->amount * $refundPercentage) * 100);
+
+            $refund = Refund::create([
+                'payment_intent' => $transaction->stripe_payment_intent_id,
+                'amount' => $refundAmountInCents,
+                'metadata' => [
+                    'appointment_id' => $appointment->id,
+                    'reason' => $hoursRemaining < 48
+                        ? 'Canceled within 48 hours'
+                        : 'Canceled well in advance'
+                ]
+            ]);
+
+            Transaction::create([
+                'appointment_id' => $appointment->id,
+                'stripe_payment_intent_id' => $refund->id,
+                'amount' => $transaction->amount * $refundPercentage,
+                'currency' => $transaction->currency,
+                'status' => 'refunded',
+            ]);
         }
 
-        $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
+        $appointment->update([
+            'status' => 'cancelled'
+        ]);
 
-
-        if ($appointmentDateTime->isPast()) {
-            return response()->json(['message' => __('messages.cannot_cancel_past')], 400);
-        }
-
-        $hoursRemaining = now()->diffInHours($appointmentDateTime, false);
-
-        $refundPercentage = 1.00;
-        $message =  __('messages.cancel_full_refund');
+        $refundAmount = $transaction
+            ? ($transaction->amount * $refundPercentage)
+            : 0;
 
         if ($hoursRemaining < 48) {
-            $refundPercentage = 0.75;
-            $message = __('messages.cancel_fee_deducted');
+            $notificationBody = __('messages.notif_cancel_fee', [
+                'amount' => $refundAmount
+            ]);
+        } else {
+            $notificationBody = __('messages.notif_cancel_full', [
+                'amount' => $refundAmount
+            ]);
         }
 
-        $transaction = Transaction::where('appointment_id', $appointment->id)
-            ->where('status', 'succeeded')
-            ->first();
+        $parent = auth()->user();
+        $child = Child::find($appointment->child_id);
+        $doctor = Doctor::find($appointment->doctor_id);
 
-        Stripe::setApiKey(config('services.stripe.secret'));
+        // إشعار الطبيب داخل الداتابيز
+        DoctorNotification::create([
+            'doctor_id' => $appointment->doctor_id,
+            'title' => 'Appointment Cancelled',
+            'message' => $child->first_name . ' ' .
+                $child->last_name .
+                ' cancelled the appointment on ' .
+                $appointment->date .
+                ' at ' .
+                $appointment->time,
+        ]);
 
-        DB::beginTransaction();
+        // إشعار الأب داخل الداتابيز
+        DBNotification::create([
+            'parent_id' => $parent->id,
+            'message' => $notificationBody
+        ]);
 
-        try {
-            if ($transaction) {
-
-                $refundAmountInCents = round(($transaction->amount * $refundPercentage) * 100);
-
-
-                $refund = Refund::create([
-                    'payment_intent' => $transaction->stripe_payment_intent_id,
-                    'amount'         => $refundAmountInCents,
-                    'metadata'       => [
-                        'appointment_id' => $appointment->id,
-                        'reason'         => $hoursRemaining < 48 ? 'Canceled within 48 hours' : 'Canceled well in advance'
-                    ]
-                ]);
-
-                Transaction::create([
-                    'appointment_id'           => $appointment->id,
-                    'stripe_payment_intent_id' => $refund->id,
-                    'amount'                   => ($transaction->amount * $refundPercentage),
-                    'currency'                 => $transaction->currency,
-                    'status'                   => 'refunded',
-                ]);
-            }
-
-            $appointment->update([
-                'status' => 'cancelled'
-            ]);
-
-            DB::commit();
-
-            $refundAmount = $transaction
-                ? ($transaction->amount * $refundPercentage)
-                : 0;
-
-            if ($hoursRemaining < 48) {
-
-                $notificationBody =
-                    __('messages.notif_cancel_fee', ['amount' => $refundAmount]);
-            } else {
-
-                $notificationBody =
-                    __('messages.notif_cancel_full', ['amount' => $refundAmount]);
-            }
-
-            $parent = auth()->user();
-
-            DBNotification::create([
-                'parent_id' => $parent->id,
-                'message'   => $notificationBody
-            ]);
-
-            if (!empty($parent->fcm_token)) {
-
-                $firebase->send(
-                    $parent->fcm_token,
-                    'Appointment Cancelled',
-                    $notificationBody
-                );
-            }
-            return response()->json([
-                'message' => $message,
-                'refund_amount' => $refundAmount
-            ], 200);
-        } catch (Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'error' => 'Cancellation and Refund failed: '
-                    . $e->getMessage()
-            ], 500);
+        DB::commit();
+       
+        // Push Notification للطبيب
+        if ($doctor && !empty($doctor->fcm_token)) {
+            
+            $firebase->send(
+                $doctor->fcm_token,
+                'Appointment Cancelled',
+                $child->first_name . ' ' .
+                    $child->last_name .
+                    ' cancelled the appointment on ' .
+                    $appointment->date .
+                    ' at ' .
+                    $appointment->time
+            );
         }
+
+        // Push Notification للأب
+        if (!empty($parent->fcm_token)) {
+
+            $firebase->send(
+                $parent->fcm_token,
+                'Appointment Cancelled',
+                $notificationBody
+            );
+        }
+
+        return response()->json([
+            'message' => $message,
+            'refund_amount' => $refundAmount
+        ], 200);
+
+    } catch (Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'error' => 'Cancellation and Refund failed: ' . $e->getMessage()
+        ], 500);
     }
+}
 
 
     public function upcoming()

@@ -230,6 +230,14 @@ class PaymentController extends Controller
 
                             $parent = ParentModel::find($child->parent_id);
 
+                            DoctorNotification::create([
+                            'doctor_id' => $appointment->doctor_id,
+                            'title' => 'New Appointment',
+                            'message' => $child->first_name . ' ' . $child->last_name .
+                            ' booked an appointment on ' .
+                            $appointment->date . ' at ' . $appointment->time,
+]);
+
                             DBNotification::create([
                                 'parent_id' => $parent->id,
                                 'message'   => 'Your appointment has been confirmed successfully.'
@@ -424,9 +432,29 @@ class PaymentController extends Controller
             ]);
 
             $child = Child::find($appointment->child_id);
-
+            $doctor = Doctor::find($appointment->doctor_id);
             $parent = ParentModel::find($child->parent_id);
 
+            DoctorNotification::create([
+            'doctor_id' => $appointment->doctor_id,
+            'title' => 'New Appointment',
+            'message' => $child->first_name . ' ' . $child->last_name .
+                 ' booked an appointment on ' .
+                 $appointment->date . ' at ' . $appointment->time,
+]);
+            if ($doctor && !empty($doctor->fcm_token)) {
+            
+            $firebase->send(
+                $doctor->fcm_token,
+                'New Appointment',
+                $child->first_name . ' ' .
+                    $child->last_name .
+                    ' booked an appointment on ' .
+                    $appointment->date .
+                    ' at ' .
+                    $appointment->time
+            );
+        }
 
             DBNotification::create([
                 'parent_id' => $parent->id,
