@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\Appointment;
+use App\Models\ParentModel;
+use App\Models\Receptionist;
 use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -219,29 +221,28 @@ class AppointmentController extends Controller
 
     public function show(Appointment $appointment)
     {
-        $isOwner = auth()->user()
-            ->children()
-            ->where('id', $appointment->child_id)
-            ->exists();
+        $currentUser = auth()->user();
 
-        if (!$isOwner) {
-            return response()->json([
-                'message'      => __('messages.unauthorized'),
-            ], 403);
+        if ($currentUser instanceof ParentModel) {
+            $isOwner = $currentUser->children()->where('id', $appointment->child_id)->exists();
+            if (!$isOwner) {
+                return response()->json(['message' => __('messages.unauthorized')], 403);
+            }
+        } elseif (!($currentUser instanceof Receptionist)) {
+            return response()->json(['message' => __('messages.unauthorized')], 403);
         }
-
 
         return response()->json([
             'status'      => 'success',
             'message'     => __('messages.show_success'),
             'appointment' => [
-                'id' => $appointment->id,
+                'id'        => $appointment->id,
                 'doctor_id' => $appointment->doctor_id,
-                'child_id' => $appointment->child_id,
-                'date' => $appointment->date,
-                'time' => $appointment->time,
-                'price' => $appointment->price,
-                'status' => __('messages.' . $appointment->status),
+                'child_id'  => $appointment->child_id,
+                'date'      => $appointment->date,
+                'time'      => $appointment->time,
+                'price'     => $appointment->price,
+                'status'    => __('messages.' . $appointment->status),
             ]
         ], 200);
     }
@@ -620,7 +621,7 @@ class AppointmentController extends Controller
         ], 200);
     }
 
-     public function appointmentDetails($id)
+    public function appointmentDetails($id)
     {
         $doctor = auth()->user();
 
@@ -652,24 +653,24 @@ class AppointmentController extends Controller
     }
 
     public function addMedicalRequests(Request $request, $appointmentId)
-{
-    $request->validate([
-        'required_tests' => 'nullable|string',
-        'required_imaging' => 'nullable|string',
-    ]);
+    {
+        $request->validate([
+            'required_tests' => 'nullable|string',
+            'required_imaging' => 'nullable|string',
+        ]);
 
-    $appointment = Appointment::findOrFail($appointmentId);
+        $appointment = Appointment::findOrFail($appointmentId);
 
-    $appointment->update([
-        'required_tests' => $request->required_tests,
-        'required_imaging' => $request->required_imaging,
-    ]);
+        $appointment->update([
+            'required_tests' => $request->required_tests,
+            'required_imaging' => $request->required_imaging,
+        ]);
 
-    return response()->json([
-        'message' =>  __('messages.Medical_requests'),
-        //'appointment' => $appointment
-    ]);
-}
+        return response()->json([
+            'message' =>  __('messages.Medical_requests'),
+            //'appointment' => $appointment
+        ]);
+    }
 
     /*public function bookVaccine(Request $request)
 {

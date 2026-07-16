@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\ParentModel;
+use App\Models\Receptionist;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+
 
 class ParentModelController extends Controller
 {
@@ -232,20 +234,49 @@ class ParentModelController extends Controller
     }
     public function showProfile(Request $request)
     {
-        $parent = $request->user();
+        $currentUser = $request->user();
 
-        if (!$parent) {
+        if (!$currentUser) {
             return response()->json([
                 'status' => 'error',
-                'message' => __('messages.unauthorized')
+                'message' => 'Unauthorized.'
             ], 401);
         }
 
-        $children = $parent->children()->select('image', 'first_name')->get();
+        if ($currentUser instanceof ParentModel) {
+            $parent = $currentUser;
+        } elseif ($currentUser instanceof Receptionist) {
+            $parentId = $request->input('parent_id');
+
+            if (!$parentId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The parent_id field is required for receptionists.'
+                ], 400);
+            }
+
+            $parent = ParentModel::find($parentId);
+
+            if (!$parent) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Parent not found.'
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized role.'
+            ], 403);
+        }
+
+        $children = $parent->children()
+            ->select('parent_id', 'image', 'first_name')
+            ->get();
 
         return response()->json([
             'status' => 'success',
-            'message' => __('messages.parent_fetched_success'),
+            'message' => 'Parent profile fetched successfully.',
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,
@@ -292,35 +323,49 @@ class ParentModelController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $parent = $request->user();
+        $currentUser = $request->user();
 
-        if (!$parent) {
+        if (!$currentUser) {
             return response()->json([
                 'status' => 'error',
-                'message' => __('messages.unauthorized')
+                'message' => 'Unauthorized.'
             ], 401);
         }
 
-        $request->validate([
+        if ($currentUser instanceof ParentModel) {
+            $parent = $currentUser;
+        } elseif ($currentUser instanceof Receptionist) {
+            $request->validate([
+                'parent_id' => 'required|integer|exists:parent_models,id',
+            ]);
 
-            'email'        => 'sometimes|email|unique:users,email,' . $parent->id,
-            'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . $parent->id,
+            $parent = ParentModel::find($request->parent_id);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized role.'
+            ], 403);
+        }
+
+        $request->validate([
+            'email'        => 'sometimes|email|unique:parent_models,email,' . $parent->id,
+            'phone_number' => 'sometimes|string|max:20|unique:parent_models,phone_number,' . $parent->id,
             'address'      => 'sometimes|string|max:255',
         ]);
 
         $parent->update($request->only([
-
             'email',
             'phone_number',
             'address'
-
         ]));
 
-        $children = $parent->children()->select('image', 'first_name')->get();
+        $children = $parent->children()
+            ->select('parent_id', 'image', 'first_name')
+            ->get();
 
         return response()->json([
             'status' => 'success',
-            'message' => __('messages.profile_updated_successfully'),
+            'message' => 'Profile updated successfully.',
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,
@@ -332,24 +377,4 @@ class ParentModelController extends Controller
             ]
         ], 200);
     }
-    public function destroyAccount(Request $request)
-{
-  
-    $parent = $request->user();
-
-    if (!$parent) {
-        return response()->json([
-            'status' => 'error',
-            'message' => __('messages.unauthorized')
-        ], 401);
-    }
-
-    
-    $parent->tokens()->delete(); 
-    $parent->forceDelete(); 
-    return response()->json([
-        'status'  => 'success',
-        'message' => __('messages.account_permanently_deleted')
-    ], 200);
-}
 }

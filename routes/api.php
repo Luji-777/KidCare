@@ -39,7 +39,6 @@ Route::middleware('set.locale')->group(function () {
     //Sanctum
     Route::middleware('auth:sanctum')->group(function () {
 
-
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
@@ -151,10 +150,15 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
         Route::get('/reports/monthly-budget', [AdminController::class, 'getMonthlyBudgetReport']);
 
-        //reseption
+        //reseptionist
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
+        Route::post('reception/parents/add', [ReceptionistController::class, 'addParent']);
+        Route::post('/reception/appointments', [ReceptionistController::class, 'store']);
+        Route::put('/reception/appointments/{appointment}', [ReceptionistController::class, 'updateReception']);
+        Route::get('/reception/appointments', [ReceptionistController::class, 'indexReception']);
+        Route::delete('/reception/appointments/{appointment}', [ReceptionistController::class, 'destroy']);
     });
 
     // Open routes
