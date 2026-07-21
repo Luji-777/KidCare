@@ -138,6 +138,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/monthly-revenue', [AdminController::class, 'getMonthlyRevenueReport']);
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
+        Route::put('/admin/receptionists/{receptionist}/change-password', [AdminController::class, 'changeReceptionistPassword']);
 
         // Departments dashboard
         Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
@@ -159,6 +160,9 @@ Route::middleware('set.locale')->group(function () {
         Route::put('/reception/appointments/{appointment}', [ReceptionistController::class, 'updateReception']);
         Route::get('/reception/appointments', [ReceptionistController::class, 'indexReception']);
         Route::delete('/reception/appointments/{appointment}', [ReceptionistController::class, 'destroy']);
+        Route::get('/appointments/doctor/{doctor}/past', [ReceptionistController::class, 'pastByDoctor']);
+        Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
+        Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
     });
 
     // Open routes

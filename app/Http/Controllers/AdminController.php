@@ -12,6 +12,8 @@ use App\Models\Appointment;
 use App\Models\Transaction;
 use App\Models\Department;
 use App\Models\DoctorAvailability;
+use App\Models\Receptionist;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -27,7 +29,7 @@ class AdminController extends Controller
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -59,7 +61,7 @@ class AdminController extends Controller
         if (!$admin) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.user_not_found'),
                 ],
                 404
@@ -719,6 +721,46 @@ class AdminController extends Controller
             'currency' => 'USD',
             'year' => $year,
             'data' => $monthlyReport
+        ], 200);
+    }
+
+    public function changeReceptionistPassword(Request $request, $receptionistId)
+    {
+        $currentUser = auth()->user();
+
+        if (!$currentUser || !($currentUser instanceof Admin)) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $receptionist = Receptionist::find($receptionistId);
+        if (!$receptionist) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.receptionist_not_found')
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $receptionist->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.password_updated_successfully')
         ], 200);
     }
 }

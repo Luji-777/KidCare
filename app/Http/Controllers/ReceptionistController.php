@@ -14,9 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-
 
 class ReceptionistController extends Controller
 {
@@ -31,7 +29,7 @@ class ReceptionistController extends Controller
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -63,7 +61,7 @@ class ReceptionistController extends Controller
         if (!$admin) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.user_not_found'),
                 ],
                 404
@@ -122,7 +120,7 @@ class ReceptionistController extends Controller
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => 'Unauthorized. This resource is only accessible by receptionists.'
             ], 403);
         }
@@ -200,7 +198,7 @@ class ReceptionistController extends Controller
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => 'Unauthorized. This resource is only accessible by receptionists.',
             ], 403);
         }
@@ -285,7 +283,7 @@ class ReceptionistController extends Controller
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => 'Unauthorized. This resource is only accessible by receptionists.'
             ], 403);
         }
@@ -323,7 +321,7 @@ class ReceptionistController extends Controller
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => 'Unauthorized. Only receptionists can delete or cancel appointments.',
             ], 403);
         }
@@ -341,6 +339,190 @@ class ReceptionistController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => __('messages.appointment_canceled_success'),
+        ], 200);
+    }
+
+    public function pastByDoctor($doctorId)
+    {
+        $currentUser = auth()->user();
+
+        $doctorExists = Doctor::where('id', $doctorId)->exists();
+        if (!$doctorExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.doctor_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query()->where('doctor_id', $doctorId);
+
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized'),
+            ], 403);
+        }
+
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
+            ->whereDate('date', '<', now()->toDateString())
+            ->where('status', '!=', 'cancelled')
+            ->orderByDesc('date')
+            ->orderByDesc('time')
+            ->get();
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
+                ]
+            ];
+        });
+
+        return response()->json([
+            'status'       => 'success',
+            'message'      => __('messages.past_doctor_success'),
+            'appointments' => $formattedAppointments
+        ], 200);
+    }
+    public function upcomingByDoctor($doctorId)
+    {
+        $currentUser = auth()->user();
+
+        $doctorExists = Doctor::where('id', $doctorId)->exists();
+        if (!$doctorExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.doctor_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query()->where('doctor_id', $doctorId);
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized'),
+            ], 403);
+        }
+
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
+            ->whereDate('date', '>=', now()->toDateString())
+            ->orderBy('date')
+            ->orderBy('time')
+            ->get();
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
+                    'id'         => $appointment->child_id,
+                    'first_name' => $appointment->child?->first_name,
+                    'image'      => $appointment->child?->image,
+                    'gender'     => $appointment->child?->gender,
+                ],
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
+                ]
+            ];
+        });
+
+        return response()->json([
+            'status'       => 'success',
+            'message'      => __('messages.upcoming_doctor_success'),
+            'appointments' => $formattedAppointments
+        ], 200);
+    }
+
+    public function getByDateForReception($date)
+    {
+        $currentUser = auth()->user();
+
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        try {
+            $formattedDate = Carbon::parse($date)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => 'Invalid date format. Please use Y-m-d.'
+            ], 400);
+        }
+
+        $appointments = Appointment::with([
+            'child:id,first_name,parent_id',
+            'child.parent:id,first_name,last_name,phone_number',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name'
+        ])
+            ->whereDate('date', $formattedDate)
+            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'canceled')
+            ->orderBy('time', 'asc')
+            ->get();
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            $parent = $appointment->child?->parent;
+
+            return [
+                'id'               => $appointment->id,
+                'time'             => Carbon::parse($appointment->time)->format('H:i'),
+                'status'           => __('messages.' . $appointment->status),
+                'payment_status'   => $appointment->payment_status,
+                'price'            => $appointment->price,
+
+                'patient' => [
+                    'child_id'   => $appointment->child_id,
+                    'child_name' => $appointment->child?->first_name,
+                    'parent_name' => $parent ? $parent->first_name . ' ' . $parent->last_name : null,
+                    'parent_phone' => $parent?->phone_number,
+                ],
+
+                'doctor' => [
+                    'id'         => $appointment->doctor_id,
+                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
+                    'department' => $appointment->doctor?->department?->name,
+                ]
+            ];
+        });
+
+        return response()->json([
+            'status'       => 'success',
+            'date_queries' => $formattedDate,
+            'total_appointments' => $appointments->count(),
+            'appointments' => $formattedAppointments
         ], 200);
     }
 }

@@ -20,8 +20,8 @@ class ChildController extends Controller
 
         if (!$currentUser) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -36,8 +36,8 @@ class ChildController extends Controller
 
             if ($validator->fails()) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'The parent_id field is required and must be valid for receptionists.',
+                    'status' => __('messages.error'),
+                    'message' => __('messages.parent_id_required'),
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -45,8 +45,8 @@ class ChildController extends Controller
             $parentId = $request->parent_id;
         } else {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized role.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
         if ($request->hasFile('image')) {
@@ -74,8 +74,8 @@ class ChildController extends Controller
 
         if (!$currentUser) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -87,22 +87,22 @@ class ChildController extends Controller
             if ($child && $request->has('parent_id')) {
                 if ($child->parent_id != $request->parent_id) {
                     return response()->json([
-                        'status' => 'error',
-                        'message' => 'This child does not belong to the specified parent.'
+                        'status' => __('messages.error'),
+                        'message' => __('messages.child_parent_mismatch')
                     ], 422);
                 }
             }
         } else {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized role.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
 
         if (!$child) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Child not found or you do not have permission to update this child.'
+                'status' => __('messages.error'),
+                'message' => __('messages.child_not_found')
             ], 404);
         }
 
@@ -137,8 +137,8 @@ class ChildController extends Controller
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized. This resource is only accessible by receptionists.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 403);
         }
 
@@ -206,8 +206,8 @@ class ChildController extends Controller
         // 2. التحقق من وجود الطفل
         if (!$child) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Child not found.'
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
             ], 404);
         }
         return response()->json([
@@ -222,8 +222,8 @@ class ChildController extends Controller
 
         if (!$currentUser) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Unauthorized.'
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -233,15 +233,15 @@ class ChildController extends Controller
             $child = Child::find($id);
         } else {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Unauthorized role.'
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
 
         if (!$child) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Child not found or you do not have permission to delete this child.'
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
             ], 404);
         }
 

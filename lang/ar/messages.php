@@ -65,6 +65,8 @@ return [
     'unauthorized_transaction'             => 'إجراء غير مصرح به لهذه المعاملة المالية.',
     'payment_processing_wait'              => 'عملية الدفع قيد المعالجة الآن. يرجى الانتظار.',
     'stripe_init_failed'                   => 'فشل في تهيئة بوابة دفع Stripe: ',
+    'cannot_view_summary_for_cancelled_appointment' => 'لا يمكن عرض ملخص الحساب لموعد ملغى.',
+    'cannot_complete_payment_for_cancelled_appointment' => 'لا يمكن إتمام عملية الدفع لموعد ملغى.',
 
     // Firebase Push Notifications
     'notification_appointment_confirmed_title' => 'تم تأكيد الموعد بنجاح',
@@ -104,11 +106,17 @@ return [
     'Growth_add_success' => 'تم اضافة تقرير النمو بنجاح.',
     'Medical_requests'  => 'تم اضافة المتطلبات الطبية بنجاح.',
 
+
+    'receptionist_not_found' => 'موظف الاستقبال غير موجود.',
+    'password_updated_successfully' => 'تم تحديث كلمة السر بنجاح.',
+
     // Statuses (Values from Database)
     'pending'                => 'قيد الانتظار',
     'confirmed'              => 'مؤكد',
     'completed'              => 'مكتمل',
     'cancelled'              => 'ملغي',
+
+    'error' => 'خطأ',
 
     'paid_online'    => 'مدفوع إلكترونياً',
     'partially_paid' => 'مدفوع جزئياً',

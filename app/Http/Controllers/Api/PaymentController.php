@@ -293,6 +293,13 @@ class PaymentController extends Controller
             $appointment = Appointment::with('additions')->findOrFail($appointment_id);
             $additionsTotal = $appointment->additions->sum('price');
 
+            if ($appointment->status === 'cancelled' || $appointment->status === 'canceled') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => __('messages.cannot_complete_payment_for_cancelled_appointment')
+                ], 400);
+            }
+
             if ($appointment->booking_source == 'online') {
 
                 if ($additionsTotal > 0) {
@@ -337,6 +344,13 @@ class PaymentController extends Controller
 
         $appointment = Appointment::with(['additions', 'transactions', 'doctor', 'child'])
             ->findOrFail($appointment_id);
+
+        if ($appointment->status === 'cancelled' || $appointment->status === 'canceled') {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.cannot_view_summary_for_cancelled_appointment')
+            ], 400);
+        }
 
         $fixedPrice = $appointment->price;
         $additionsTotal = $appointment->additions->sum('price');

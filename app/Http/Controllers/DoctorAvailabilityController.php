@@ -73,7 +73,7 @@ class DoctorAvailabilityController extends Controller
 
         if (!$availability) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.availability_not_found')
             ], 404);
         }
@@ -97,7 +97,7 @@ class DoctorAvailabilityController extends Controller
 
         if ($conflict) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.doctor_time_conflict')
             ], 422);
         }

@@ -66,6 +66,8 @@ return [
     'unauthorized_transaction'             => 'Unauthorized action for this financial transaction.',
     'payment_processing_wait'              => 'Payment is already processing. Please wait.',
     'stripe_init_failed'                   => 'Stripe payment initialization failed: ',
+    'cannot_view_summary_for_cancelled_appointment' => 'Cannot view the summary for a cancelled appointment.',
+    'cannot_complete_payment_for_cancelled_appointment' => 'Cannot complete payment for a cancelled appointment.',
 
     // Firebase Push Notifications
     'notification_appointment_confirmed_title' => 'Appointment Confirmed',
@@ -107,12 +109,17 @@ return [
     'Medical_requests'  => 'Medical requests added successfully',
 
 
+    'receptionist_not_found' => 'Receptionist not found.',
+    'password_updated_successfully' => 'Password updated successfully.',
+
 
     // Statuses (Values from Database)
     'pending'                => 'Pending',
     'confirmed'              => 'Confirmed',
     'completed'              => 'Completed',
     'cancelled'              => 'Cancelled',
+
+    'error' => 'Error',
 
     'days' => [
         'monday'    => 'Monday',

@@ -67,7 +67,7 @@ class ParentModelController extends Controller
 
             if ($parent->otp_code !== $request->otp || now()->gt($parent->otp_expires_at)) {
                 return response()->json([
-                    'status'  => 'error',
+                    'status'  => __('messages.error'),
                     'message' =>  __('messages.otp_invalid_expired'),
                 ], 422);
             }
@@ -88,8 +88,8 @@ class ParentModelController extends Controller
 
         if (!$pendingUser || $pendingUser['otp'] != $request->otp) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'The provided OTP is invalid, expired, or no pending registration found.',
+                'status'  => __('messages.error'),
+                'message' => __('messages.otp_invalid_expired'),
             ], 422);
         }
 
@@ -126,7 +126,7 @@ class ParentModelController extends Controller
 
         if (!$parent) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' =>
                 __('messages.phone_not_registered')
             ], 404);
@@ -164,7 +164,7 @@ class ParentModelController extends Controller
 
         if (!$parent || !Hash::check($request->password, $parent->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -197,7 +197,7 @@ class ParentModelController extends Controller
         if (!$parent) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.user_not_found'),
                 ],
                 404
@@ -228,7 +228,7 @@ class ParentModelController extends Controller
         }
 
         return response()->json([
-            'status' => 'error',
+            'status' => __('messages.error'),
             'message' => __('messages.no_active_session')
         ], 401);
     }
@@ -238,8 +238,8 @@ class ParentModelController extends Controller
 
         if (!$currentUser) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -250,7 +250,7 @@ class ParentModelController extends Controller
 
             if (!$parentId) {
                 return response()->json([
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' => 'The parent_id field is required for receptionists.'
                 ], 400);
             }
@@ -259,14 +259,14 @@ class ParentModelController extends Controller
 
             if (!$parent) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Parent not found.'
+                    'status' => __('messages.error'),
+                    'message' => __('messages.parent_not_found')
                 ], 404);
             }
         } else {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized role.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
 
@@ -294,7 +294,7 @@ class ParentModelController extends Controller
 
         if (!$parent) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }
@@ -327,8 +327,8 @@ class ParentModelController extends Controller
 
         if (!$currentUser) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
             ], 401);
         }
 
@@ -342,8 +342,8 @@ class ParentModelController extends Controller
             $parent = ParentModel::find($request->parent_id);
         } else {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized role.'
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
 
