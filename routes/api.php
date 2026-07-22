@@ -71,7 +71,7 @@ Route::middleware('set.locale')->group(function () {
         // Favorites & doctor availability
         Route::post('/doctors/{id}/available-times', [DoctorAvailabilityController::class, 'availableTimes']);
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
-       Route::delete('/doctor/availability/{id}', [DoctorAvailabilityController::class, 'deleteAvailability']);
+        Route::delete('/doctor/availability/{id}', [DoctorAvailabilityController::class, 'deleteAvailability']);
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
@@ -93,6 +93,7 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/completed-appointments-today', [DoctorController::class, 'completedAppointmentsToday']);
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
+            Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
 
             Route::post('/{appointmentId}/diagnosis',[DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);

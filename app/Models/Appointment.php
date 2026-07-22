@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Doctor;
 use App\Models\Child;
 use App\Models\medicalRecord;
+use App\Models\ِAppointment_additions;
+
 
 class Appointment extends Model
 {

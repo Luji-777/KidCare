@@ -1108,4 +1108,41 @@ class DoctorController extends Controller
             'message' => __('messages.account_permanently_deleted')
         ], 200);
     }
+
+    public function cancelAppointmentsByDate(Request $request)
+{
+    $request->validate([
+        'date' => 'required|date'
+    ]);
+
+    $doctor = auth()->user();
+
+    $appointments = Appointment::where('doctor_id', $doctor->id)
+        ->whereDate('date', $request->date)
+        ->whereNotIn('status', ['cancelled', 'completed'])
+        ->get();
+
+    if ($appointments->isEmpty()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No appointments found on this date.'
+        ], 404);
+    }
+
+    foreach ($appointments as $appointment) {
+
+        $appointment->update([
+            'status' => 'cancelled'
+        ]);
+
+        // إرسال إشعار للمريض (اختياري)
+        // Notification::create(...);
+        // FirebaseService::send(...);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'All appointments have been cancelled successfully.'
+    ]);
+}
 }
