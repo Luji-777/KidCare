@@ -7,7 +7,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
-use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\ReceptionistController;
