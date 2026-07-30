@@ -39,6 +39,13 @@ class Appointment extends Model
     {
         return $this->additions()->sum('price');
     }
+  
+    
+    public function getFinalPriceAttribute()
+{
+    return ($this->price ?? 0) + $this->additions()->sum('price');
+}
+
 
     public function getTotalPaidAttribute()
     {

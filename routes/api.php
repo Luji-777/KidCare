@@ -3,6 +3,7 @@
 use App\Http\Controllers\ParentModelController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AppointmentAdditionsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\ChildController;
@@ -103,6 +104,9 @@ Route::middleware('set.locale')->group(function () {
             Route::put('/updateProfile', [DoctorController::class, 'updateProfile']);
 
             Route::post('/{appointment}/medicalRequests', [AppointmentController::class, 'addMedicalRequests']);
+            Route::post('/{appointment}/additions', [AppointmentAdditionsController::class, 'store']);
+            Route::delete('/{additionId}/additions', [AppointmentAdditionsController::class, 'destroy']);
+
 
             Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
             Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);

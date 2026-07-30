@@ -35,6 +35,7 @@ class AppointmentSeeder extends Seeder
                 'time'            => $now->copy()->subHours(2)->format('H:i:s'), // دائماً قبل ساعتين من تشغيل السيدر
                 'status'          => 'completed',
                 'price'           => 100,
+                'base_price' => 100,
                 'currency'        => 'USD',
                 'payment_status'  => 'paid_online',
                 'doctor_earnings' => 60,
@@ -48,6 +49,7 @@ class AppointmentSeeder extends Seeder
                 'time'            => $now->copy()->addMinutes(30)->format('H:i:s'), // دائماً بعد نصف ساعة من تشغيل السيدر
                 'status'          => 'confirmed',
                 'price'           => 100,
+                'base_price' => 100,
                 'currency'        => 'USD',
                 'payment_status'  => 'paid_online',
                 'doctor_earnings' => 60,
@@ -61,6 +63,7 @@ class AppointmentSeeder extends Seeder
                 'time'            => $now->copy()->addHours(3)->format('H:i:s'), // دائماً بعد 3 ساعات من تشغيل السيدر
                 'status'          => 'confirmed',
                 'price'           => 100,
+                'base_price' => 100,
                 'currency'        => 'USD',
                 'payment_status'  => 'paid_online',
                 'doctor_earnings' => 60,
@@ -82,6 +85,7 @@ class AppointmentSeeder extends Seeder
                         'time'            => sprintf('%02d:00:00', rand(9, 16)), // بين الـ 9 صباحاً والـ 4 عصراً
                         'status'          => 'completed',
                         'price'           => 100,
+                        'base_price' => 100,
                         'currency'        => 'USD',
                         'payment_status'  => 'fully_paid',
                         'doctor_earnings' => 60,
@@ -110,6 +114,7 @@ class AppointmentSeeder extends Seeder
                         'time'            => $slot->start_time,
                         'status'          => 'confirmed',
                         'price'           => 100,
+                        'base_price' => 100,
                         'currency'        => 'USD',
                         'payment_status'  => 'paid_online',
                         'doctor_earnings' => 60,
@@ -136,6 +141,7 @@ class AppointmentSeeder extends Seeder
                     'time'            => sprintf('%02d:00:00', rand(9, 17)),
                     'status'          => $isPast ? 'completed' : 'confirmed',
                     'price'           => $price,
+                    'base_price'      => $price,
                     'currency'        => 'USD',
                     'payment_status'  => $isPast ? 'fully_paid' : 'paid_online',
                     'doctor_earnings' => $price * 0.6,
