@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Doctor;
 use App\Models\Child;
 use App\Models\medicalRecord;
+use App\Models\ِAppointment_additions;
+
 
 class Appointment extends Model
 {
@@ -37,6 +39,13 @@ class Appointment extends Model
     {
         return $this->additions()->sum('price');
     }
+
+
+    public function getFinalPriceAttribute()
+    {
+        return ($this->price ?? 0) + $this->additions()->sum('price');
+    }
+
 
     public function getTotalPaidAttribute()
     {

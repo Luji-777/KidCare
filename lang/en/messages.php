@@ -23,6 +23,7 @@ return [
     'appointment_updated_success'  => 'Appointment updated successfully.',
     'no_doctors_in_department'     => 'There are currently no doctors registered in this department.',
     'closest_appointments_fetched' => 'Closest available appointments per doctor fetched successfully.',
+    'availability_deleted_success' => 'Time deleted successfully',
 
     // Auth & OTP
     'phone_not_registered'       => 'This phone number is not registered in our records. Please check the number or create a new account.',

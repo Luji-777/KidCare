@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDoctorAvailabilityRequest;
-use App\Http\Requests\UpdateDoctorAvailabilityRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Http\Requests\UpdateDoctorRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Models\DoctorAvailability;
@@ -63,9 +61,10 @@ class DoctorAvailabilityController extends Controller
         ]);
     }
 
-    public function updateAvailability(UpdateDoctorAvailabilityRequest $request, $id)
+    public function deleteAvailability($id)
     {
         $doctor = auth()->user();
+
 
         $availability = DoctorAvailability::where('id', $id)
             ->where('doctor_id', $doctor->id)
@@ -74,46 +73,40 @@ class DoctorAvailabilityController extends Controller
         if (!$availability) {
             return response()->json([
                 'status' => 'error',
-                'message' => __('messages.availability_not_found')
+                'message' => ('messages.availability_not_found')
             ], 404);
         }
 
-        // القيم النهائية بعد التعديل
-        $dayOfWeek = $request->input('day_of_week', $availability->day_of_week);
-        $startTime = $request->input('start_time', $availability->start_time);
-        $endTime   = $request->input('end_time', $availability->end_time);
 
-        $doctorIds = Doctor::where('department_id', $doctor->department_id)
-            ->pluck('id');
+        $day = strtolower($availability->day_of_week);
 
-        $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
-            ->where('id', '!=', $availability->id)
-            ->where('day_of_week', $dayOfWeek)
-            ->where(function ($query) use ($startTime, $endTime) {
-                $query->where('start_time', '<', $endTime)
-                    ->where('end_time', '>', $startTime);
-            })
+
+        $hasAppointments = Appointment::where('doctor_id', $doctor->id)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
+            ->whereBetween('time', [
+                $availability->start_time,
+                Carbon::parse($availability->end_time)->subMinute()->format('H:i:s')
+            ])
+            ->whereNotIn('status', ['cancelled'])
             ->exists();
 
-        if ($conflict) {
+        if ($hasAppointments) {
             return response()->json([
                 'status' => 'error',
-                'message' => __('messages.doctor_time_conflict')
+                'message' => ('messages.cannot_delete_availability_with_appointments')
             ], 422);
         }
 
-        $availability->update([
-            'day_of_week' => $dayOfWeek,
-            'start_time'  => $startTime,
-            'end_time'    => $endTime,
-        ]);
+
+        $availability->delete();
 
         return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.availability_updated_success'),
-            'availability' => $availability->fresh()
-        ]);
+            'status' => 'success',
+            'message' => __('messages.availability_deleted_success')
+        ], 200);
     }
+
 
     public function availableTimes($doctorId, Request $request)
     {

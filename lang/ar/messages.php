@@ -23,7 +23,7 @@ return [
     'appointment_updated_success'  => 'تم تحديث بيانات الموعد بنجاح.',
     'no_doctors_in_department'     => 'لا يوجد أطباء مسجلين في هذا القسم حالياً.',
     'closest_appointments_fetched' => 'تم جلب أقرب المواعيد المتاحة لكل طبيب بنجاح.',
-
+    'availability_deleted_success' => 'تم حذف الوقت بنجاح',
     // Auth & OTP
     'phone_not_registered'       => 'رقم الهاتف هذا غير مسجل في سجلاتنا. يرجى التحقق من الرقم أو إنشاء حساب جديد.',
     'otp_sent_success'           => 'تم إرسال رمز تحقق جديد إلى هاتفك بنجاح.',

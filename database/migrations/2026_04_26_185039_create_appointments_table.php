@@ -19,6 +19,7 @@ return new class extends Migration
             $table->time('time');
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
             $table->decimal('price', 8, 2)->nullable();
+            $table->decimal('base_price', 8, 2);
             $table->string('currency', 3)->default('USD');
             $table->text('required_tests')->nullable();
             $table->text('required_imaging')->nullable();
