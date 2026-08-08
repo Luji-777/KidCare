@@ -129,4 +129,12 @@ return [
         'Dentistry'  => 'طب الأسنان',
         'Psychiatry' => 'الطب النفسي',
     ],
+
+    'vaccine_schedule_created_successfully' => 'تم الإعلان عن موعد اللقاح بنجاح.',
+    'schedule_not_found'                   => 'موعد اللقاح غير موجود.',
+    'schedule_status_updated'               => 'تم تحديث حالة موعد اللقاح بنجاح.',
+    'vaccine_already_given_to_child'        => 'هذا اللقاح تم توثيقه لهذا الطفل من قبل.',
+    'vaccination_recorded_successfully'     => 'تم تسجيل إعطاء اللقاح للطفل بنجاح.',
+    'vaccine_schedule_already_exists' => 'تم الإعلان عن موعد لهذا اللقاح في نفس اليوم من قبل.',
+    'vaccine_created_successfully' => 'تم إضافة اللقاح بنجاح'
 ];

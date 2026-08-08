@@ -130,4 +130,12 @@ return [
         'Dentistry'  => 'Dentistry',
         'Psychiatry' => 'Psychiatry',
     ],
+
+    'vaccine_schedule_created_successfully' => 'Vaccine schedule created successfully.',
+    'schedule_not_found'                   => 'Vaccine schedule not found.',
+    'schedule_status_updated'               => 'Vaccine schedule status updated successfully.',
+    'vaccine_already_given_to_child'        => 'This vaccine has already been given to this child.',
+    'vaccination_recorded_successfully'     => 'Child vaccination recorded successfully.',
+    'vaccine_schedule_already_exists' => 'A schedule for this vaccine already exists on the selected date.',
+    'vaccine_created_successfully' => 'Vaccine created successfully'
 ];

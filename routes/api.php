@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\VaccineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -163,6 +164,18 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
+
+
+        // === راوتات الرسبشن ===
+        Route::post('/reception/vaccine-schedules', [VaccineController::class, 'createSchedule']);
+        Route::put('/reception/vaccine-schedules/{schedule}/status', [VaccineController::class, 'updateScheduleStatus']);
+        Route::post('/reception/child-vaccinations', [VaccineController::class, 'recordChildVaccination']);
+        Route::post('/reception/vaccines', [VaccineController::class, 'storeVaccine']);
+        Route::get('/vaccines', [VaccineController::class, 'getAllVaccines']);
+
+        // === راوتات الأب والرسبشن (مشتركة) ===
+        Route::get('/vaccines/available-schedules', [VaccineController::class, 'getAvailableSchedules']);
+        Route::get('/vaccines/child-history/{childId}', [VaccineController::class, 'getChildVaccinationHistory']);
     });
 
     // Open routes

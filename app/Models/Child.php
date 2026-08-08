@@ -8,6 +8,7 @@ use App\Models\Growth;
 use App\Models\Appointment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Carbon\Carbon;
 
 class Child extends Model
 {
@@ -46,14 +47,24 @@ class Child extends Model
         );
     }
 
-    /* public function vaccines()
-{
-    return $this->belongsToMany(
-        Vaccine::class,
-        'child_vaccines'
-    )->withPivot([
-        'taken_date',
-        'notes'
-    ]);
-}*/
+    public function childVaccinations()
+    {
+        return $this->hasMany(ChildVaccination::class);
+    }
+    public function vaccines()
+    {
+        return $this->belongsToMany(Vaccine::class, 'child_vaccinations')
+            ->withPivot('given_date', 'notes', 'receptionist_id')
+            ->withTimestamps();
+    }
+
+
+    public function getAgeInMonthsAttribute()
+    {
+        if (!$this->birth_date) {
+            return 0;
+        }
+
+        return Carbon::parse($this->birth_date)->diffInMonths(now());
+    }
 }
