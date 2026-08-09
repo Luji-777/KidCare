@@ -1144,5 +1144,5 @@ class DoctorController extends Controller
         'status' => 'success',
         'message' => 'All appointments have been cancelled successfully.'
     ]);
-}
+}                                                                                                       
 }

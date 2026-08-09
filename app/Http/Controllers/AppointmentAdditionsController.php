@@ -10,13 +10,15 @@ class AppointmentAdditionsController extends Controller
 {
    public function store(Request $request, $appointmentId)
 {
+    // Validation
     $request->validate([
         'item_name' => 'required|string|max:255',
-        'price' => 'required|numeric|min:0',
+        'price'     => 'required|numeric|min:0',
     ]);
 
     $doctor = auth()->user();
 
+    // التأكد أن الموعد تابع لهذا الدكتور
     $appointment = Appointment::where('id', $appointmentId)
         ->where('doctor_id', $doctor->id)
         ->firstOrFail();
@@ -28,73 +30,91 @@ class AppointmentAdditionsController extends Controller
         'price'          => $request->price,
     ]);
 
-    // جلب جميع الإضافات الخاصة بالموعد
-    $additions = Appointment_additions::where('appointment_id', $appointment->id)->get();
+    // جلب جميع إضافات الموعد
+    $additions = Appointment_additions::where(
+        'appointment_id',
+        $appointment->id
+    )->get();
 
-    // حساب مجموع الإضافات
+    // مجموع أسعار الإضافات
     $totalAdditions = $additions->sum('price');
 
-    // تحديث السعر النهائي
-    $appointment->update([
-        'price' => $appointment->base_price + $totalAdditions,
-    ]);
+    // سعر الكشفية الأساسي
+    $appointmentPrice = $appointment->price;
 
-    $appointment->refresh();
+    // السعر النهائي
+    $finalPrice = $appointmentPrice + $totalAdditions;
 
     return response()->json([
-        'status' => 'success',
+        'status'  => 'success',
         'message' => 'Addition added successfully',
 
         'appointment' => [
-            'appointment_id'  => $appointment->id,
-            'base_price'      => $appointment->base_price,
+            'appointment_id' => $appointment->id,
+
+            // سعر الكشفية الأساسي
+            'appointment_price' => $appointmentPrice,
 
             // جميع الإضافات
             'additions' => $additions,
 
+            // مجموع الإضافات
             'total_additions' => $totalAdditions,
 
-            'final_price' => $appointment->price,
+            // الكشفية + الإضافات
+            'final_price' => $finalPrice,
         ]
-    ]);
+    ], 201);
 }
     public function destroy($additionId)
-
 {
     $doctor = auth()->user();
 
+    
     $addition = Appointment_additions::findOrFail($additionId);
 
+    
     $appointment = Appointment::where('id', $addition->appointment_id)
         ->where('doctor_id', $doctor->id)
         ->firstOrFail();
 
+    
     $addition->delete();
 
-    // إعادة حساب مجموع الإضافات
-    $totalAdditions = Appointment_additions::where('appointment_id', $appointment->id)
-        ->sum('price');
+    
+    $additions = Appointment_additions::where(
+        'appointment_id',
+        $appointment->id
+    )->get();
 
-    // تحديث السعر النهائي
-    $appointment->update([
-        'price' => $appointment->base_price + $totalAdditions,
-    ]);
+    
+    $totalAdditions = $additions->sum('price');
 
-    $appointment->refresh();
+    
+    $appointmentPrice = $appointment->price;
+
+   
+    $finalPrice = $appointmentPrice + $totalAdditions;
 
     return response()->json([
-        'status' => 'success',
+        'status'  => 'success',
         'message' => 'Addition deleted successfully',
 
         'appointment' => [
             'appointment_id' => $appointment->id,
 
-            'base_price' => $appointment->base_price,
+            
+            'appointment_price' => $appointmentPrice,
 
+           
+            'additions' => $additions,
+
+            
             'total_additions' => $totalAdditions,
 
-            'final_price' => $appointment->price,
+            
+            'final_price' => $finalPrice,
         ]
-    ]);
+    ], 200);
 }
 }
