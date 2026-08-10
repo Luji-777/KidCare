@@ -67,4 +67,25 @@ class Child extends Model
 
         return Carbon::parse($this->birth_date)->diffInMonths(now());
     }
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
+
+
+    /**
+     * فحص هل الطفل ما زال ضمن السن المسموح للعيادة (أصغر من أو يساوي 6 سنوات)
+     */
+    public function isEligibleForClinic(): bool
+    {
+        // 6 سنوات × 12 شهر = 72 شهراً
+        return $this->age_in_months <= 72;
+    }
+
+    /**
+     * Scope لجلب الأطفال المؤهلين فقط للعيادة مباشرة من قاعدة البيانات
+     */
+    public function scopeEligibleForClinic($query)
+    {
+        return $query->where('birth_date', '>=', now()->subYears(6));
+    }
 }
