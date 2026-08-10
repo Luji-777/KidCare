@@ -130,8 +130,14 @@ class ChildController extends Controller
             'updated_fields' => $changes
         ]);
     }
-
-    public function index(Request $request)
+    public function index()
+    {
+        $children = auth()->user()->children;
+        return response()->json([
+            'children' => $children
+        ]);
+    }
+    public function dashboardIndex(Request $request)
     {
         $currentUser = $request->user();
 
