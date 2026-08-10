@@ -42,7 +42,6 @@ Route::middleware('set.locale')->group(function () {
     //Sanctum
     Route::middleware('auth:sanctum')->group(function () {
 
-
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
@@ -148,6 +147,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/monthly-revenue', [AdminController::class, 'getMonthlyRevenueReport']);
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
+        Route::put('/admin/receptionists/{receptionist}/change-password', [AdminController::class, 'changeReceptionistPassword']);
 
         // Departments dashboard
         Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
@@ -160,10 +160,11 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
         Route::get('/reports/monthly-budget', [AdminController::class, 'getMonthlyBudgetReport']);
 
-        //reseption
+        //reseptionist
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
+<<<<<<< HEAD
 
 
         // === راوتات الرسبشن ===
@@ -176,6 +177,16 @@ Route::middleware('set.locale')->group(function () {
         // === راوتات الأب والرسبشن (مشتركة) ===
         Route::get('/vaccines/available-schedules', [VaccineController::class, 'getAvailableSchedules']);
         Route::get('/vaccines/child-history/{childId}', [VaccineController::class, 'getChildVaccinationHistory']);
+=======
+        Route::post('reception/parents/add', [ReceptionistController::class, 'addParent']);
+        Route::post('/reception/appointments', [ReceptionistController::class, 'store']);
+        Route::put('/reception/appointments/{appointment}', [ReceptionistController::class, 'updateReception']);
+        Route::get('/reception/appointments', [ReceptionistController::class, 'indexReception']);
+        Route::delete('/reception/appointments/{appointment}', [ReceptionistController::class, 'destroy']);
+        Route::get('/appointments/doctor/{doctor}/past', [ReceptionistController::class, 'pastByDoctor']);
+        Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
+        Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
+>>>>>>> dashboard
     });
 
     // Open routes

@@ -29,7 +29,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' =>  __('messages.phone_not_registered'),
             ], 404);
         }
@@ -65,7 +65,7 @@ class DoctorController extends Controller
         $doctor = Doctor::where('phone_number', $request->phone_number)->firstOrFail();
         if ($doctor->otp_code !== $request->otp || Carbon::now()->gt($doctor->otp_expires_at)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.otp_invalid_expired'),
                 'otp' => $doctor->otp_code
             ], 422);
@@ -88,7 +88,7 @@ class DoctorController extends Controller
         if (!$doctor) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.doctor_not_found'),
                 ],
                 404
@@ -118,7 +118,7 @@ class DoctorController extends Controller
 
         if (!$doctor || !Hash::check($request->password, $doctor->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -186,7 +186,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.doctor_not_found')
             ], 404);
         }
@@ -247,6 +247,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
+                'status' => __('messages.error'),
                 'message' => __('messages.doctor_not_found')
             ], 404);
         }
@@ -344,6 +345,7 @@ class DoctorController extends Controller
 
         if (!$appointment) {
             return response()->json([
+                'status' => __('messages.error'),
                 'message' => 'No upcoming patients'
             ]);
         }
@@ -1009,7 +1011,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }
@@ -1036,7 +1038,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }

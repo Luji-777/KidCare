@@ -107,7 +107,6 @@ class DoctorAvailabilityController extends Controller
         ], 200);
     }
 
-
     public function availableTimes($doctorId, Request $request)
     {
         $date = $request->date;
@@ -174,7 +173,6 @@ class DoctorAvailabilityController extends Controller
             'times'   => $times
         ], 200);
     }
-
     public function index($doctorId)
     {
         $availabilities = DoctorAvailability::where('doctor_id', $doctorId)->get();

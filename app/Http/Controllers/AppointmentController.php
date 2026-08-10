@@ -10,6 +10,9 @@ use App\Models\DoctorAvailability;
 use App\Models\DoctorNotification;
 use App\Models\Child;
 use App\Models\Appointment;
+use App\Models\ParentModel;
+use App\Models\Receptionist;
+use App\Models\Child;
 use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -112,7 +115,7 @@ class AppointmentController extends Controller
 
         if (!$isOwner) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => __('messages.unauthorized'),
             ], 403);
         }
@@ -221,29 +224,28 @@ class AppointmentController extends Controller
 
     public function show(Appointment $appointment)
     {
-        $isOwner = auth()->user()
-            ->children()
-            ->where('id', $appointment->child_id)
-            ->exists();
+        $currentUser = auth()->user();
 
-        if (!$isOwner) {
-            return response()->json([
-                'message'      => __('messages.unauthorized'),
-            ], 403);
+        if ($currentUser instanceof ParentModel) {
+            $isOwner = $currentUser->children()->where('id', $appointment->child_id)->exists();
+            if (!$isOwner) {
+                return response()->json(['message' => __('messages.unauthorized')], 403);
+            }
+        } elseif (!($currentUser instanceof Receptionist)) {
+            return response()->json(['message' => __('messages.unauthorized')], 403);
         }
-
 
         return response()->json([
             'status'      => 'success',
             'message'     => __('messages.show_success'),
             'appointment' => [
-                'id' => $appointment->id,
+                'id'        => $appointment->id,
                 'doctor_id' => $appointment->doctor_id,
-                'child_id' => $appointment->child_id,
-                'date' => $appointment->date,
-                'time' => $appointment->time,
-                'price' => $appointment->price,
-                'status' => __('messages.' . $appointment->status),
+                'child_id'  => $appointment->child_id,
+                'date'      => $appointment->date,
+                'time'      => $appointment->time,
+                'price'     => $appointment->price,
+                'status'    => __('messages.' . $appointment->status),
             ]
         ], 200);
     }
@@ -395,7 +397,6 @@ class AppointmentController extends Controller
     }
 }
 
-
     public function upcoming()
     {
         $appointments = Appointment::whereHas('child', function ($query) {
@@ -485,15 +486,37 @@ class AppointmentController extends Controller
 
     public function upcomingByChild($childId)
     {
-        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
-            $query->where('parent_id', auth()->id())
-                ->where('id', $childId);
-        })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
+        $currentUser = auth()->user();
+
+        $childExists = Child::where('id', $childId)->exists();
+        if (!$childExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query();
+
+        if ($currentUser instanceof ParentModel) {
+            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+                $q->where('parent_id', $currentUser->id)
+                    ->where('id', $childId);
+            });
+        } elseif ($currentUser instanceof Receptionist) {
+            $query->where('child_id', $childId);
+        } else {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('time')
@@ -501,12 +524,12 @@ class AppointmentController extends Controller
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
@@ -529,29 +552,51 @@ class AppointmentController extends Controller
 
     public function pastByChild($childId)
     {
-        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
-            $query->where('parent_id', auth()->id())
-                ->where('id', $childId);
-        })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
+        $currentUser = auth()->user();
+
+        $childExists = Child::where('id', $childId)->exists();
+        if (!$childExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query();
+
+        if ($currentUser instanceof ParentModel) {
+            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+                $q->where('parent_id', $currentUser->id)
+                    ->where('id', $childId);
+            });
+        } elseif ($currentUser instanceof Receptionist) {
+            $query->where('child_id', $childId);
+        } else {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
             ->whereDate('date', '<', now()->toDateString())
-            // ->where('status', '!=', 'Cancelled')
             ->orderByDesc('date')
             ->orderByDesc('time')
+            ->where('status', '!=', 'cancelled')
             ->get();
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
@@ -658,7 +703,7 @@ class AppointmentController extends Controller
         ], 200);
     }
 
-     public function appointmentDetails($id)
+    public function appointmentDetails($id)
     {
         $doctor = auth()->user();
 
@@ -690,24 +735,24 @@ class AppointmentController extends Controller
     }
 
     public function addMedicalRequests(Request $request, $appointmentId)
-{
-    $request->validate([
-        'required_tests' => 'nullable|string',
-        'required_imaging' => 'nullable|string',
-    ]);
+    {
+        $request->validate([
+            'required_tests' => 'nullable|string',
+            'required_imaging' => 'nullable|string',
+        ]);
 
-    $appointment = Appointment::findOrFail($appointmentId);
+        $appointment = Appointment::findOrFail($appointmentId);
 
-    $appointment->update([
-        'required_tests' => $request->required_tests,
-        'required_imaging' => $request->required_imaging,
-    ]);
+        $appointment->update([
+            'required_tests' => $request->required_tests,
+            'required_imaging' => $request->required_imaging,
+        ]);
 
-    return response()->json([
-        'message' =>  __('messages.Medical_requests'),
-        //'appointment' => $appointment
-    ]);
-}
+        return response()->json([
+            'message' =>  __('messages.Medical_requests'),
+            //'appointment' => $appointment
+        ]);
+    }
 
     /*public function bookVaccine(Request $request)
 {

@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // اجعلي الـ driver هنا 'session' لأن Sanctum يتعامل داخلياً مع الـ session كحارس أساسي للموديل
+        'receptionist' => [
+            'driver' => 'session',
+            'provider' => 'receptionists',
+        ],
     ],
 
     /*
@@ -63,6 +68,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'receptionists' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Receptionist::class,
         ],
 
         // 'users' => [

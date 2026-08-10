@@ -31,7 +31,7 @@ class DepartmentController extends Controller
 
         if (!$departmentExists) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => __('messages.department_not_found')
             ], 404);
         }

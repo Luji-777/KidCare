@@ -12,7 +12,7 @@ class AdminSeeder extends Seeder
     {
         $admin = [
             'name'         => 'Super Admin',
-            'phone_number' => '963968539434',
+            'phone_number' => '963968539430',
             'password'     => Hash::make('admin12345'),
         ];
 

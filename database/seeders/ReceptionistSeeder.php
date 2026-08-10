@@ -14,7 +14,7 @@ class ReceptionistSeeder extends Seeder
 
         $receptionist = [
             'name'         => 'Receptionist',
-            'phone_number' => '963968539434',
+            'phone_number' => '963968539431',
             'password'     => Hash::make('Receptionist12345'),
         ];
 
