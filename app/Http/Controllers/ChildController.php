@@ -253,21 +253,6 @@ class ChildController extends Controller
         ]);
     }
 
-    public function homeChildren()
-    {
-        $children = auth()->user()->children->map(function ($child) {
-            return [
-                'id' => $child->id,
-                'name' => $child->first_name . ' ' . $child->last_name,
-                'age' => Carbon::parse($child->birth_date)->age,
-                'image' => $child->image
-            ];
-        });
-
-        return response()->json([
-            'children' => $children
-        ]);
-    }
 
     /*  public function childAllergies($id)
     {
