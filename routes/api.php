@@ -64,11 +64,10 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/growth', [GrowthController::class, 'store']);
         Route::delete('/growth/{id}', [GrowthController::class, 'destroy']);
 
-        // Vaccines & Departments
+        // Departments
 
         Route::get('/departments', [DepartmentController::class, 'index']);
         Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
-        //Route::get('/child/{id}/vaccines', [VaccineController::class, 'getChildVaccines']);
 
 
         // Favorites & doctor availability
@@ -160,11 +159,10 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
         Route::get('/reports/monthly-budget', [AdminController::class, 'getMonthlyBudgetReport']);
 
-        //reseptionist
+        //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
-<<<<<<< HEAD
 
 
         // === راوتات الرسبشن ===
@@ -177,7 +175,7 @@ Route::middleware('set.locale')->group(function () {
         // === راوتات الأب والرسبشن (مشتركة) ===
         Route::get('/vaccines/available-schedules', [VaccineController::class, 'getAvailableSchedules']);
         Route::get('/vaccines/child-history/{childId}', [VaccineController::class, 'getChildVaccinationHistory']);
-=======
+
         Route::post('reception/parents/add', [ReceptionistController::class, 'addParent']);
         Route::post('/reception/appointments', [ReceptionistController::class, 'store']);
         Route::put('/reception/appointments/{appointment}', [ReceptionistController::class, 'updateReception']);
@@ -186,7 +184,6 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/doctor/{doctor}/past', [ReceptionistController::class, 'pastByDoctor']);
         Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
         Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
->>>>>>> dashboard
     });
 
     // Open routes
