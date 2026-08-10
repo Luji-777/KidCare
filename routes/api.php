@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('set.locale')->group(function () {
 
+\Log::info('Incoming Request:', ['path' => request()->path(), 'method' => request()->method(), 'token' => request()->bearerToken()]);
     // Auth parent
     Route::post('/register', [ParentModelController::class, 'register']);
     Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
