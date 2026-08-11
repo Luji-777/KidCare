@@ -132,9 +132,18 @@ class ChildController extends Controller
     }
     public function index()
     {
-        $children = auth()->user()->children;
+        $user = auth()->user();
+
+        $children = optional($user)->children ?? collect();
+
+        $filteredChildren = $children
+            ->filter(function ($child) {
+                return $child->birth_date && \Carbon\Carbon::parse($child->birth_date)->age <= 7;
+            })
+            ->values();
+
         return response()->json([
-            'children' => $children
+            'children' => $filteredChildren
         ]);
     }
     public function dashboardIndex(Request $request)

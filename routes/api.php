@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('set.locale')->group(function () {
 
-\Log::info('Incoming Request:', ['path' => request()->path(), 'method' => request()->method(), 'token' => request()->bearerToken()]);
+    \Log::info('Incoming Request:', ['path' => request()->path(), 'method' => request()->method(), 'token' => request()->bearerToken()]);
     // Auth parent
     Route::post('/register', [ParentModelController::class, 'register']);
     Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
@@ -185,6 +185,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/doctor/{doctor}/past', [ReceptionistController::class, 'pastByDoctor']);
         Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
         Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
+        Route::get('/reception/children', [ChildController::class, 'dashboardIndex']);
     });
 
     // Open routes
