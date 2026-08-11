@@ -67,7 +67,7 @@ class DoctorAvailabilityController extends Controller
 {
     $doctor = auth()->user();
 
-    
+    // التأكد أن وقت الدوام تابع لهذا الدكتور
     $availability = DoctorAvailability::where('id', $id)
         ->where('doctor_id', $doctor->id)
         ->first();
@@ -79,36 +79,72 @@ class DoctorAvailabilityController extends Controller
         ], 404);
     }
 
-   
     $day = strtolower($availability->day_of_week);
 
-    
-    $hasAppointments = Appointment::where('doctor_id', $doctor->id)
+    $startTime = $availability->start_time;
+
+    $endTime = Carbon::parse($availability->end_time)
+        ->format('H:i:s');
+
+
+    // جلب كل المواعيد المستقبلية التي تقع ضمن وقت الدوام المحذوف
+    $appointments = Appointment::with('child.parent')
+        ->where('doctor_id', $doctor->id)
         ->whereDate('date', '>=', now()->toDateString())
         ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
-        ->whereBetween('time', [
-            $availability->start_time,
-            Carbon::parse($availability->end_time)->subMinute()->format('H:i:s')
-        ])
-        ->whereNotIn('status', ['cancelled'])
-        ->exists();
+        ->whereTime('time', '>=', $startTime)
+        ->whereTime('time', '<', $endTime)
+        ->whereNotIn('status', ['cancelled', 'completed'])
+        ->get();
 
-    if ($hasAppointments) {
-        return response()->json([
-            'status' => 'error',
-            'message' => __('messages.cannot_delete_availability_with_appointments')
-        ], 422);
+
+    // إلغاء المواعيد وإرسال الإشعارات
+    foreach ($appointments as $appointment) {
+
+        // إلغاء الموعد
+        $appointment->update([
+            'status' => 'cancelled'
+        ]);
+
+
+        // جلب الأب
+        $parent = $appointment->child->parent;
+
+
+        // إذا عنده FCM Token أرسل إشعار
+        if ($parent && $parent->fcm_token) {
+
+            $messaging = app('firebase.messaging');
+
+            $message = CloudMessage::withTarget(
+                'token',
+                $parent->fcm_token
+            )->withNotification(
+                Notification::create(
+                    'Appointment Cancelled',
+                    'Your appointment has been cancelled because the doctor is no longer available at this time.'
+                )
+            )->withData([
+                'appointment_id' => (string) $appointment->id,
+                'type' => 'appointment_cancelled',
+                'sound' => 'default'
+            ]);
+
+            $messaging->send($message);
+        }
     }
 
-    
+
+    // بعد معالجة المواعيد نحذف وقت الدوام
     $availability->delete();
+
 
     return response()->json([
         'status' => 'success',
-        'message' => __('messages.availability_deleted_success')
+        'message' => __('messages.availability_deleted_success'),
+        'cancelled_appointments_count' => $appointments->count()
     ], 200);
 }
-
     
 
     public function availableTimes($doctorId, Request $request)
