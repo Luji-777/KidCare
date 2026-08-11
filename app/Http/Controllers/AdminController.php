@@ -233,7 +233,7 @@ class AdminController extends Controller
         $endOfToday   = $today->copy()->endOfDay()->format('Y-m-d H:i:s');
         $dayOfWeek    = $today->format('l');
 
-        $excludedStatuses = ['cancelled', 'pending'];
+        $excludedStatuses = ['cancelled_by_patient', 'cancelled_by_clinic', 'pending'];
         $totalTodayAppointments = Appointment::whereBetween('date', [$startOfToday, $endOfToday])
             ->whereNotIn('status', $excludedStatuses)
             ->count();
@@ -349,7 +349,7 @@ class AdminController extends Controller
         $startOfToday = $today->copy()->startOfDay()->format('Y-m-d H:i:s');
         $endOfToday   = $today->copy()->endOfDay()->format('Y-m-d H:i:s');
         $dayOfWeek    = $today->format('l');
-        $excludedStatuses = ['cancelled'];
+        $excludedStatuses = ['cancelled_by_patient', 'cancelled_by_clinic'];
         $appointmentDurationMinutes = 30;
 
         $departments = Department::with('doctors')->get();

@@ -101,6 +101,7 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
+            Route::put( 'appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
 
             Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
@@ -114,10 +115,6 @@ Route::middleware('set.locale')->group(function () {
             Route::delete('/{additionId}/additions', [AppointmentAdditionsController::class, 'destroy']);
 
 
-
-
-           /* Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
-            Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);*/
 
             Route::get('/upcomingWorkingDays', [DoctorController::class, 'upcomingWorkingDays']);
             Route::get('/appointmentsByDate', [DoctorController::class, 'appointmentsByDate']);

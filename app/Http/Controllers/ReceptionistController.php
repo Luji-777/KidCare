@@ -10,10 +10,19 @@ use App\Models\DoctorAvailability;
 use App\Models\Doctor;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
+use App\Services\FirebaseNotificationService;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Notification as DBNotification;
+use Stripe\Stripe;
+use Stripe\Refund;
+use Illuminate\Support\Facades\DB;
+use App\Models\DoctorNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Support\Str;
 
 class ReceptionistController extends Controller
@@ -315,31 +324,117 @@ class ReceptionistController extends Controller
             ])
         ], 200);
     }
-    public function destroy(Appointment $appointment)
+    public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
     {
         $currentUser = auth()->user();
 
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
-                'status'  => __('messages.error'),
-                'message' => 'Unauthorized. Only receptionists can delete or cancel appointments.',
+                'status'  => 'error',
+                'message' => 'Unauthorized. Only receptionists can cancel appointments.',
             ], 403);
         }
-        if ($appointment->status === 'completed') {
+
+        if (in_array($appointment->status, ['completed', 'cancelled_by_clinic', 'cancelled_by_patient', 'missed'])) {
             return response()->json([
                 'status'  => 'error',
-                'message' => __('messages.cannot_cancel_completed_appointment'),
+                'message' => __('messages.cannot_cancel_this_appointment'),
             ], 400);
         }
 
-        $appointment->update([
-            'status' => 'cancelled'
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.appointment_canceled_success'),
-        ], 200);
+        try {
+            $refundAmount = 0;
+
+            if ($appointment->booking_source === 'online') {
+
+                $transaction = Transaction::where('appointment_id', $appointment->id)
+                    ->where('status', 'succeeded')
+                    ->first();
+
+                if ($transaction) {
+                    Stripe::setApiKey(config('services.stripe.secret'));
+
+                    $refundAmountInCents = round($transaction->amount * 100);
+
+                    $refund = Refund::create([
+                        'payment_intent' => $transaction->stripe_payment_intent_id,
+                        'amount' => $refundAmountInCents,
+                        'metadata' => [
+                            'appointment_id' => $appointment->id,
+                            'reason' => 'Cancelled by clinic receptionist'
+                        ]
+                    ]);
+
+                    $refundAmount = $transaction->amount;
+
+                    Transaction::create([
+                        'appointment_id' => $appointment->id,
+                        'stripe_payment_intent_id' => $refund->id,
+                        'amount' => $refundAmount,
+                        'currency' => $transaction->currency,
+                        'status' => 'refunded',
+                    ]);
+                }
+            }
+
+            $appointment->update([
+                'status' => 'cancelled_by_clinic'
+            ]);
+
+            $child = Child::find($appointment->child_id);
+            $parent = $child ? User::find($child->parent_id) : null;
+            $doctor = Doctor::find($appointment->doctor_id);
+
+            $notifTitle = 'Appointment Cancelled';
+            $notifBodyParent = __('messages.notif_clinic_cancelled_appointment', [
+                'date' => $appointment->date,
+                'time' => $appointment->time,
+                'amount' => $refundAmount
+            ]);
+            $notifBodyDoctor = "Appointment for " . ($child ? "{$child->first_name} {$child->last_name}" : "Patient") . " on {$appointment->date} at {$appointment->time} was cancelled by receptionist.";
+
+            if ($parent) {
+                DBNotification::create([
+                    'parent_id' => $parent->id,
+                    'message' => $notifBodyParent,
+                ]);
+            }
+
+            if ($doctor) {
+                DoctorNotification::create([
+                    'doctor_id' => $doctor->id,
+                    'title' => $notifTitle,
+                    'message' => $notifBodyDoctor,
+                ]);
+            }
+
+            DB::commit();
+
+            Cache::forget("booked_slot_{$appointment->doctor_id}_{$appointment->date}_{$appointment->time}");
+
+            if ($parent && !empty($parent->fcm_token)) {
+                $firebase->send($parent->fcm_token, $notifTitle, $notifBodyParent);
+            }
+
+            if ($doctor && !empty($doctor->fcm_token)) {
+                $firebase->send($doctor->fcm_token, $notifTitle, $notifBodyDoctor);
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.appointment_canceled_success'),
+                'refund_amount' => $refundAmount,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Cancellation failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function pastByDoctor($doctorId)
@@ -370,7 +465,9 @@ class ReceptionistController extends Controller
             'doctor.department:id,name',
         ])
             ->whereDate('date', '<', now()->toDateString())
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'cancelled_by_patient')
+            ->where('status', '!=', 'cancelled_by_clinic')
+            ->where('status', '!=', 'missed')
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->get();
@@ -488,8 +585,8 @@ class ReceptionistController extends Controller
             'doctor.department:id,name'
         ])
             ->whereDate('date', $formattedDate)
-            ->where('status', '!=', 'cancelled')
-            ->where('status', '!=', 'canceled')
+            ->where('status', '!=', 'cancelled_by_patient')
+            ->where('status', '!=', 'cancelled_by_clinic')
             ->orderBy('time', 'asc')
             ->get();
 
@@ -524,5 +621,64 @@ class ReceptionistController extends Controller
             'total_appointments' => $appointments->count(),
             'appointments' => $formattedAppointments
         ], 200);
+    }
+
+    public function checkIn(Appointment $appointment, FirebaseNotificationService $firebase)
+    {
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => __('messages.invalid_status_for_checkin')
+            ], 400);
+        }
+
+        if (!\Carbon\Carbon::parse($appointment->date)->isToday()) {
+            return response()->json([
+                'message' => __('messages.checkin_today_only')
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $appointment->update([
+                'status' => 'checked_in',
+            ]);
+
+            $child = Child::find($appointment->child_id);
+            $doctor = Doctor::find($appointment->doctor_id);
+
+            $notifTitle = 'Patient Arrived 🏥';
+            $notifMessage = "{$child->first_name} {$child->last_name} is now in the waiting room.";
+
+            // 4. إنشاء إشعار للطبيب في قاعدة البيانات
+            DoctorNotification::create([
+                'doctor_id' => $appointment->doctor_id,
+                'title' => $notifTitle,
+                'message' => $notifMessage,
+            ]);
+
+            DB::commit();
+
+            // 5. إرسال Push Notification للهاتف الخاص بالطبيب
+            if ($doctor && !empty($doctor->fcm_token)) {
+                $firebase->send(
+                    $doctor->fcm_token,
+                    $notifTitle,
+                    $notifMessage
+                );
+            }
+
+            return response()->json([
+                'message' => __('messages.patient_checked_in_successfully'),
+                'appointment' => $appointment
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Check-in failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

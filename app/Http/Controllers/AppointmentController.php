@@ -16,10 +16,10 @@ use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Stripe\Stripe;
+use Stripe\Refund;
 use Stripe\PaymentIntent;
 use App\Models\Transaction;
 use Carbon\Carbon;
-use Stripe\Refund;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use App\Models\Doctor;
@@ -261,6 +261,11 @@ class AppointmentController extends Controller
                 'message' => __('messages.unauthorized')
             ], 403);
         }
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => __('messages.cannot_cancel_appointment')
+            ], 400);
+        }
 
         $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
@@ -315,7 +320,7 @@ class AppointmentController extends Controller
             }
 
             $appointment->update([
-                'status' => 'cancelled'
+                'status' => 'cancelled_by_patient'
             ]);
 
             $refundAmount = $transaction
@@ -355,7 +360,7 @@ class AppointmentController extends Controller
             ]);
 
             DB::commit();
-
+            Cache::forget("booked_slot_{$appointment->doctor_id}_{$appointment->date}_{$appointment->time}");
             // Push Notification للطبيب
             if ($doctor && !empty($doctor->fcm_token)) {
 
@@ -584,7 +589,8 @@ class AppointmentController extends Controller
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
             ->orderByDesc('time')
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'cancelled_by_patient')
+            ->where('status', '!=', 'cancelled_by_clinic')
             ->get();
 
         $formattedAppointments = $appointments->map(function ($appointment) {
@@ -667,7 +673,8 @@ class AppointmentController extends Controller
 
                         $isBooked = Appointment::where('doctor_id', $doctor->id)
                             ->where('date', $dateString)
-                            ->where('status', '!=', 'cancelled')
+                            ->where('status', '!=', 'cancelled_by_patient')
+                            ->where('status', '!=', 'cancelled_by_clinic')
                             ->where(function ($q) use ($timeWithSeconds, $timeWithoutSeconds) {
                                 $q->where('time', $timeWithoutSeconds)
                                     ->orWhere('time', $timeWithSeconds);

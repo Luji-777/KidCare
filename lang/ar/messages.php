@@ -114,7 +114,7 @@ return [
     'pending'                => 'قيد الانتظار',
     'confirmed'              => 'مؤكد',
     'completed'              => 'مكتمل',
-    'cancelled'              => 'ملغي',
+    'cancelled_by_clinic'              => 'ملغي من قبل العيادة',
 
     'error' => 'خطأ',
 

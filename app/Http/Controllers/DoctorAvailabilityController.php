@@ -94,7 +94,7 @@ class DoctorAvailabilityController extends Controller
         ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
         ->whereTime('time', '>=', $startTime)
         ->whereTime('time', '<', $endTime)
-        ->whereNotIn('status', ['cancelled', 'completed'])
+        ->whereNotIn('status', ['cancelled_by_clinic','cancelled_by_patient', 'completed'])
         ->get();
 
 
@@ -103,7 +103,7 @@ class DoctorAvailabilityController extends Controller
 
        
         $appointment->update([
-            'status' => 'cancelled'
+            'status' => 'cancelled_by_clinic'
         ]);
 
 
@@ -195,7 +195,8 @@ class DoctorAvailabilityController extends Controller
             $isBooked = Appointment::where('doctor_id', $doctorId)
                 ->where('date', $date)
                 ->where('time', $formatted)
-                ->where('status', '!=', 'Cancelled')
+                ->where('status', '!=', 'cancelled_by_patient')
+                ->where('status', '!=', 'cancelled_by_clinic')
                 ->exists();
 
             if (!$isBooked) {
