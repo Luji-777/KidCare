@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('app:send-appointment-reminders')
     ->everyMinute();
+Schedule::command('appointments:update-missed')->hourly();

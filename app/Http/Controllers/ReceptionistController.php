@@ -10,10 +10,14 @@ use App\Models\DoctorAvailability;
 use App\Models\Doctor;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
+use App\Services\FirebaseNotificationService;
+use Illuminate\Support\Facades\DB;
+use App\Models\DoctorNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Support\Str;
 
 class ReceptionistController extends Controller
@@ -524,5 +528,64 @@ class ReceptionistController extends Controller
             'total_appointments' => $appointments->count(),
             'appointments' => $formattedAppointments
         ], 200);
+    }
+
+    public function checkIn(Appointment $appointment, FirebaseNotificationService $firebase)
+    {
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => __('messages.invalid_status_for_checkin')
+            ], 400);
+        }
+
+        if (!\Carbon\Carbon::parse($appointment->date)->isToday()) {
+            return response()->json([
+                'message' => __('messages.checkin_today_only')
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $appointment->update([
+                'status' => 'checked_in',
+            ]);
+
+            $child = Child::find($appointment->child_id);
+            $doctor = Doctor::find($appointment->doctor_id);
+
+            $notifTitle = 'Patient Arrived 🏥';
+            $notifMessage = "{$child->first_name} {$child->last_name} is now in the waiting room.";
+
+            // 4. إنشاء إشعار للطبيب في قاعدة البيانات
+            DoctorNotification::create([
+                'doctor_id' => $appointment->doctor_id,
+                'title' => $notifTitle,
+                'message' => $notifMessage,
+            ]);
+
+            DB::commit();
+
+            // 5. إرسال Push Notification للهاتف الخاص بالطبيب
+            if ($doctor && !empty($doctor->fcm_token)) {
+                $firebase->send(
+                    $doctor->fcm_token,
+                    $notifTitle,
+                    $notifMessage
+                );
+            }
+
+            return response()->json([
+                'message' => __('messages.patient_checked_in_successfully'),
+                'appointment' => $appointment
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Check-in failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

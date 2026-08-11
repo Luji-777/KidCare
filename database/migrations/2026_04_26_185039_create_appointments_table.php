@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
             $table->date('date');
             $table->time('time');
-            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled_by_patient', 'cancelled_by_clinic', 'checked_in', 'missed', 'completed'])->default('pending');
             $table->decimal('price', 8, 2)->nullable();
             $table->decimal('base_price', 8, 2)->nullable();
             $table->string('currency', 3)->default('USD');

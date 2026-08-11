@@ -261,6 +261,11 @@ class AppointmentController extends Controller
                 'message' => __('messages.unauthorized')
             ], 403);
         }
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => __('messages.cannot_cancel_appointment')
+            ], 400);
+        }
 
         $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
@@ -315,7 +320,7 @@ class AppointmentController extends Controller
             }
 
             $appointment->update([
-                'status' => 'cancelled'
+                'status' => 'cancelled_by_patient'
             ]);
 
             $refundAmount = $transaction
@@ -355,7 +360,7 @@ class AppointmentController extends Controller
             ]);
 
             DB::commit();
-
+            Cache::forget("booked_slot_{$appointment->doctor_id}_{$appointment->date}_{$appointment->time}");
             // Push Notification للطبيب
             if ($doctor && !empty($doctor->fcm_token)) {
 
