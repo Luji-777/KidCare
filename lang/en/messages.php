@@ -118,7 +118,7 @@ return [
     'pending'                => 'Pending',
     'confirmed'              => 'Confirmed',
     'completed'              => 'Completed',
-    'cancelled'              => 'Cancelled',
+    'cancelled_by_patient'              => 'Cancelled by patient',
 
     'error' => 'Error',
 

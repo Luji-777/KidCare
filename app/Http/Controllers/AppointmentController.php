@@ -16,10 +16,10 @@ use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Stripe\Stripe;
+use Stripe\Refund;
 use Stripe\PaymentIntent;
 use App\Models\Transaction;
 use Carbon\Carbon;
-use Stripe\Refund;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use App\Models\Doctor;
@@ -589,7 +589,8 @@ class AppointmentController extends Controller
             ->whereDate('date', '<', now()->toDateString())
             ->orderByDesc('date')
             ->orderByDesc('time')
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'cancelled_by_patient')
+            ->where('status', '!=', 'cancelled_by_clinic')
             ->get();
 
         $formattedAppointments = $appointments->map(function ($appointment) {
@@ -672,7 +673,8 @@ class AppointmentController extends Controller
 
                         $isBooked = Appointment::where('doctor_id', $doctor->id)
                             ->where('date', $dateString)
-                            ->where('status', '!=', 'cancelled')
+                            ->where('status', '!=', 'cancelled_by_patient')
+                            ->where('status', '!=', 'cancelled_by_clinic')
                             ->where(function ($q) use ($timeWithSeconds, $timeWithoutSeconds) {
                                 $q->where('time', $timeWithoutSeconds)
                                     ->orWhere('time', $timeWithSeconds);

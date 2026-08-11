@@ -156,7 +156,8 @@ class DoctorAvailabilityController extends Controller
             $isBooked = Appointment::where('doctor_id', $doctorId)
                 ->where('date', $date)
                 ->where('time', $formatted)
-                ->where('status', '!=', 'Cancelled')
+                ->where('status', '!=', 'cancelled_by_patient')
+                ->where('status', '!=', 'cancelled_by_clinic')
                 ->exists();
 
             if (!$isBooked) {
