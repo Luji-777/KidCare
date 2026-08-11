@@ -11,16 +11,17 @@ class ChildFactory extends Factory
 
     public function definition(): array
     {
+        $faker = \Faker\Factory::create();
         return [
 
-            'first_name' => $this->faker->firstName,
-            'last_name' => $this->faker->lastName,
-            'gender' => $this->faker->randomElement(['male', 'female']),
+            'first_name' => $faker->firstName(),
+            'last_name' => $faker->lastName(),
+            'gender' => $faker->randomElement(['male', 'female']),
 
-            'birth_date' => $this->faker->date('Y-m-m', '-1 years'),
-            'blood_type' => $this->faker->randomElement(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
-            'medical_history' => $this->faker->paragraph,
-            'allergies' => $this->faker->randomElement(['peanut', 'sesame', 'berrie', null]),
+            'birth_date' => $faker->date('Y-m-d', '-1 years'),
+            'blood_type' => $faker->randomElement(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
+            'medical_history' => $faker->paragraph,
+            'allergies' => $faker->randomElement(['peanut', 'sesame', 'berry', null]),
         ];
     }
 }

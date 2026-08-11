@@ -12,6 +12,8 @@ use App\Models\Appointment;
 use App\Models\Transaction;
 use App\Models\Department;
 use App\Models\DoctorAvailability;
+use App\Models\Receptionist;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -27,7 +29,7 @@ class AdminController extends Controller
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -59,7 +61,7 @@ class AdminController extends Controller
         if (!$admin) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.user_not_found'),
                 ],
                 404
@@ -408,6 +410,91 @@ class AdminController extends Controller
     }
 
     //----------------Statistics-----------------
+
+    public function getWeeklyClinicSummary()
+    {
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeek;
+
+        if ($dayOfWeek == Carbon::SATURDAY) {
+            $startOfWeek = $today->copy()->format('Y-m-d');
+            $endOfWeek   = $today->copy()->addDays(5)->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::THURSDAY) {
+            $startOfWeek = $today->copy()->subDays(5)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->format('Y-m-d');
+        } elseif ($dayOfWeek == Carbon::FRIDAY) {
+            $startOfWeek = $today->copy()->subDays(6)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->subDay()->format('Y-m-d');
+        } else {
+            $startOfWeek = $today->copy()->previous(Carbon::SATURDAY)->format('Y-m-d');
+            $endOfWeek   = $today->copy()->next(Carbon::THURSDAY)->format('Y-m-d');
+        }
+
+        $allowedStatuses = ['confirmed', 'completed'];
+        $appointmentDurationMinutes = 30;
+
+        $totalDoctorsCount = Doctor::count();
+
+        $activeDoctorsThisWeekCount = Appointment::whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->distinct('doctor_id')
+            ->count('doctor_id');
+
+        $bookedAppointmentsCount = Appointment::whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->count();
+
+        $availabilities = DoctorAvailability::get();
+        $maxWeeklyCapacity = 0;
+
+        $startDate = Carbon::parse($startOfWeek);
+        for ($i = 0; $i <= 5; $i++) {
+            $currentDate = $startDate->copy()->addDays($i);
+            $currentDayName = $currentDate->format('l');
+
+            $dayAvailabilities = $availabilities->where('day_of_week', $currentDayName);
+
+            foreach ($dayAvailabilities as $availability) {
+                $startTime = Carbon::parse($availability->start_time);
+                $endTime   = Carbon::parse($availability->end_time);
+                $totalMinutes = $startTime->diffInMinutes($endTime);
+
+                if ($appointmentDurationMinutes > 0) {
+                    $maxWeeklyCapacity += floor($totalMinutes / $appointmentDurationMinutes);
+                }
+            }
+        }
+        $availableSlotsRemaining = max(0, $maxWeeklyCapacity - $bookedAppointmentsCount);
+        $busiestDayQuery = Appointment::select(
+            DB::raw('DAYNAME(date) as day_name'),
+            DB::raw('COUNT(*) as count')
+        )
+            ->whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', $allowedStatuses)
+            ->groupBy('day_name')
+            ->orderBy('count', 'desc')
+            ->first();
+
+        $busiestDay = $busiestDayQuery ? $busiestDayQuery->day_name : 'No appointments this week';
+        $busiestDayCount = $busiestDayQuery ? $busiestDayQuery->count : 0;
+
+        return response()->json([
+            'status' => 'success',
+            'week_range' => [
+                'start_date' => $startOfWeek,
+                'end_date'   => $endOfWeek
+            ],
+            'data' => [
+                'total_doctors'               => $totalDoctorsCount,
+                'active_doctors_this_week'    => $activeDoctorsThisWeekCount,
+                'available_appointments_left' => $availableSlotsRemaining,
+                'busiest_day_of_week'         => [
+                    'day_name'           => $busiestDay,
+                    'appointments_count' => $busiestDayCount
+                ]
+            ]
+        ], 200);
+    }
     public function getChildrenAgeDistribution()
     {
         $ageCounts = DB::table('children')
@@ -570,5 +657,110 @@ class AdminController extends Controller
             'data' => $report
         ], 200);
     }
-    
+
+    public function getMonthlyBudgetReport()
+    {
+        $startOfYear = Carbon::now()->startOfYear();
+        $currentDate = Carbon::now()->endOfDay();
+        $allowedStatuses = ['completed'];
+
+        $appointments = Appointment::with('additions')
+            ->whereIn('status', $allowedStatuses)
+            ->whereBetween('date', [$startOfYear->format('Y-m-d'), $currentDate->format('Y-m-d')])
+            ->get();
+
+        $monthlyReport = [];
+        $startMonth = $startOfYear->copy();
+        while ($startMonth->lte($currentDate)) {
+            $monthName = $startMonth->format('F');
+            $year = $startMonth->year;
+
+            $currentMonthAppointments = $appointments->filter(function ($appointment) use ($startMonth) {
+                $appointmentDate = Carbon::parse($appointment->date);
+                return $appointmentDate->month === $startMonth->month && $appointmentDate->year === $startMonth->year;
+            });
+
+            $appointmentsRevenue = $currentMonthAppointments->sum('price');
+
+            $additionsRevenue = 0;
+            foreach ($currentMonthAppointments as $appointment) {
+                if ($appointment->additions) {
+                    $additionsRevenue += $appointment->additions->sum('price');
+                }
+            }
+
+            $doctorEarningsExpense = $currentMonthAppointments->sum('doctor_earnings');
+            $materialsCostExpense = $additionsRevenue;
+
+            $totalIncome = $appointmentsRevenue + $additionsRevenue;
+            $totalExpense = $doctorEarningsExpense + $materialsCostExpense;
+            $netProfit = $totalIncome - $totalExpense;
+
+            $monthlyReport[] = [
+
+                'month_number' => $startMonth->month,
+                'month_name' => $monthName,
+                'income_details' => [
+                    'appointments_revenue' => round($appointmentsRevenue, 2),
+                    'additions_revenue'    => round($additionsRevenue, 2),
+                    'total_income'         => round($totalIncome, 2)
+                ],
+                'expense_details' => [
+                    'doctor_earnings'  => round($doctorEarningsExpense, 2),
+                    'materials_cost'   => round($materialsCostExpense, 2),
+                    'total_expense'    => round($totalExpense, 2)
+                ],
+                'net_profit' => round($netProfit, 2)
+            ];
+
+            $startMonth->addMonth();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'currency' => 'USD',
+            'year' => $year,
+            'data' => $monthlyReport
+        ], 200);
+    }
+
+    public function changeReceptionistPassword(Request $request, $receptionistId)
+    {
+        $currentUser = auth()->user();
+
+        if (!$currentUser || !($currentUser instanceof Admin)) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $receptionist = Receptionist::find($receptionistId);
+        if (!$receptionist) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.receptionist_not_found')
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $receptionist->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.password_updated_successfully')
+        ], 200);
+    }
 }

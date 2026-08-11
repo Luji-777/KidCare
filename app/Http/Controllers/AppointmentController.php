@@ -8,8 +8,10 @@ use App\Http\Requests\UpdateAppointmentRequest;
 use App\Services\FirebaseNotificationService;
 use App\Models\DoctorAvailability;
 use App\Models\DoctorNotification;
-use App\Models\Child;
 use App\Models\Appointment;
+use App\Models\ParentModel;
+use App\Models\Receptionist;
+use App\Models\Child;
 use App\Models\Notification as DBNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -112,7 +114,7 @@ class AppointmentController extends Controller
 
         if (!$isOwner) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => __('messages.unauthorized'),
             ], 403);
         }
@@ -221,6 +223,34 @@ class AppointmentController extends Controller
 
     public function show(Appointment $appointment)
     {
+        $currentUser = auth()->user();
+
+        if ($currentUser instanceof ParentModel) {
+            $isOwner = $currentUser->children()->where('id', $appointment->child_id)->exists();
+            if (!$isOwner) {
+                return response()->json(['message' => __('messages.unauthorized')], 403);
+            }
+        } elseif (!($currentUser instanceof Receptionist)) {
+            return response()->json(['message' => __('messages.unauthorized')], 403);
+        }
+
+        return response()->json([
+            'status'      => 'success',
+            'message'     => __('messages.show_success'),
+            'appointment' => [
+                'id'        => $appointment->id,
+                'doctor_id' => $appointment->doctor_id,
+                'child_id'  => $appointment->child_id,
+                'date'      => $appointment->date,
+                'time'      => $appointment->time,
+                'price'     => $appointment->price,
+                'status'    => __('messages.' . $appointment->status),
+            ]
+        ], 200);
+    }
+
+    public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
+    {
         $isOwner = auth()->user()
             ->children()
             ->where('id', $appointment->child_id)
@@ -228,173 +258,142 @@ class AppointmentController extends Controller
 
         if (!$isOwner) {
             return response()->json([
-                'message'      => __('messages.unauthorized'),
+                'message' => __('messages.unauthorized')
             ], 403);
         }
 
+        $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
 
-        return response()->json([
-            'status'      => 'success',
-            'message'     => __('messages.show_success'),
-            'appointment' => [
-                'id' => $appointment->id,
-                'doctor_id' => $appointment->doctor_id,
-                'child_id' => $appointment->child_id,
-                'date' => $appointment->date,
-                'time' => $appointment->time,
-                'price' => $appointment->price,
-                'status' => __('messages.' . $appointment->status),
-            ]
-        ], 200);
-    }
-
-    public function destroy(Appointment $appointment, FirebaseNotificationService $firebase)
-{
-    $isOwner = auth()->user()
-        ->children()
-        ->where('id', $appointment->child_id)
-        ->exists();
-
-    if (!$isOwner) {
-        return response()->json([
-            'message' => __('messages.unauthorized')
-        ], 403);
-    }
-
-    $appointmentDateTime = Carbon::parse("{$appointment->date} {$appointment->time}");
-
-    if ($appointmentDateTime->isPast()) {
-        return response()->json([
-            'message' => __('messages.cannot_cancel_past')
-        ], 400);
-    }
-
-    $hoursRemaining = now()->diffInHours($appointmentDateTime, false);
-
-    $refundPercentage = 1.00;
-    $message = __('messages.cancel_full_refund');
-
-    if ($hoursRemaining < 48) {
-        $refundPercentage = 0.75;
-        $message = __('messages.cancel_fee_deducted');
-    }
-
-    $transaction = Transaction::where('appointment_id', $appointment->id)
-        ->where('status', 'succeeded')
-        ->first();
-
-    Stripe::setApiKey(config('services.stripe.secret'));
-
-    DB::beginTransaction();
-
-    try {
-
-        if ($transaction) {
-
-            $refundAmountInCents = round(($transaction->amount * $refundPercentage) * 100);
-
-            $refund = Refund::create([
-                'payment_intent' => $transaction->stripe_payment_intent_id,
-                'amount' => $refundAmountInCents,
-                'metadata' => [
-                    'appointment_id' => $appointment->id,
-                    'reason' => $hoursRemaining < 48
-                        ? 'Canceled within 48 hours'
-                        : 'Canceled well in advance'
-                ]
-            ]);
-
-            Transaction::create([
-                'appointment_id' => $appointment->id,
-                'stripe_payment_intent_id' => $refund->id,
-                'amount' => $transaction->amount * $refundPercentage,
-                'currency' => $transaction->currency,
-                'status' => 'refunded',
-            ]);
+        if ($appointmentDateTime->isPast()) {
+            return response()->json([
+                'message' => __('messages.cannot_cancel_past')
+            ], 400);
         }
 
-        $appointment->update([
-            'status' => 'cancelled'
-        ]);
+        $hoursRemaining = now()->diffInHours($appointmentDateTime, false);
 
-        $refundAmount = $transaction
-            ? ($transaction->amount * $refundPercentage)
-            : 0;
+        $refundPercentage = 1.00;
+        $message = __('messages.cancel_full_refund');
 
         if ($hoursRemaining < 48) {
-            $notificationBody = __('messages.notif_cancel_fee', [
-                'amount' => $refundAmount
-            ]);
-        } else {
-            $notificationBody = __('messages.notif_cancel_full', [
-                'amount' => $refundAmount
-            ]);
+            $refundPercentage = 0.75;
+            $message = __('messages.cancel_fee_deducted');
         }
 
-        $parent = auth()->user();
-        $child = Child::find($appointment->child_id);
-        $doctor = Doctor::find($appointment->doctor_id);
+        $transaction = Transaction::where('appointment_id', $appointment->id)
+            ->where('status', 'succeeded')
+            ->first();
 
-        // إشعار الطبيب داخل الداتابيز
-        DoctorNotification::create([
-            'doctor_id' => $appointment->doctor_id,
-            'title' => 'Appointment Cancelled',
-            'message' => $child->first_name . ' ' .
-                $child->last_name .
-                ' cancelled the appointment on ' .
-                $appointment->date .
-                ' at ' .
-                $appointment->time,
-        ]);
+        Stripe::setApiKey(config('services.stripe.secret'));
 
-        // إشعار الأب داخل الداتابيز
-        DBNotification::create([
-            'parent_id' => $parent->id,
-            'message' => $notificationBody
-        ]);
+        DB::beginTransaction();
 
-        DB::commit();
-       
-        // Push Notification للطبيب
-        if ($doctor && !empty($doctor->fcm_token)) {
-            
-            $firebase->send(
-                $doctor->fcm_token,
-                'Appointment Cancelled',
-                $child->first_name . ' ' .
+        try {
+
+            if ($transaction) {
+
+                $refundAmountInCents = round(($transaction->amount * $refundPercentage) * 100);
+
+                $refund = Refund::create([
+                    'payment_intent' => $transaction->stripe_payment_intent_id,
+                    'amount' => $refundAmountInCents,
+                    'metadata' => [
+                        'appointment_id' => $appointment->id,
+                        'reason' => $hoursRemaining < 48
+                            ? 'Canceled within 48 hours'
+                            : 'Canceled well in advance'
+                    ]
+                ]);
+
+                Transaction::create([
+                    'appointment_id' => $appointment->id,
+                    'stripe_payment_intent_id' => $refund->id,
+                    'amount' => $transaction->amount * $refundPercentage,
+                    'currency' => $transaction->currency,
+                    'status' => 'refunded',
+                ]);
+            }
+
+            $appointment->update([
+                'status' => 'cancelled'
+            ]);
+
+            $refundAmount = $transaction
+                ? ($transaction->amount * $refundPercentage)
+                : 0;
+
+            if ($hoursRemaining < 48) {
+                $notificationBody = __('messages.notif_cancel_fee', [
+                    'amount' => $refundAmount
+                ]);
+            } else {
+                $notificationBody = __('messages.notif_cancel_full', [
+                    'amount' => $refundAmount
+                ]);
+            }
+
+            $parent = auth()->user();
+            $child = Child::find($appointment->child_id);
+            $doctor = Doctor::find($appointment->doctor_id);
+
+            // إشعار الطبيب داخل الداتابيز
+            DoctorNotification::create([
+                'doctor_id' => $appointment->doctor_id,
+                'title' => 'Appointment Cancelled',
+                'message' => $child->first_name . ' ' .
                     $child->last_name .
                     ' cancelled the appointment on ' .
                     $appointment->date .
                     ' at ' .
-                    $appointment->time
-            );
+                    $appointment->time,
+            ]);
+
+            // إشعار الأب داخل الداتابيز
+            DBNotification::create([
+                'parent_id' => $parent->id,
+                'message' => $notificationBody
+            ]);
+
+            DB::commit();
+
+            // Push Notification للطبيب
+            if ($doctor && !empty($doctor->fcm_token)) {
+
+                $firebase->send(
+                    $doctor->fcm_token,
+                    'Appointment Cancelled',
+                    $child->first_name . ' ' .
+                        $child->last_name .
+                        ' cancelled the appointment on ' .
+                        $appointment->date .
+                        ' at ' .
+                        $appointment->time
+                );
+            }
+
+            // Push Notification للأب
+            if (!empty($parent->fcm_token)) {
+
+                $firebase->send(
+                    $parent->fcm_token,
+                    'Appointment Cancelled',
+                    $notificationBody
+                );
+            }
+
+            return response()->json([
+                'message' => $message,
+                'refund_amount' => $refundAmount
+            ], 200);
+        } catch (Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Cancellation and Refund failed: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Push Notification للأب
-        if (!empty($parent->fcm_token)) {
-
-            $firebase->send(
-                $parent->fcm_token,
-                'Appointment Cancelled',
-                $notificationBody
-            );
-        }
-
-        return response()->json([
-            'message' => $message,
-            'refund_amount' => $refundAmount
-        ], 200);
-
-    } catch (Exception $e) {
-
-        DB::rollBack();
-
-        return response()->json([
-            'error' => 'Cancellation and Refund failed: ' . $e->getMessage()
-        ], 500);
     }
-}
-
 
     public function upcoming()
     {
@@ -485,15 +484,37 @@ class AppointmentController extends Controller
 
     public function upcomingByChild($childId)
     {
-        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
-            $query->where('parent_id', auth()->id())
-                ->where('id', $childId);
-        })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
+        $currentUser = auth()->user();
+
+        $childExists = Child::where('id', $childId)->exists();
+        if (!$childExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query();
+
+        if ($currentUser instanceof ParentModel) {
+            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+                $q->where('parent_id', $currentUser->id)
+                    ->where('id', $childId);
+            });
+        } elseif ($currentUser instanceof Receptionist) {
+            $query->where('child_id', $childId);
+        } else {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
             ->whereDate('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('time')
@@ -501,12 +522,12 @@ class AppointmentController extends Controller
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
@@ -529,29 +550,51 @@ class AppointmentController extends Controller
 
     public function pastByChild($childId)
     {
-        $appointments = Appointment::whereHas('child', function ($query) use ($childId) {
-            $query->where('parent_id', auth()->id())
-                ->where('id', $childId);
-        })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
+        $currentUser = auth()->user();
+
+        $childExists = Child::where('id', $childId)->exists();
+        if (!$childExists) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
+
+        $query = Appointment::query();
+
+        if ($currentUser instanceof ParentModel) {
+            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+                $q->where('parent_id', $currentUser->id)
+                    ->where('id', $childId);
+            });
+        } elseif ($currentUser instanceof Receptionist) {
+            $query->where('child_id', $childId);
+        } else {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $appointments = $query->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
             ->whereDate('date', '<', now()->toDateString())
-            // ->where('status', '!=', 'Cancelled')
             ->orderByDesc('date')
             ->orderByDesc('time')
+            ->where('status', '!=', 'cancelled')
             ->get();
 
         $formattedAppointments = $appointments->map(function ($appointment) {
             return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
+                'id'     => $appointment->id,
+                'status' => __('messages.' . $appointment->status),
+                'price'  => $appointment->price,
+                'date'   => $appointment->date,
+                'time'   => $appointment->time,
+                'child'  => [
                     'id'         => $appointment->child_id,
                     'first_name' => $appointment->child?->first_name,
                     'image'      => $appointment->child?->image,
@@ -658,7 +701,7 @@ class AppointmentController extends Controller
         ], 200);
     }
 
-     public function appointmentDetails($id)
+    public function appointmentDetails($id)
     {
         $doctor = auth()->user();
 
@@ -690,24 +733,24 @@ class AppointmentController extends Controller
     }
 
     public function addMedicalRequests(Request $request, $appointmentId)
-{
-    $request->validate([
-        'required_tests' => 'nullable|string',
-        'required_imaging' => 'nullable|string',
-    ]);
+    {
+        $request->validate([
+            'required_tests' => 'nullable|string',
+            'required_imaging' => 'nullable|string',
+        ]);
 
-    $appointment = Appointment::findOrFail($appointmentId);
+        $appointment = Appointment::findOrFail($appointmentId);
 
-    $appointment->update([
-        'required_tests' => $request->required_tests,
-        'required_imaging' => $request->required_imaging,
-    ]);
+        $appointment->update([
+            'required_tests' => $request->required_tests,
+            'required_imaging' => $request->required_imaging,
+        ]);
 
-    return response()->json([
-        'message' =>  __('messages.Medical_requests'),
-        //'appointment' => $appointment
-    ]);
-}
+        return response()->json([
+            'message' =>  __('messages.Medical_requests'),
+            //'appointment' => $appointment
+        ]);
+    }
 
     /*public function bookVaccine(Request $request)
 {

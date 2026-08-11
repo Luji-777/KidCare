@@ -11,20 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('child_vaccines', function (Blueprint $table) {
+        Schema::create('receptionists', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('child_id')->constrained('children')->cascadeOnDelete();
-            $table->foreignId('vaccine_id')->constrained('vaccines')->cascadeOnDelete();
-            $table->date('taken_date')->nullable();
-            $table->text('notes')->nullable();
+            $table->string('name');
+            $table->string('phone_number')->unique();
+            $table->string('password');
             $table->timestamps();
         });
     }
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('child_vaccines');
+        Schema::dropIfExists('receptionists');
     }
 };

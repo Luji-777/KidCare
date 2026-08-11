@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Doctor;
 use App\Models\Child;
 use App\Models\ParentModel;
-use App\Models\Notification;
+use App\Models\DoctorNotification;
+
 
 
 use App\Services\FirebaseNotificationService;
@@ -52,7 +53,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_age       = Carbon::parse($child->birth_date)->age;
-            $patient_image = $appointment->child->image ?? '';
+            $patient_image     = $child->image ?? '';
             $department_name   = $doctor->department->name;
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
@@ -75,7 +76,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
             $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
             $patient_age       = Carbon::parse($appointment->child->birth_date)->age;
-            $patient_image = $child->image ?? '';
+            $patient_image     = $appointment->child->image ?? '';
             $department_name   = $appointment->doctor->department->name;
             $date_time         = $appointment->date . ' ' . $appointment->time;
             $price             = (string)$appointment->price;
@@ -231,12 +232,12 @@ class PaymentController extends Controller
                             $parent = ParentModel::find($child->parent_id);
 
                             DoctorNotification::create([
-                            'doctor_id' => $appointment->doctor_id,
-                            'title' => 'New Appointment',
-                            'message' => $child->first_name . ' ' . $child->last_name .
-                            ' booked an appointment on ' .
-                            $appointment->date . ' at ' . $appointment->time,
-]);
+                                'doctor_id' => $appointment->doctor_id,
+                                'title' => 'New Appointment',
+                                'message' => $child->first_name . ' ' . $child->last_name .
+                                    ' booked an appointment on ' .
+                                    $appointment->date . ' at ' . $appointment->time,
+                            ]);
 
                             DBNotification::create([
                                 'parent_id' => $parent->id,
@@ -301,6 +302,13 @@ class PaymentController extends Controller
             $appointment = Appointment::with('additions')->findOrFail($appointment_id);
             $additionsTotal = $appointment->additions->sum('price');
 
+            if ($appointment->status === 'cancelled' || $appointment->status === 'canceled') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => __('messages.cannot_complete_payment_for_cancelled_appointment')
+                ], 400);
+            }
+
             if ($appointment->booking_source == 'online') {
 
                 if ($additionsTotal > 0) {
@@ -345,6 +353,13 @@ class PaymentController extends Controller
 
         $appointment = Appointment::with(['additions', 'transactions', 'doctor', 'child'])
             ->findOrFail($appointment_id);
+
+        if ($appointment->status === 'cancelled' || $appointment->status === 'canceled') {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.cannot_view_summary_for_cancelled_appointment')
+            ], 400);
+        }
 
         $fixedPrice = $appointment->price;
         $additionsTotal = $appointment->additions->sum('price');
@@ -394,7 +409,7 @@ class PaymentController extends Controller
     }
 
     //---------------Test----------------
-    public function testAppointment(Request $request)
+    /*  public function testAppointment(Request $request)
     {
         $pendingAppointmentId = $request->appointment_id;
 
@@ -436,25 +451,25 @@ class PaymentController extends Controller
             $parent = ParentModel::find($child->parent_id);
 
             DoctorNotification::create([
-            'doctor_id' => $appointment->doctor_id,
-            'title' => 'New Appointment',
-            'message' => $child->first_name . ' ' . $child->last_name .
-                 ' booked an appointment on ' .
-                 $appointment->date . ' at ' . $appointment->time,
-]);
-            if ($doctor && !empty($doctor->fcm_token)) {
-            
-            $firebase->send(
-                $doctor->fcm_token,
-                'New Appointment',
-                $child->first_name . ' ' .
-                    $child->last_name .
+                'doctor_id' => $appointment->doctor_id,
+                'title' => 'New Appointment',
+                'message' => $child->first_name . ' ' . $child->last_name .
                     ' booked an appointment on ' .
-                    $appointment->date .
-                    ' at ' .
-                    $appointment->time
-            );
-        }
+                    $appointment->date . ' at ' . $appointment->time,
+            ]);
+            if ($doctor && !empty($doctor->fcm_token)) {
+
+                $firebase->send(
+                    $doctor->fcm_token,
+                    'New Appointment',
+                    $child->first_name . ' ' .
+                        $child->last_name .
+                        ' booked an appointment on ' .
+                        $appointment->date .
+                        ' at ' .
+                        $appointment->time
+                );
+            }
 
             DBNotification::create([
                 'parent_id' => $parent->id,
@@ -491,5 +506,5 @@ class PaymentController extends Controller
                 'error'   => $e->getMessage()
             ], 500);
         }
-    }
+    }*/
 }

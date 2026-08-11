@@ -67,7 +67,7 @@ class DoctorAvailabilityController extends Controller
 {
     $doctor = auth()->user();
 
-    // التأكد أن وقت الدوام تابع لهذا الدكتور
+   
     $availability = DoctorAvailability::where('id', $id)
         ->where('doctor_id', $doctor->id)
         ->first();
@@ -87,7 +87,7 @@ class DoctorAvailabilityController extends Controller
         ->format('H:i:s');
 
 
-    // جلب كل المواعيد المستقبلية التي تقع ضمن وقت الدوام المحذوف
+    
     $appointments = Appointment::with('child.parent')
         ->where('doctor_id', $doctor->id)
         ->whereDate('date', '>=', now()->toDateString())
@@ -98,20 +98,20 @@ class DoctorAvailabilityController extends Controller
         ->get();
 
 
-    // إلغاء المواعيد وإرسال الإشعارات
+    
     foreach ($appointments as $appointment) {
 
-        // إلغاء الموعد
+       
         $appointment->update([
             'status' => 'cancelled'
         ]);
 
 
-        // جلب الأب
+        
         $parent = $appointment->child->parent;
 
 
-        // إذا عنده FCM Token أرسل إشعار
+       
         if ($parent && $parent->fcm_token) {
 
             $messaging = app('firebase.messaging');
@@ -134,8 +134,6 @@ class DoctorAvailabilityController extends Controller
         }
     }
 
-
-    // بعد معالجة المواعيد نحذف وقت الدوام
     $availability->delete();
 
 
@@ -145,6 +143,7 @@ class DoctorAvailabilityController extends Controller
         'cancelled_appointments_count' => $appointments->count()
     ], 200);
 }
+
     
 
     public function availableTimes($doctorId, Request $request)

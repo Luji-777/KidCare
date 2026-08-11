@@ -67,6 +67,8 @@ return [
     'unauthorized_transaction'             => 'Unauthorized action for this financial transaction.',
     'payment_processing_wait'              => 'Payment is already processing. Please wait.',
     'stripe_init_failed'                   => 'Stripe payment initialization failed: ',
+    'cannot_view_summary_for_cancelled_appointment' => 'Cannot view the summary for a cancelled appointment.',
+    'cannot_complete_payment_for_cancelled_appointment' => 'Cannot complete payment for a cancelled appointment.',
 
     // Firebase Push Notifications
     'notification_appointment_confirmed_title' => 'Appointment Confirmed',
@@ -108,12 +110,17 @@ return [
     'Medical_requests'  => 'Medical requests added successfully',
 
 
+    'receptionist_not_found' => 'Receptionist not found.',
+    'password_updated_successfully' => 'Password updated successfully.',
+
 
     // Statuses (Values from Database)
     'pending'                => 'Pending',
     'confirmed'              => 'Confirmed',
     'completed'              => 'Completed',
     'cancelled'              => 'Cancelled',
+
+    'error' => 'Error',
 
     'days' => [
         'monday'    => 'Monday',
@@ -130,4 +137,12 @@ return [
         'Dentistry'  => 'Dentistry',
         'Psychiatry' => 'Psychiatry',
     ],
+
+    'vaccine_schedule_created_successfully' => 'Vaccine schedule created successfully.',
+    'schedule_not_found'                   => 'Vaccine schedule not found.',
+    'schedule_status_updated'               => 'Vaccine schedule status updated successfully.',
+    'vaccine_already_given_to_child'        => 'This vaccine has already been given to this child.',
+    'vaccination_recorded_successfully'     => 'Child vaccination recorded successfully.',
+    'vaccine_schedule_already_exists' => 'A schedule for this vaccine already exists on the selected date.',
+    'vaccine_created_successfully' => 'Vaccine created successfully'
 ];

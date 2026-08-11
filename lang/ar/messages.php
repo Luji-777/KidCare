@@ -65,6 +65,8 @@ return [
     'unauthorized_transaction'             => 'إجراء غير مصرح به لهذه المعاملة المالية.',
     'payment_processing_wait'              => 'عملية الدفع قيد المعالجة الآن. يرجى الانتظار.',
     'stripe_init_failed'                   => 'فشل في تهيئة بوابة دفع Stripe: ',
+    'cannot_view_summary_for_cancelled_appointment' => 'لا يمكن عرض ملخص الحساب لموعد ملغى.',
+    'cannot_complete_payment_for_cancelled_appointment' => 'لا يمكن إتمام عملية الدفع لموعد ملغى.',
 
     // Firebase Push Notifications
     'notification_appointment_confirmed_title' => 'تم تأكيد الموعد بنجاح',
@@ -104,11 +106,17 @@ return [
     'Growth_add_success' => 'تم اضافة تقرير النمو بنجاح.',
     'Medical_requests'  => 'تم اضافة المتطلبات الطبية بنجاح.',
 
+
+    'receptionist_not_found' => 'موظف الاستقبال غير موجود.',
+    'password_updated_successfully' => 'تم تحديث كلمة السر بنجاح.',
+
     // Statuses (Values from Database)
     'pending'                => 'قيد الانتظار',
     'confirmed'              => 'مؤكد',
     'completed'              => 'مكتمل',
     'cancelled'              => 'ملغي',
+
+    'error' => 'خطأ',
 
     'paid_online'    => 'مدفوع إلكترونياً',
     'partially_paid' => 'مدفوع جزئياً',
@@ -129,4 +137,12 @@ return [
         'Dentistry'  => 'طب الأسنان',
         'Psychiatry' => 'الطب النفسي',
     ],
+
+    'vaccine_schedule_created_successfully' => 'تم الإعلان عن موعد اللقاح بنجاح.',
+    'schedule_not_found'                   => 'موعد اللقاح غير موجود.',
+    'schedule_status_updated'               => 'تم تحديث حالة موعد اللقاح بنجاح.',
+    'vaccine_already_given_to_child'        => 'هذا اللقاح تم توثيقه لهذا الطفل من قبل.',
+    'vaccination_recorded_successfully'     => 'تم تسجيل إعطاء اللقاح للطفل بنجاح.',
+    'vaccine_schedule_already_exists' => 'تم الإعلان عن موعد لهذا اللقاح في نفس اليوم من قبل.',
+    'vaccine_created_successfully' => 'تم إضافة اللقاح بنجاح'
 ];

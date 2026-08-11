@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class AppointmentSeeder extends Seeder
 {
-    public function run(): void
+    /* public function run(): void
 
     {
         $childIds = Child::pluck('id')->toArray();
@@ -147,6 +147,39 @@ class AppointmentSeeder extends Seeder
                     'doctor_earnings' => $price * 0.6,
                 ]);
             }
+        }
+    }*/
+
+    public function run(): void
+    {
+        $childIds = Child::pluck('id')->toArray();
+        $doctorIds = Doctor::pluck('id')->toArray();
+
+        if (empty($doctorIds) || empty($childIds)) {
+            $this->command->warn('يرجى التأكد من وجود أطباء وأطفال في قاعدة البيانات أولاً!');
+            return;
+        }
+
+
+        for ($i = 1; $i <= 20; $i++) {
+
+            $isPast = $i <= 10;
+
+            $date = $isPast
+                ? Carbon::today()->subDays(rand(1, 20))->toDateString()
+                : Carbon::today()->addDays(rand(1, 20))->toDateString();
+
+            Appointment::create([
+                'child_id'        => Arr::random($childIds),
+                'doctor_id'       => Arr::random($doctorIds),
+                'date'            => $date,
+                'time'            => sprintf('%02d:00:00', rand(9, 16)),
+                'status'          => $isPast ? 'completed' : 'confirmed',
+                'price'           => 100.00,
+                'currency'        => 'USD',
+                'payment_status'  => $isPast ? 'fully_paid' : 'paid_online',
+                'doctor_earnings' => 50.00,
+            ]);
         }
     }
 }

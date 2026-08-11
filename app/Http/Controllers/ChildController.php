@@ -7,45 +7,104 @@ use App\Http\Requests\StoreChildRequest;
 use App\Http\Requests\UpdateChildRequest;
 use App\Models\Child;
 use Carbon\Carbon;
+use App\Models\ParentModel;
+use App\Models\Receptionist;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
 class ChildController extends Controller
 {
     public function store(StoreChildRequest $request)
     {
+        $currentUser = $request->user();
+
+        if (!$currentUser) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
 
         $data = $request->validated();
 
+        if ($currentUser instanceof ParentModel) {
+            $parentId = $currentUser->id;
+        } elseif ($currentUser instanceof Receptionist) {
+            $validator = Validator::make($request->all(), [
+                'parent_id' => 'required|integer|exists:parent_models,id',
+            ]);
 
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => __('messages.error'),
+                    'message' => __('messages.parent_id_required'),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $parentId = $request->parent_id;
+        } else {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
+            ], 403);
+        }
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-
             $image->move(public_path('uploads/children'), $imageName);
-
-
             $data['image'] = 'uploads/children/' . $imageName;
         } else {
-
             $data['image'] = null;
         }
 
-
-        $child = Child::create([
-            'parent_id' => auth()->user()->id,
-            ...$data
-        ]);
+        $child = Child::create(array_merge($data, [
+            'parent_id' => $parentId
+        ]));
 
         return response()->json([
-            'message' => __('messages.child_added_success'),
+            'message' => 'Child added successfully.',
             'child' => $child
         ], 201);
     }
 
     public function update(UpdateChildRequest $request, $id)
     {
-        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
+        $currentUser = $request->user();
+
+        if (!$currentUser) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+
+        if ($currentUser instanceof ParentModel) {
+            $child = $currentUser->children()->where('id', $id)->first();
+        } elseif ($currentUser instanceof Receptionist) {
+            $child = Child::find($id);
+
+            if ($child && $request->has('parent_id')) {
+                if ($child->parent_id != $request->parent_id) {
+                    return response()->json([
+                        'status' => __('messages.error'),
+                        'message' => __('messages.child_parent_mismatch')
+                    ], 422);
+                }
+            }
+        } else {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
+            ], 403);
+        }
+
+        if (!$child) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
 
         $data = $request->validated();
 
@@ -64,55 +123,150 @@ class ChildController extends Controller
 
         $child->update($data);
 
-
         $changes = $child->getChanges();
 
         return response()->json([
-            'message' => __('messages.child_updated_success'),
+            'message' => 'Child updated successfully.',
             'updated_fields' => $changes
         ]);
     }
-
     public function index()
     {
-        $children = auth()->user()->children;
+        $user = auth()->user();
+
+        $children = optional($user)->children ?? collect();
+
+        $filteredChildren = $children
+            ->filter(function ($child) {
+                return $child->birth_date && \Carbon\Carbon::parse($child->birth_date)->age <= 7;
+            })
+            ->values();
+
+        return response()->json([
+            'children' => $filteredChildren
+        ]);
+    }
+    public function dashboardIndex(Request $request)
+    {
+        $currentUser = $request->user();
+
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        $children = Child::select([
+            'id',
+            'parent_id',
+            'first_name',
+            'last_name',
+            'gender',
+            'birth_date',
+            'blood_type',
+            'image'
+        ])
+            ->with(['parent' => function ($query) {
+                $query->select('id', 'first_name', 'last_name');
+            }])
+            ->get();
+        $formattedChildren = $children->map(function ($child) {
+            return [
+                'id'          => $child->id,
+                'first_name'  => $child->first_name,
+                'last_name'   => $child->last_name,
+                'gender'      => $child->gender,
+                'birth_date'  => $child->birth_date,
+                'blood_type'  => $child->blood_type,
+                'image'       => $child->image,
+                'parent_name' => $child->parent
+                    ? $child->parent->first_name . ' ' . $child->parent->last_name
+                    : null
+            ];
+        });
+
         return response()->json([
             'status'   => 'success',
-            'message'  => __('messages.children_fetched_success'),
-            'children' => $children
+            'message'  => 'All children fetched successfully.',
+            'children' => $formattedChildren
         ]);
     }
 
     public function show($id)
     {
+        $currentUser = request()->user();
 
-        $child = auth()->user()->children()->find($id);
+        if (!$currentUser) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized.'
+            ], 401);
+        }
+
+        // 1. جلب الطفل بناءً على الصلاحيات
+        if ($currentUser instanceof ParentModel) {
+            // الأب يبحث في أطفاله فقط
+            $child = $currentUser->children()->find($id);
+        } elseif ($currentUser instanceof Receptionist) {
+            // الرسبشن يبحث في كل الأطفال
+            $child = Child::find($id);
+        } else {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized role.'
+            ], 403);
+        }
+
+        // 2. التحقق من وجود الطفل
+        if (!$child) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.child_not_found')
+            ], 404);
+        }
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Child fetched successfully.',
+            'data'    => $child
+        ], 200);
+    }
+    public function destroy($id)
+    {
+        $currentUser = request()->user();
+
+        if (!$currentUser) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+
+        if ($currentUser instanceof ParentModel) {
+            $child = $currentUser->children()->where('id', $id)->first();
+        } elseif ($currentUser instanceof Receptionist) {
+            $child = Child::find($id);
+        } else {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
+            ], 403);
+        }
 
         if (!$child) {
             return response()->json([
-                'status'  => 'error',
+                'status'  => __('messages.error'),
                 'message' => __('messages.child_not_found')
             ], 404);
         }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.child_fetched_success'),
-            'data'    => $child
-        ], 200);
-    }
-
-    public function destroy($id)
-    {
-        $child = auth()->user()->children()->where('id', $id)->firstOrFail();
         $child->delete();
 
         return response()->json([
             'status'  => 'success',
-            'message' => __('messages.child_deleted_success')
+            'message' => 'Child deleted successfully.'
         ]);
     }
-
     public function homeChildren()
     {
         $children = auth()->user()->children->map(function ($child) {
@@ -128,6 +282,7 @@ class ChildController extends Controller
             'children' => $children
         ]);
     }
+
 
     /*  public function childAllergies($id)
     {

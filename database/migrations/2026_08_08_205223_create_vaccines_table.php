@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('vaccines', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->integer('min_age_months');
+            $table->integer('max_age_months');
             $table->text('description')->nullable();
-            $table->unsignedInteger('age_months');
             $table->timestamps();
         });
     }

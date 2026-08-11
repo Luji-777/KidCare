@@ -13,13 +13,14 @@ class ParentModelFactory extends Factory
 
     public function definition(): array
     {
+        $faker = \Faker\Factory::create();
         return [
-            'first_name'   => $this->faker->firstName,
-            'last_name'    => $this->faker->lastName,
-            'email'        => $this->faker->unique()->safeEmail,
+            'first_name'   => $faker->firstName,
+            'last_name'    => $faker->lastName,
+            'email'        => $faker->unique()->safeEmail,
             'password'     => \Illuminate\Support\Facades\Hash::make('password'),
-            'phone_number' => $this->faker->phoneNumber,
-            'address'      => $this->faker->address,
+            'phone_number' => $faker->phoneNumber,
+            'address'      => $faker->address,
 
         ];
     }

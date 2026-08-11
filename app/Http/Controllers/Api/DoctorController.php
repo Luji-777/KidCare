@@ -13,7 +13,6 @@ use App\Models\Doctor;
 use App\Models\Appointment;
 use App\Models\MedicalRecord;
 use App\Models\DoctorAvailability;
-use App\Models\Medication;
 use App\Models\Growth;
 use App\Models\Child;
 use Carbon\Carbon;
@@ -30,7 +29,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' =>  __('messages.phone_not_registered'),
             ], 404);
         }
@@ -66,7 +65,7 @@ class DoctorController extends Controller
         $doctor = Doctor::where('phone_number', $request->phone_number)->firstOrFail();
         if ($doctor->otp_code !== $request->otp || Carbon::now()->gt($doctor->otp_expires_at)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.otp_invalid_expired'),
                 'otp' => $doctor->otp_code
             ], 422);
@@ -89,7 +88,7 @@ class DoctorController extends Controller
         if (!$doctor) {
             return response()->json(
                 [
-                    'status' => 'error',
+                    'status' => __('messages.error'),
                     'message' =>  __('messages.doctor_not_found'),
                 ],
                 404
@@ -119,7 +118,7 @@ class DoctorController extends Controller
 
         if (!$doctor || !Hash::check($request->password, $doctor->password)) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.invalid_credentials')
             ], 401);
         }
@@ -187,7 +186,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.doctor_not_found')
             ], 404);
         }
@@ -248,6 +247,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
+                'status' => __('messages.error'),
                 'message' => __('messages.doctor_not_found')
             ], 404);
         }
@@ -345,6 +345,7 @@ class DoctorController extends Controller
 
         if (!$appointment) {
             return response()->json([
+                'status' => __('messages.error'),
                 'message' => 'No upcoming patients'
             ]);
         }
@@ -748,6 +749,9 @@ class DoctorController extends Controller
             ]
         ], 200);
     }
+
+    //App
+
     public function addDiagnosis(Request $request, $appointmentId)
     {
         $request->validate([
@@ -1007,7 +1011,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }
@@ -1034,7 +1038,7 @@ class DoctorController extends Controller
 
         if (!$doctor) {
             return response()->json([
-                'status' => 'error',
+                'status' => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }
@@ -1110,39 +1114,47 @@ class DoctorController extends Controller
     }
 
     public function cancelAppointmentsByDate(Request $request)
-{
-    $request->validate([
-        'date' => 'required|date'
-    ]);
-
-    $doctor = auth()->user();
-
-    $appointments = Appointment::where('doctor_id', $doctor->id)
-        ->whereDate('date', $request->date)
-        ->whereNotIn('status', ['cancelled', 'completed'])
-        ->get();
-
-    if ($appointments->isEmpty()) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'No appointments found on this date.'
-        ], 404);
-    }
-
-    foreach ($appointments as $appointment) {
-
-        $appointment->update([
-            'status' => 'cancelled'
+    {
+        $request->validate([
+            'date' => 'required|date'
         ]);
 
-        // إرسال إشعار للمريض (اختياري)
-        // Notification::create(...);
-        // FirebaseService::send(...);
-    }
+        $doctor = auth()->user();
+
 
     return response()->json([
         'status' => 'success',
         'message' => 'All appointments have been cancelled successfully.'
     ]);
-}                                                                                                       
+                                                                                                    
+
+        $appointments = Appointment::where('doctor_id', $doctor->id)
+            ->whereDate('date', $request->date)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->get();
+
+        if ($appointments->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No appointments found on this date.'
+            ], 404);
+        }
+
+        foreach ($appointments as $appointment) {
+
+            $appointment->update([
+                'status' => 'cancelled'
+            ]);
+
+            // إرسال إشعار للمريض (اختياري)
+            // Notification::create(...);
+            // FirebaseService::send(...);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All appointments have been cancelled successfully.'
+        ]);
+    }
+
 }

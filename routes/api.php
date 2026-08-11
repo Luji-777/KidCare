@@ -10,15 +10,18 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
-use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GrowthController;
+use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\VaccineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
 Route::middleware('set.locale')->group(function () {
 
+    \Log::info('Incoming Request:', ['path' => request()->path(), 'method' => request()->method(), 'token' => request()->bearerToken()]);
     // Auth parent
     Route::post('/register', [ParentModelController::class, 'register']);
     Route::post('/sendOtp', [ParentModelController::class, 'sendOtp']);
@@ -35,11 +38,11 @@ Route::middleware('set.locale')->group(function () {
     //Auth dashboard
     Route::post('/loginAdmin', [AdminController::class, 'loginAdmin']);
     Route::post('/SetAdminPassword', [AdminController::class, 'SetAdminPassword']);
-
+    Route::post('/loginReceptionist', [ReceptionistController::class, 'loginReceptionist']);
+    Route::post('/SetReceptionistPassword', [ReceptionistController::class, 'SetReceptionistPassword']);
 
     //Sanctum
     Route::middleware('auth:sanctum')->group(function () {
-
 
         Route::get('/user', function (Request $request) {
             return $request->user();
@@ -63,11 +66,10 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/growth', [GrowthController::class, 'store']);
         Route::delete('/growth/{id}', [GrowthController::class, 'destroy']);
 
-        // Vaccines & Departments
+        // Departments
 
         Route::get('/departments', [DepartmentController::class, 'index']);
         Route::get('/departments/{id}/doctors', [DepartmentController::class, 'doctors']);
-        //Route::get('/child/{id}/vaccines', [VaccineController::class, 'getChildVaccines']);
 
 
         // Favorites & doctor availability
@@ -100,9 +102,9 @@ Route::middleware('set.locale')->group(function () {
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
 
-            Route::post('/{appointmentId}/diagnosis',[DoctorController::class, 'addDiagnosis']);
-            Route::post('/{recordId}/medications',[DoctorController::class, 'addMedication']);
-            Route::post('/{appointmentId}/growth',[DoctorController::class, 'addGrowthRecord']);
+            Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
+            Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
+            Route::post('/{appointmentId}/growth', [DoctorController::class, 'addGrowthRecord']);
 
             Route::get('/profile', [DoctorController::class, 'showProfile']);
             Route::put('/updateProfile', [DoctorController::class, 'updateProfile']);
@@ -113,14 +115,19 @@ Route::middleware('set.locale')->group(function () {
 
 
 
-            Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
-            Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);
+
+           /* Route::get('/upcomingWorkingDays',[DoctorController::class, 'upcomingWorkingDays']);
+            Route::get('/appointmentsByDate',[DoctorController::class, 'appointmentsByDate']);*/
+
+            Route::get('/upcomingWorkingDays', [DoctorController::class, 'upcomingWorkingDays']);
+            Route::get('/appointmentsByDate', [DoctorController::class, 'appointmentsByDate']);
+
             Route::get('/patients', [DoctorController::class, 'Allpatients']);
 
-             Route::get('/income', [DoctorController::class, 'monthlyIncome']);
-             Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
+            Route::get('/income', [DoctorController::class, 'monthlyIncome']);
+            Route::get('/yearlyIncome', [DoctorController::class, 'yearlyIncome']);
 
-             Route::get('/{childId}/medicalRecord', [MedicalRecordController::class, 'medicalRecord']);
+            Route::get('/{childId}/medicalRecord', [MedicalRecordController::class, 'medicalRecord']);
 
 
             Route::get('/appointments/{appointment}', [AppointmentController::class, 'appointmentDetails']);
@@ -150,6 +157,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/monthly-revenue', [AdminController::class, 'getMonthlyRevenueReport']);
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
+        Route::put('/admin/receptionists/{receptionist}/change-password', [AdminController::class, 'changeReceptionistPassword']);
 
         // Departments dashboard
         Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
@@ -159,10 +167,35 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reports/{id}/weekly-stats', [DoctorController::class, 'getDoctorWeeklyStats']);
         Route::get('/reports/appointments-per-weekday', [AdminController::class, 'getAppointmentsCountPerDayOfWeek']);
         Route::get('/reports/top-three-departments-share', [AdminController::class, 'getTopThreeDepartmentsShare']);
+        Route::get('/reports/weekly-summary', [AdminController::class, 'getWeeklyClinicSummary']);
+        Route::get('/reports/monthly-budget', [AdminController::class, 'getMonthlyBudgetReport']);
 
         //reseption
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
+        Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
+
+
+        // === راوتات الرسبشن ===
+        Route::post('/reception/vaccine-schedules', [VaccineController::class, 'createSchedule']);
+        Route::put('/reception/vaccine-schedules/{schedule}/status', [VaccineController::class, 'updateScheduleStatus']);
+        Route::post('/reception/child-vaccinations', [VaccineController::class, 'recordChildVaccination']);
+        Route::post('/reception/vaccines', [VaccineController::class, 'storeVaccine']);
+        Route::get('/vaccines', [VaccineController::class, 'getAllVaccines']);
+
+        // === راوتات الأب والرسبشن (مشتركة) ===
+        Route::get('/vaccines/available-schedules', [VaccineController::class, 'getAvailableSchedules']);
+        Route::get('/vaccines/child-history/{childId}', [VaccineController::class, 'getChildVaccinationHistory']);
+
+        Route::post('reception/parents/add', [ReceptionistController::class, 'addParent']);
+        Route::post('/reception/appointments', [ReceptionistController::class, 'store']);
+        Route::put('/reception/appointments/{appointment}', [ReceptionistController::class, 'updateReception']);
+        Route::get('/reception/appointments', [ReceptionistController::class, 'indexReception']);
+        Route::delete('/reception/appointments/{appointment}', [ReceptionistController::class, 'destroy']);
+        Route::get('/appointments/doctor/{doctor}/past', [ReceptionistController::class, 'pastByDoctor']);
+        Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
+        Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
+        Route::get('/reception/children', [ChildController::class, 'dashboardIndex']);
     });
 
     // Open routes

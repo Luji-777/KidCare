@@ -8,6 +8,7 @@ use App\Models\Appointment;
 
 class AppointmentAdditionsController extends Controller
 {
+
    public function store(Request $request, $appointmentId)
 {
     // Validation
@@ -16,19 +17,24 @@ class AppointmentAdditionsController extends Controller
         'price'     => 'required|numeric|min:0',
     ]);
 
-    $doctor = auth()->user();
+  
+        $doctor = auth()->user();
+
 
     // التأكد أن الموعد تابع لهذا الدكتور
     $appointment = Appointment::where('id', $appointmentId)
         ->where('doctor_id', $doctor->id)
         ->firstOrFail();
 
-    // إنشاء الإضافة
-    Appointment_additions::create([
-        'appointment_id' => $appointment->id,
-        'item_name'      => $request->item_name,
-        'price'          => $request->price,
-    ]);
+        
+
+        // إنشاء الإضافة
+        Appointment_additions::create([
+            'appointment_id' => $appointment->id,
+            'item_name'      => $request->item_name,
+            'price'          => $request->price,
+        ]);
+
 
     // جلب جميع إضافات الموعد
     $additions = Appointment_additions::where(
@@ -55,8 +61,11 @@ class AppointmentAdditionsController extends Controller
             // سعر الكشفية الأساسي
             'appointment_price' => $appointmentPrice,
 
-            // جميع الإضافات
-            'additions' => $additions,
+        
+
+                // جميع الإضافات
+                'additions' => $additions,
+
 
             // مجموع الإضافات
             'total_additions' => $totalAdditions,
@@ -100,8 +109,10 @@ class AppointmentAdditionsController extends Controller
         'status'  => 'success',
         'message' => 'Addition deleted successfully',
 
-        'appointment' => [
-            'appointment_id' => $appointment->id,
+
+            'appointment' => [
+                'appointment_id' => $appointment->id,
+
 
             
             'appointment_price' => $appointmentPrice,
@@ -117,4 +128,5 @@ class AppointmentAdditionsController extends Controller
         ]
     ], 200);
 }
+
 }
