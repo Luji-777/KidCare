@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDoctorAvailabilityRequest;
 use App\Http\Requests\UpdateDoctorAvailabilityRequest;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Requests\UpdateDoctorRequest;
