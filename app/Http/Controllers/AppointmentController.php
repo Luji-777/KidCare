@@ -192,11 +192,11 @@ class AppointmentController extends Controller
     {
         $user = auth()->user();
 
-        // 1. التحقق مما إذا كان المستخدم محظوراً
-        if ($user && $user->is_blocked) {
+        // 1. استخدام fresh() لجلب أحدث حالة للحساب مباشرة من الداتابيز
+        if ($user && $user->fresh()->is_blocked) {
             return response()->json([
                 'status'  => 'error',
-                'message' => __('messages.account_blocked') // أو رسالة الحظر المخصصة
+                'message' => __('messages.account_blocked')
             ], 403);
         }
         $appointments = Appointment::whereHas('child', function ($query) {
