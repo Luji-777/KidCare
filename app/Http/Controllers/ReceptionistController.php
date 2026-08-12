@@ -384,7 +384,7 @@ class ReceptionistController extends Controller
             ]);
 
             $child = Child::find($appointment->child_id);
-            $parent = $child ? User::find($child->parent_id) : null;
+            $parent = $child ? ParentModel::find($child->parent_id) : null;
             $doctor = Doctor::find($appointment->doctor_id);
 
             $notifTitle = 'Appointment Cancelled';
