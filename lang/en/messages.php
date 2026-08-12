@@ -119,6 +119,7 @@ return [
     'confirmed'              => 'Confirmed',
     'completed'              => 'Completed',
     'cancelled_by_patient'              => 'Cancelled by patient',
+    'cancelled_by_clinic'              => 'Cancelled by clinic',
 
     'error' => 'Error',
 

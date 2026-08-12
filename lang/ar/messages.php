@@ -115,6 +115,7 @@ return [
     'confirmed'              => 'مؤكد',
     'completed'              => 'مكتمل',
     'cancelled_by_clinic'              => 'ملغي من قبل العيادة',
+    'cancelled_by_patient'              => 'ملغي من قبل المريض',
 
     'error' => 'خطأ',
 

@@ -186,6 +186,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/doctor/{doctor}/upcoming', [ReceptionistController::class, 'upcomingByDoctor']);
         Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
         Route::get('/reception/children', [ChildController::class, 'dashboardIndex']);
+        Route::post('/reception/parents/{parent}/block', [ReceptionistController::class, 'blockParent']);
     });
 
     // Open routes

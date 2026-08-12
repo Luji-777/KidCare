@@ -29,9 +29,6 @@ return new class extends Migration
             $table->boolean('reminder_2h_sent')->default(false);
             $table->boolean('test_reminder_sent')->default(false);
             $table->enum('booking_source', ['online', 'reception'])->default('online');
-
-            //  $table->enum('type', ['consultation', 'vaccine'])->default('consultation');
-            //  $table->foreignId('vaccine_id')->nullable()->constrained('vaccines')->nullOnDelete();
             $table->timestamps();
         });
     }

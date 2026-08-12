@@ -121,7 +121,7 @@ class AdminController extends Controller
         $todayDate = Carbon::now()->format('Y-m-d');
 
         $todayAppointmentsCount = Appointment::where('date', $todayDate)
-            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereIn('status', ['confirmed', 'completed', 'checked_in'])
             ->count();
 
         return response()->json([

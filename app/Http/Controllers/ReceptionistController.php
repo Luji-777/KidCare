@@ -681,4 +681,66 @@ class ReceptionistController extends Controller
             ], 500);
         }
     }
+    public function blockParent(Request $request, ParentModel $parent, FirebaseNotificationService $firebase)
+    {
+        $currentUser = auth()->user();
+
+        // 1. التحقق من صلاحيات موظف الاستقبال (Receptionist)
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized. Only receptionists can block users.',
+            ], 403);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $reason = $request->reason ?? 'Blocked by clinic receptionist';
+
+            // 2. تحديث حالة الحظر في قاعدة البيانات
+            $parent->update([
+                'is_blocked'   => true,
+                'block_reason' => $reason,
+            ]);
+
+            // 3. إنشاء إشعار في قاعدة البيانات للأب
+            $notifTitle = 'Account Blocked';
+            $notifMessage = __('messages.account_blocked_notification', ['reason' => $reason]);
+
+            DBNotification::create([
+                'parent_id' => $parent->id,
+                'message'   => $notifMessage,
+            ]);
+
+            DB::commit();
+
+            // 4. إرسال Push Notification للهاتف
+            if (!empty($parent->fcm_token)) {
+                $firebase->send($parent->fcm_token, $notifTitle, $notifMessage);
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.user_blocked_successfully'),
+                'parent'  => [
+                    'id'         => $parent->id,
+                    'name'       => $parent->name ?? $parent->first_name,
+                    'is_blocked' => $parent->is_blocked,
+                    'reason'     => $parent->block_reason,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to block parent: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
