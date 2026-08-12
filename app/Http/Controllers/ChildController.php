@@ -134,6 +134,13 @@ class ChildController extends Controller
     {
         $user = auth()->user();
 
+        // 1. التحقق مما إذا كان المستخدم محظوراً
+        if ($user && $user->is_blocked) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.account_blocked') // أو رسالة الحظر المخصصة
+            ], 403);
+        }
         $children = optional($user)->children ?? collect();
 
         $filteredChildren = $children
