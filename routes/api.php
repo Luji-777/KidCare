@@ -188,6 +188,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reception/children', [ChildController::class, 'dashboardIndex']);
         Route::post('/reception/parents/{parent}/block', [ReceptionistController::class, 'blockParent']);
         Route::post('/reception/{parent}/revoke-tokens', [ReceptionistController::class, 'revokeTokens']);
+        Route::post('/reception/parents/{parent}/hard-delete', [ReceptionistController::class, 'hardDelete']);
     });
 
     // Open routes

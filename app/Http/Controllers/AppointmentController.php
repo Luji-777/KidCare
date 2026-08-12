@@ -190,15 +190,6 @@ class AppointmentController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
-
-        // 1. استخدام fresh() لجلب أحدث حالة للحساب مباشرة من الداتابيز
-        if ($user && $user->fresh()->is_blocked) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => __('messages.account_blocked')
-            ], 403);
-        }
         $appointments = Appointment::whereHas('child', function ($query) {
             $query->where('parent_id', auth()->id());
         })
