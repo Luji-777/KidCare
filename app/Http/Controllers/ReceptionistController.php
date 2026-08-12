@@ -764,4 +764,64 @@ class ReceptionistController extends Controller
             ], 500);
         }
     }
+
+    public function hardDelete(Request $request)
+    {
+        $parent = auth()->user();
+
+        if (!$parent || !($parent instanceof ParentModel)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized operation.',
+            ], 403);
+        }
+
+        $hasActiveAppointments = Appointment::whereHas('child', function ($query) use ($parent) {
+            $query->where('parent_id', $parent->id);
+        })
+            ->whereIn('status', ['confirmed', 'checked_in', 'in_progress'])
+            ->where('date', '>=', now()->toDateString())
+            ->exists();
+
+        if ($hasActiveAppointments) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.cannot_delete_account_has_active_appointments'),
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $parent->tokens()->delete();
+
+            $childIds = $parent->children()->pluck('id');
+
+            if ($childIds->isNotEmpty()) {
+                Appointment::whereIn('child_id', $childIds)->delete();
+
+                $parent->children()->delete();
+            }
+
+            if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($parent))) {
+                $parent->forceDelete();
+            } else {
+                $parent->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.account_permanently_deleted'),
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hard delete failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
