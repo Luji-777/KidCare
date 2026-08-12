@@ -187,6 +187,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/reception/appointments/date/{date}', [ReceptionistController::class, 'getByDateForReception']);
         Route::get('/reception/children', [ChildController::class, 'dashboardIndex']);
         Route::post('/reception/parents/{parent}/block', [ReceptionistController::class, 'blockParent']);
+        Route::post('/reception/{parent}/revoke-tokens', [ReceptionistController::class, 'revokeTokens']);
     });
 
     // Open routes

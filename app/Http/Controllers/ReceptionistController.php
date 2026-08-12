@@ -685,7 +685,6 @@ class ReceptionistController extends Controller
     {
         $currentUser = auth()->user();
 
-        // 1. التحقق من صلاحيات موظف الاستقبال (Receptionist)
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
@@ -702,13 +701,11 @@ class ReceptionistController extends Controller
         try {
             $reason = $request->reason ?? 'Blocked by clinic receptionist';
 
-            // 2. تحديث حالة الحظر في قاعدة البيانات
             $parent->update([
                 'is_blocked'   => true,
                 'block_reason' => $reason,
             ]);
 
-            // 3. إنشاء إشعار في قاعدة البيانات للأب
             $notifTitle = 'Account Blocked';
             $notifMessage = __('messages.account_blocked_notification', ['reason' => $reason]);
 
@@ -719,7 +716,6 @@ class ReceptionistController extends Controller
 
             DB::commit();
 
-            // 4. إرسال Push Notification للهاتف
             if (!empty($parent->fcm_token)) {
                 $firebase->send($parent->fcm_token, $notifTitle, $notifMessage);
             }
@@ -740,6 +736,31 @@ class ReceptionistController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Failed to block parent: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function revokeTokens(ParentModel $parent)
+    {
+        $currentUser = auth()->user();
+
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized. Only receptionists can revoke tokens.',
+            ], 403);
+        }
+
+        try {
+            $parent->tokens()->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.user_tokens_revoked_successfully'),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to revoke tokens: ' . $e->getMessage()
             ], 500);
         }
     }

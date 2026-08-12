@@ -16,6 +16,14 @@ class ChildController extends Controller
 {
     public function store(StoreChildRequest $request)
     {
+        $user = auth()->user();
+
+        if ($user && $user->is_blocked) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.account_blocked')
+            ], 403);
+        }
         $currentUser = $request->user();
 
         if (!$currentUser) {
@@ -134,11 +142,10 @@ class ChildController extends Controller
     {
         $user = auth()->user();
 
-        // 1. التحقق مما إذا كان المستخدم محظوراً
         if ($user && $user->is_blocked) {
             return response()->json([
                 'status'  => 'error',
-                'message' => __('messages.account_blocked') // أو رسالة الحظر المخصصة
+                'message' => __('messages.account_blocked')
             ], 403);
         }
         $children = optional($user)->children ?? collect();
