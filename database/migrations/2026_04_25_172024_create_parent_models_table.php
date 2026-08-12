@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('otp_code')->nullable(); // رمز التحقق
             $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق
             $table->text('fcm_token')->nullable();
-            $table->boolean('is_blocked')->default(false);
-            $table->text('reason')->nullable();
+            $table->boolean('is_blocked')->default(false)->after('email');
+            $table->string('block_reason')->nullable()->after('is_blocked');
 
             $table->timestamps();
         });
