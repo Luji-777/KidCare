@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('is_blocked')->default(false);
             $table->string('block_reason')->nullable();
 
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
     }

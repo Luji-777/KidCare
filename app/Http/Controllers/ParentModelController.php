@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 
@@ -379,22 +380,42 @@ class ParentModelController extends Controller
     }
     public function destroyAccount(Request $request)
     {
-
         $parent = $request->user();
 
         if (!$parent) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => __('messages.unauthorized')
             ], 401);
         }
 
+        DB::beginTransaction();
 
-        $parent->tokens()->delete();
-        $parent->forceDelete();
-        return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.account_permanently_deleted')
-        ], 200);
+        try {
+            $parent->tokens()->delete();
+
+            $parent->update([
+                'fcm_token'    => null,
+                'otp_code'     => null,
+                'is_blocked'   => true,
+                'block_reason' => 'Account deleted by user',
+            ]);
+
+            $parent->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.account_permanently_deleted')
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Account deletion failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

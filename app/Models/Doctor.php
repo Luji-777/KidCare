@@ -9,13 +9,14 @@ use App\Models\Appointment;
 use App\Models\DoctorAvailability;
 use App\Models\DoctorNotification;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class Doctor extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
     protected $guarded = [];
     public function department()
     {
@@ -33,7 +34,8 @@ class Doctor extends Authenticatable
     {
         return $this->hasMany(DoctorAvailability::class, 'doctor_id');
     }
-     public function notification(){
+    public function notification()
+    {
         return $this->hasMany(DoctorNotification::class);
     }
 }

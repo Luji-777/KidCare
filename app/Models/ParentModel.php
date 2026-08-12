@@ -9,6 +9,7 @@ use App\Models\Doctor;
 
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -17,20 +18,21 @@ use Illuminate\Notifications\Notifiable;
 
 class ParentModel extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
-    protected $guarded=[];
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
+    protected $guarded = [];
 
-    public function children(){
-        return $this->hasMany(Child::class,'parent_id');
+    public function children()
+    {
+        return $this->hasMany(Child::class, 'parent_id');
     }
 
-    public function notification(){
+    public function notification()
+    {
         return $this->hasMany(Notification::class);
     }
 
-    public function doctors(){
-        return $this->belongsToMany(Doctor::class,'favorite','parent_id','doctor_id');
-
+    public function doctors()
+    {
+        return $this->belongsToMany(Doctor::class, 'favorite', 'parent_id', 'doctor_id');
     }
-
 }

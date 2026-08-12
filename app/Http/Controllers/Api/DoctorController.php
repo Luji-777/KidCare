@@ -1101,17 +1101,6 @@ class DoctorController extends Controller
         ], 200);
     }
 
-    public function destroyAccount(Request $request)
-    {
-        $doctor = auth()->user();
-        $doctor->tokens()->delete();
-        $doctor->forceDelete();
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.account_permanently_deleted')
-        ], 200);
-    }
 
     public function cancelAppointmentsByDate(Request $request)
     {
