@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Stripe\Stripe;
+use Illuminate\Support\Facades\Log;
 
 
 class ParentModelController extends Controller
@@ -22,8 +24,17 @@ class ParentModelController extends Controller
             'first_name'   => 'required|string|max:255',
             'last_name'    => 'required|string|max:255',
             'address'      => 'required|string|max:255',
-            'phone_number' => 'required|digits_between:9,15|unique:parent_models,phone_number',
-            'email'        => 'required|string|max:255',
+            'phone_number' => [
+                'required',
+                'digits_between:9,15',
+                Rule::unique('parent_models', 'phone_number')->whereNull('deleted_at'),
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('parent_models', 'email')->whereNull('deleted_at'),
+            ],
             'password'     => 'required|string|min:6|max:255|confirmed',
         ]);
         $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
@@ -388,19 +399,25 @@ class ParentModelController extends Controller
                 'message' => __('messages.unauthorized')
             ], 401);
         }
-
+        Stripe::setApiKey(config('services.stripe.secret'));
         DB::beginTransaction();
 
         try {
+            $childIds = $parent->children()->pluck('id');
             $parent->tokens()->delete();
-
+            $parent->appointments()
+                ->where('appointment_date', '>=', now())
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->update([
+                    'status'            => 'cancelled_by_parent',
+                ]);
             $parent->update([
+                'phone_number' => $parent->phone_number . '_deleted_' . time(),
                 'fcm_token'    => null,
                 'otp_code'     => null,
                 'is_blocked'   => true,
                 'block_reason' => 'Account deleted by user',
             ]);
-
             $parent->delete();
 
             DB::commit();
@@ -411,10 +428,13 @@ class ParentModelController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-
+            Log::error('Account deletion failed', [
+                'parent_id' => $parent->id,
+                'error'     => $e->getMessage()
+            ]);
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Account deletion failed: ' . $e->getMessage()
+                'message' => __('messages.account_deletion_failed')
             ], 500);
         }
     }

@@ -32,6 +32,9 @@ return new class extends Migration
             $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق
             $table->text('fcm_token')->nullable();
             $table->timestamp('deleted_at')->nullable();
+            $table->string('deletion_reason')->nullable();
+            $table->boolean('is_active')->default(true);
+
 
 
             $table->timestamps();

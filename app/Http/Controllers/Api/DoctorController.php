@@ -180,31 +180,48 @@ class DoctorController extends Controller
             ], 200);
         }
     }
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $doctor = Doctor::find($id);
 
         if (!$doctor) {
             return response()->json([
-                'status' => __('messages.error'),
+                'status'  => __('messages.error'),
                 'message' => __('messages.doctor_not_found')
             ], 404);
         }
 
-        if ($doctor->profile_picture) {
-            Storage::disk('public')->delete($doctor->profile_picture);
+        $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $doctor->tokens()->delete();
+
+            $doctor->update([
+                'fcm_token'       => null,
+                'is_active'       => false,
+                'deletion_reason' => $request->reason ?? 'Deleted by admin',
+            ]);
+
+            $doctor->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.doctor_deleted_success')
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => 'Failed to delete doctor: ' . $e->getMessage()
+            ], 500);
         }
-
-        if ($doctor->cv) {
-            Storage::disk('public')->delete($doctor->cv);
-        }
-
-        $doctor->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => __('messages.doctor_deleted_success')
-        ], 200);
     }
     public function addAdditions(Request $request, $appointment_id)
     {
@@ -1100,7 +1117,47 @@ class DoctorController extends Controller
             ]
         ], 200);
     }
+    public function destroyAccount(Request $request)
+    {
+        $doctor = auth()->user();
 
+        if (!$doctor) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+        $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $doctor->tokens()->delete();
+
+            $doctor->update([
+                'fcm_token' => null,
+                'is_active' => false,
+                'deletion_reason' => $request->reason ?? 'Account deleted by doctor',
+            ]);
+            $doctor->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.account_permanently_deleted')
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Doctor account deletion failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function cancelAppointmentsByDate(Request $request)
     {

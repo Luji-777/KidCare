@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             AppointmentSeeder::class,
             Appointment_additionsSeeder::class,
             TransactionSeeder::class,
+            VaccineSeeder::class,
 
         ]);
     }
