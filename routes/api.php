@@ -6,6 +6,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentAdditionsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorAvailabilityController;
@@ -87,6 +88,9 @@ Route::middleware('set.locale')->group(function () {
         Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);
         Route::apiResource('appointment', AppointmentController::class)->except(['index']);
 
+        Route::get('/prescription/{recordId}', [MedicationController::class, 'showPrescription']);
+
+
         // Doctor app
         Route::prefix('doctor')->group(function () {
             Route::get('/home', [DoctorController::class, 'home']);
@@ -97,6 +101,7 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
+            Route::put( 'appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
 
             Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
@@ -110,8 +115,10 @@ Route::middleware('set.locale')->group(function () {
             Route::delete('/{additionId}/additions', [AppointmentAdditionsController::class, 'destroy']);
 
 
+
             Route::get('/upcomingWorkingDays', [DoctorController::class, 'upcomingWorkingDays']);
             Route::get('/appointmentsByDate', [DoctorController::class, 'appointmentsByDate']);
+
             Route::get('/patients', [DoctorController::class, 'Allpatients']);
 
             Route::get('/income', [DoctorController::class, 'monthlyIncome']);

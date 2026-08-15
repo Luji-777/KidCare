@@ -8,18 +8,25 @@ use App\Models\Appointment;
 
 class AppointmentAdditionsController extends Controller
 {
-    public function store(Request $request, $appointmentId)
-    {
-        $request->validate([
-            'item_name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-        ]);
 
+   public function store(Request $request, $appointmentId)
+{
+    // Validation
+    $request->validate([
+        'item_name' => 'required|string|max:255',
+        'price'     => 'required|numeric|min:0',
+    ]);
+
+  
         $doctor = auth()->user();
 
-        $appointment = Appointment::where('id', $appointmentId)
-            ->where('doctor_id', $doctor->id)
-            ->firstOrFail();
+
+    // التأكد أن الموعد تابع لهذا الدكتور
+    $appointment = Appointment::where('id', $appointmentId)
+        ->where('doctor_id', $doctor->id)
+        ->firstOrFail();
+
+        
 
         // إنشاء الإضافة
         Appointment_additions::create([
@@ -28,73 +35,98 @@ class AppointmentAdditionsController extends Controller
             'price'          => $request->price,
         ]);
 
-        // جلب جميع الإضافات الخاصة بالموعد
-        $additions = Appointment_additions::where('appointment_id', $appointment->id)->get();
 
-        // حساب مجموع الإضافات
-        $totalAdditions = $additions->sum('price');
+    // جلب جميع إضافات الموعد
+    $additions = Appointment_additions::where(
+        'appointment_id',
+        $appointment->id
+    )->get();
 
-        // تحديث السعر النهائي
-        $appointment->update([
-            'price' => $appointment->base_price + $totalAdditions,
-        ]);
+    // مجموع أسعار الإضافات
+    $totalAdditions = $additions->sum('price');
 
-        $appointment->refresh();
+    // سعر الكشفية الأساسي
+    $appointmentPrice = $appointment->price;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Addition added successfully',
+    // السعر النهائي
+    $finalPrice = $appointmentPrice + $totalAdditions;
 
-            'appointment' => [
-                'appointment_id'  => $appointment->id,
-                'base_price'      => $appointment->base_price,
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Addition added successfully',
+
+        'appointment' => [
+            'appointment_id' => $appointment->id,
+
+            // سعر الكشفية الأساسي
+            'appointment_price' => $appointmentPrice,
+
+        
 
                 // جميع الإضافات
                 'additions' => $additions,
 
-                'total_additions' => $totalAdditions,
 
-                'final_price' => $appointment->price,
-            ]
-        ]);
-    }
+            // مجموع الإضافات
+            'total_additions' => $totalAdditions,
+
+            // الكشفية + الإضافات
+            'final_price' => $finalPrice,
+        ]
+    ], 201);
+}
     public function destroy($additionId)
+{
+    $doctor = auth()->user();
 
-    {
-        $doctor = auth()->user();
+    
+    $addition = Appointment_additions::findOrFail($additionId);
 
-        $addition = Appointment_additions::findOrFail($additionId);
+    
+    $appointment = Appointment::where('id', $addition->appointment_id)
+        ->where('doctor_id', $doctor->id)
+        ->firstOrFail();
 
-        $appointment = Appointment::where('id', $addition->appointment_id)
-            ->where('doctor_id', $doctor->id)
-            ->firstOrFail();
+    
+    $addition->delete();
 
-        $addition->delete();
+    
+    $additions = Appointment_additions::where(
+        'appointment_id',
+        $appointment->id
+    )->get();
 
-        // إعادة حساب مجموع الإضافات
-        $totalAdditions = Appointment_additions::where('appointment_id', $appointment->id)
-            ->sum('price');
+    
+    $totalAdditions = $additions->sum('price');
 
-        // تحديث السعر النهائي
-        $appointment->update([
-            'price' => $appointment->base_price + $totalAdditions,
-        ]);
+    
+    $appointmentPrice = $appointment->price;
 
-        $appointment->refresh();
+   
+    $finalPrice = $appointmentPrice + $totalAdditions;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Addition deleted successfully',
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Addition deleted successfully',
+
 
             'appointment' => [
                 'appointment_id' => $appointment->id,
 
-                'base_price' => $appointment->base_price,
 
-                'total_additions' => $totalAdditions,
+            
+            'appointment_price' => $appointmentPrice,
 
-                'final_price' => $appointment->price,
-            ]
-        ]);
-    }
+           
+            'additions' => $additions,
+
+            
+            'total_additions' => $totalAdditions,
+
+            
+            'final_price' => $finalPrice,
+        ]
+    ], 200);
+}
+
 }
