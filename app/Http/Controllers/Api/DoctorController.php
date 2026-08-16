@@ -6,6 +6,9 @@ use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use App\Models\Notification as DBNotification;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
+use App\Models\DoctorNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
@@ -891,46 +894,51 @@ class DoctorController extends Controller
     }
 
     public function appointmentsByDate(Request $request)
-    {
+{
+    $request->validate([
+        'date' => 'required|date',
+    ]);
 
-        $request->validate([
-            'date' => 'required|date',
-        ]);
+    $doctor = auth()->user();
 
-        $doctor = auth()->user();
+    $date = $request->date;
 
-        $date = $request->date;
+    $appointments = Appointment::with('child')
+        ->where('doctor_id', $doctor->id)
+        ->whereDate('date', $date)
 
+        ->whereNotIn('status', [
+            'cancelled_by_patient',
+            'cancelled_by_clinic',
+        ])
 
-        $appointments = Appointment::with('child')
-            ->where('doctor_id', $doctor->id)
-            ->whereDate('date', $date)
-            ->orderBy('time')
-            ->get();
+        ->orderBy('time')
+        ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'total_appointments' => $appointments->count(),
-                'appointments' => $appointments->map(function ($appointment) {
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'total_appointments' => $appointments->count(),
 
-                    $child = $appointment->child;
+            'appointments' => $appointments->map(function ($appointment) {
 
-                    $age = Carbon::parse($child->birth_date)->age;
+                $child = $appointment->child;
 
-                    return [
-                        'id' => $appointment->id,
-                        'patient_name' => $child->first_name . ' ' . $child->last_name,
-                        'age' => $age,
-                        'gender' => $child->gender,
-                        'image' => $child->image,
-                        'time' => Carbon::parse($appointment->time)->format('H:i'),
-                        'status' => $appointment->status,
-                    ];
-                })
-            ]
-        ]);
-    }
+                $age = Carbon::parse($child->birth_date)->age;
+
+                return [
+                    'id' => $appointment->id,
+                    'patient_name' => $child->first_name . ' ' . $child->last_name,
+                    'age' => $age,
+                    'gender' => $child->gender,
+                    'image' => $child->image,
+                    'time' => Carbon::parse($appointment->time)->format('H:i'),
+                    'status' => $appointment->status,
+                ];
+            })
+        ]
+    ]);
+}
 
     public function allPatients(Request $request)
     {
@@ -1194,6 +1202,32 @@ class DoctorController extends Controller
 
         
         $parent = $appointment->child->parent;
+        if ($parent) {
+
+        DBNotification::create([
+            'parent_id' => $parent->id,
+            'message' => 'Your appointment on ' .
+                $appointment->date . ' at ' .
+                $appointment->time .
+                ' has been cancelled by the doctor.'
+        ]);
+    }
+
+        /*DoctorNotification::create([
+            'doctor_id' => $doctor->id,
+            'title' => 'Appointments Cancelled',
+            'message' => 'The appointment for '
+                . $appointment->child->first_name
+                . ' '
+                . $appointment->child->last_name
+                . ' on '
+                . $appointment->date
+                . ' at '
+                . $appointment->time
+                . ' has been cancelled.',
+        ]);*/
+
+
 
         // إذا ما عندو FCM token ما منقدر نبعت إشعار
         if (!$parent || !$parent->fcm_token) {
@@ -1219,6 +1253,14 @@ class DoctorController extends Controller
         // إرسال الإشعار
         $messaging->send($message);
     }
+    DoctorNotification::create([
+    'doctor_id' => $doctor->id,
+    'title' => 'Appointments Cancelled',
+    'message' => 'All appointments on '
+        . $request->date
+        . ' have been cancelled. Total cancelled appointments: '
+        . $appointments->count(),
+]);
 
     return response()->json([
         'status' => 'success',
@@ -1255,6 +1297,29 @@ class DoctorController extends Controller
     ]);
 
     $parent = $appointment->child->parent;
+
+    
+    DBNotification::create([
+    'parent_id' => $parent->id,
+    'message' => 'Your appointment on ' .
+        $appointment->date . ' at ' .
+        $appointment->time .
+        ' has been cancelled by the doctor.'
+    ]);
+
+    DoctorNotification::create([
+        'doctor_id' => $doctor->id,
+        'title' => 'Appointment Cancelled',
+        'message' => 'The appointment for '
+            . $appointment->child->first_name
+            . ' '
+            . $appointment->child->last_name
+            . ' on '
+            . $appointment->date
+            . ' at '
+            . $appointment->time
+            . ' has been cancelled.',
+    ]);
 
     // إرسال الإشعار إذا كان عند الأب FCM token
     if ($parent && $parent->fcm_token) {

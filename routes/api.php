@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentAdditionsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DoctorNotificationController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ChildController;
@@ -101,7 +102,10 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
-            Route::put( 'appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
+            Route::put( 'appointments/{appointmentId}/cancel', [DoctorController::class, 'cancelAppointment']);
+
+            Route::get('/notification', [DoctorNotificationController::class, 'getDoctorNotifications']);
+
 
             Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
@@ -138,7 +142,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/test-fcm', [PaymentController::class, 'testFcm']);
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/test-notification', [NotificationController::class, 'test']);
-
+        
         //Doctor dashboard
         Route::get('/doctors/count', [DoctorController::class, 'getDoctorsCount']);
         Route::get('/doctors/count/department/{department_id}', [DoctorController::class, 'getDoctorsCountByDepartment']);
