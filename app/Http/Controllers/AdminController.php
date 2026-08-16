@@ -47,6 +47,15 @@ class AdminController extends Controller
             'Token'   => $token,
         ], 200);
     }
+    public function logoutAdmin(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.logout_success')
+        ], 200);
+    }
     public function SetAdminPassword(Request $request)
     {
 

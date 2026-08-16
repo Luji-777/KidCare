@@ -86,7 +86,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
         Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
         Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);
-        Route::apiResource('appointment', AppointmentController::class)->except(['index']);
+        Route::apiResource('appointments', AppointmentController::class)->except(['index']);
 
         Route::get('/prescription/{recordId}', [MedicationController::class, 'showPrescription']);
 
@@ -101,7 +101,7 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
-            Route::put( 'appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
+            Route::put('appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
 
             Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);
@@ -155,6 +155,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/daily-revenue', [AdminController::class, 'getDailyRevenueReport']);
         Route::get('/home/top-department', [AdminController::class, 'getTopDepartmentThisWeek']);
         Route::put('/admin/receptionists/{receptionist}/change-password', [AdminController::class, 'changeReceptionistPassword']);
+        Route::post('/admin/logout', [AdminController::class, 'logoutAdmin']);
 
         // Departments dashboard
         Route::get('/departments/daily-report', [AdminController::class, 'getDepartmentsDashboardReport']);
@@ -171,6 +172,7 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/appointments/{appointment_id}/complete-payment', [PaymentController::class, 'completePayment']);
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
+        Route::get('/dashboard/children', [ChildController::class, 'dashboardIndex']);
 
 
         // === راوتات الرسبشن ===
