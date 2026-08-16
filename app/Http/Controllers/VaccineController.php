@@ -7,6 +7,10 @@ use App\Models\VaccineSchedule;
 use App\Models\ChildVaccination;
 use App\Models\Child;
 use App\Models\Receptionist;
+use App\Models\Notification as DBNotification;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
+use Kreait\Firebase\Messaging\Notification;
 use App\Models\ParentModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -56,240 +60,239 @@ class VaccineController extends Controller
         ], 200);
     }
     public function createSchedule(Request $request)
-{
-    $currentUser = auth()->user();
+    {
+        $currentUser = auth()->user();
 
-    if (!$currentUser || !($currentUser instanceof Receptionist)) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => __('messages.unauthorized')
-        ], 403);
-    }
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
 
-    $validator = Validator::make($request->all(), [
-        'vaccine_id' => 'required|exists:vaccines,id',
-        'date'       => 'required|date|date_format:Y-m-d|after_or_equal:today',
-        'start_time' => 'required|date_format:H:i',
-        'end_time'   => 'required|date_format:H:i|after:start_time',
-        'notes'      => 'nullable|string',
-    ]);
+        $validator = Validator::make($request->all(), [
+            'vaccine_id' => 'required|exists:vaccines,id',
+            'date'       => 'required|date|date_format:Y-m-d|after_or_equal:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time'   => 'required|date_format:H:i|after:start_time',
+            'notes'      => 'nullable|string',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 'error',
-            'errors' => $validator->errors()
-        ], 422);
-    }
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-    $alreadyExists = VaccineSchedule::where('vaccine_id', $request->vaccine_id)
-        ->where('date', $request->date)
-        ->where('status', '!=', 'cancelled')
-        ->exists();
+        $alreadyExists = VaccineSchedule::where('vaccine_id', $request->vaccine_id)
+            ->where('date', $request->date)
+            ->where('status', '!=', 'cancelled')
+            ->exists();
 
-    if ($alreadyExists) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => __('messages.vaccine_schedule_already_exists')
-        ], 400);
-    }
+        if ($alreadyExists) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.vaccine_schedule_already_exists')
+            ], 400);
+        }
 
-    // إنشاء جدول اللقاح
-    $schedule = VaccineSchedule::create([
-        'vaccine_id' => $request->vaccine_id,
-        'date'       => $request->date,
-        'start_time' => $request->start_time,
-        'end_time'   => $request->end_time,
-        'status'     => 'available',
-        'notes'      => $request->notes,
-    ]);
+        // إنشاء جدول اللقاح
+        $schedule = VaccineSchedule::create([
+            'vaccine_id' => $request->vaccine_id,
+            'date'       => $request->date,
+            'start_time' => $request->start_time,
+            'end_time'   => $request->end_time,
+            'status'     => 'available',
+            'notes'      => $request->notes,
+        ]);
 
-    // جلب اللقاح مع معلومات العمر
-    $vaccine = $schedule->load('vaccine')->vaccine;
+        // جلب اللقاح مع معلومات العمر
+        $vaccine = $schedule->load('vaccine')->vaccine;
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | تحديد الأطفال المناسبين للعمر
     |--------------------------------------------------------------------------
     */
 
-    $scheduleDate = Carbon::parse($schedule->date);
+        $scheduleDate = Carbon::parse($schedule->date);
 
-    // أصغر عمر مسموح
-    $minimumBirthDate = $scheduleDate->copy()
-        ->subMonths($vaccine->min_age_months);
+        // أصغر عمر مسموح
+        $minimumBirthDate = $scheduleDate->copy()
+            ->subMonths($vaccine->min_age_months);
 
-    // أكبر عمر مسموح
-    $maximumBirthDate = $scheduleDate->copy()
-        ->subMonths($vaccine->max_age_months);
+        // أكبر عمر مسموح
+        $maximumBirthDate = $scheduleDate->copy()
+            ->subMonths($vaccine->max_age_months);
 
-    $children = Child::with('parent')
-        ->whereDate('birth_date', '<=', $minimumBirthDate->toDateString())
-        ->whereDate('birth_date', '>=', $maximumBirthDate->toDateString())
-        ->get();
+        $children = Child::with('parent')
+            ->whereDate('birth_date', '<=', $minimumBirthDate->toDateString())
+            ->whereDate('birth_date', '>=', $maximumBirthDate->toDateString())
+            ->get();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | إرسال الإشعارات للأهل
     |--------------------------------------------------------------------------
     */
 
-    $messaging = app('firebase.messaging');
+        $messaging = app('firebase.messaging');
 
-    // حتى إذا كان عند الأب أكثر من طفل مناسب، يصله إشعار واحد فقط
-    $parents = $children
-        ->filter(function ($child) {
-            return $child->parent && $child->parent->fcm_token;
-        })
-        ->map(function ($child) {
-            return $child->parent;
-        })
-        ->unique('id');
+        // حتى إذا كان عند الأب أكثر من طفل مناسب، يصله إشعار واحد فقط
+        $parents = $children
+            ->filter(function ($child) {
+                return $child->parent && $child->parent->fcm_token;
+            })
+            ->map(function ($child) {
+                return $child->parent;
+            })
+            ->unique('id');
 
-    foreach ($parents as $parent) {
+        foreach ($parents as $parent) {
 
-        $message = CloudMessage::withTarget(
-            'token',
-            $parent->fcm_token
-        )->withNotification(
-            Notification::create(
-                'New Vaccine Available',
-                $vaccine->name . ' is available for children of the appropriate age.'
-            )
-        )->withData([
-            'type'        => 'vaccine_schedule_created',
-            'schedule_id' => (string) $schedule->id,
-            'vaccine_id'  => (string) $vaccine->id,
-            'vaccine_name'=> $vaccine->name,
-            'date'        => $schedule->date->toDateString(),
-            'start_time'  => $schedule->start_time,
-            'end_time'    => $schedule->end_time,
+            $message = CloudMessage::withTarget(
+                'token',
+                $parent->fcm_token
+            )->withNotification(
+                Notification::create(
+                    'New Vaccine Available',
+                    $vaccine->name . ' is available for children of the appropriate age.'
+                )
+            )->withData([
+                'type'        => 'vaccine_schedule_created',
+                'schedule_id' => (string) $schedule->id,
+                'vaccine_id'  => (string) $vaccine->id,
+                'vaccine_name' => $vaccine->name,
+                'date'        => $schedule->date->toDateString(),
+                'start_time'  => $schedule->start_time,
+                'end_time'    => $schedule->end_time,
+            ]);
+
+            $messaging->send($message);
+        }
+
+        return response()->json([
+            'status'   => 'success',
+            'message'  => __('messages.vaccine_schedule_created_successfully'),
+            'schedule' => $schedule->load('vaccine'),
+            'notified_parents_count' => $parents->count(),
+        ], 201);
+    }
+    public function updateScheduleStatus(Request $request, $scheduleId)
+    {
+        $currentUser = auth()->user();
+
+        // التأكد أن المستخدم Receptionist
+        if (!$currentUser || !($currentUser instanceof Receptionist)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.unauthorized')
+            ], 403);
+        }
+
+        // جلب جدول اللقاح مع اللقاح
+        $schedule = VaccineSchedule::with('vaccine')->find($scheduleId);
+
+        if (!$schedule) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.schedule_not_found')
+            ], 404);
+        }
+
+        // التحقق من الحالة
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:available,finished,cancelled',
         ]);
 
-        $messaging->send($message);
-    }
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-    return response()->json([
-        'status'   => 'success',
-        'message'  => __('messages.vaccine_schedule_created_successfully'),
-        'schedule' => $schedule->load('vaccine'),
-        'notified_parents_count' => $parents->count(),
-    ], 201);
-}
-   public function updateScheduleStatus(Request $request, $scheduleId)
-{
-    $currentUser = auth()->user();
+        // تحديث حالة الجدول
+        $schedule->update([
+            'status' => $request->status
+        ]);
 
-    // التأكد أن المستخدم Receptionist
-    if (!$currentUser || !($currentUser instanceof Receptionist)) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => __('messages.unauthorized')
-        ], 403);
-    }
-
-    // جلب جدول اللقاح مع اللقاح
-    $schedule = VaccineSchedule::with('vaccine')->find($scheduleId);
-
-    if (!$schedule) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => __('messages.schedule_not_found')
-        ], 404);
-    }
-
-    // التحقق من الحالة
-    $validator = Validator::make($request->all(), [
-        'status' => 'required|in:available,finished,cancelled',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 'error',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    // تحديث حالة الجدول
-    $schedule->update([
-        'status' => $request->status
-    ]);
-
-    /*
+        /*
     |--------------------------------------------------------------------------
     | إرسال الإشعار عند انتهاء أو إلغاء جدول اللقاح
     |--------------------------------------------------------------------------
     */
 
-    if (in_array($request->status, ['finished', 'cancelled'])) {
+        if (in_array($request->status, ['finished', 'cancelled'])) {
 
-        $vaccine = $schedule->vaccine;
+            $vaccine = $schedule->vaccine;
 
-        // جلب الأطفال الذين لديهم أب
-        $children = Child::with('parent')->get();
+            // جلب الأطفال الذين لديهم أب
+            $children = Child::with('parent')->get();
 
-        $messaging = app('firebase.messaging');
+            $messaging = app('firebase.messaging');
 
-        foreach ($children as $child) {
+            foreach ($children as $child) {
 
-            $parent = $child->parent;
+                $parent = $child->parent;
 
-            // إذا ما عند الأب FCM token
-            if (!$parent || !$parent->fcm_token) {
-                continue;
-            }
-
-            // حساب عمر الطفل بالأشهر
-            $ageInMonths = Carbon::parse($child->birth_date)
-                ->diffInMonths(Carbon::today());
-
-            // التأكد أن عمر الطفل مناسب للقاح
-            if (
-                $ageInMonths >= $vaccine->min_age_months &&
-                $ageInMonths <= $vaccine->max_age_months
-            ) {
-
-                if ($request->status === 'finished') {
-
-                    $title = 'Vaccination Schedule Finished';
-
-                    $body = "The {$vaccine->name} vaccination schedule has been finished.";
-
-                } else {
-
-                    $title = 'Vaccination Schedule Cancelled';
-
-                    $body = "The {$vaccine->name} vaccination schedule has been cancelled.";
+                // إذا ما عند الأب FCM token
+                if (!$parent || !$parent->fcm_token) {
+                    continue;
                 }
 
-                $message = CloudMessage::withTarget(
-                    'token',
-                    $parent->fcm_token
-                )
-                ->withNotification(
-                    Notification::create(
-                        $title,
-                        $body
-                    )
-                )
-                ->withData([
-                    'type' => 'vaccine_schedule_status',
-                    'schedule_id' => (string) $schedule->id,
-                    'vaccine_id' => (string) $vaccine->id,
-                    'vaccine_name' => $vaccine->name,
-                    'status' => $request->status,
-                ]);
+                // حساب عمر الطفل بالأشهر
+                $ageInMonths = Carbon::parse($child->birth_date)
+                    ->diffInMonths(Carbon::today());
 
-                $messaging->send($message);
+                // التأكد أن عمر الطفل مناسب للقاح
+                if (
+                    $ageInMonths >= $vaccine->min_age_months &&
+                    $ageInMonths <= $vaccine->max_age_months
+                ) {
+
+                    if ($request->status === 'finished') {
+
+                        $title = 'Vaccination Schedule Finished';
+
+                        $body = "The {$vaccine->name} vaccination schedule has been finished.";
+                    } else {
+
+                        $title = 'Vaccination Schedule Cancelled';
+
+                        $body = "The {$vaccine->name} vaccination schedule has been cancelled.";
+                    }
+
+                    $message = CloudMessage::withTarget(
+                        'token',
+                        $parent->fcm_token
+                    )
+                        ->withNotification(
+                            Notification::create(
+                                $title,
+                                $body
+                            )
+                        )
+                        ->withData([
+                            'type' => 'vaccine_schedule_status',
+                            'schedule_id' => (string) $schedule->id,
+                            'vaccine_id' => (string) $vaccine->id,
+                            'vaccine_name' => $vaccine->name,
+                            'status' => $request->status,
+                        ]);
+
+                    $messaging->send($message);
+                }
             }
         }
-    }
 
-    return response()->json([
-        'status'  => 'success',
-        'message' => __('messages.schedule_status_updated'),
-        'data'    => $schedule->load('vaccine')
-    ], 200);
-}
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.schedule_status_updated'),
+            'data'    => $schedule->load('vaccine')
+        ], 200);
+    }
 
     public function recordChildVaccination(Request $request)
     {
