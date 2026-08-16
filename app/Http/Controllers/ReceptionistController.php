@@ -288,16 +288,14 @@ class ReceptionistController extends Controller
     }
     public function indexReception()
     {
-        $currentUser = request()->user();
-
-        if (!$currentUser || !($currentUser instanceof Receptionist)) {
-            return response()->json([
-                'status'  => __('messages.error'),
-                'message' => 'Unauthorized. This resource is only accessible by receptionists.'
-            ], 403);
-        }
-        $appointments = Appointment::orderBy('date', 'asc')
-            ->orderBy('time', 'asc')
+        $appointments = Appointment::whereHas('child', function ($query) {
+            $query->where('parent_id', auth()->id());
+        })
+            ->with([
+                'child:id,first_name,last_name',
+                'doctor:id,first_name,last_name'
+            ])
+            ->latest()
             ->get([
                 'id',
                 'doctor_id',
@@ -313,14 +311,20 @@ class ReceptionistController extends Controller
             'status'       => 'success',
             'message'      => __('messages.index_success'),
             'appointments' => $appointments->map(fn($app) => [
-                'id'         => $app->id,
-                'doctor_id'  => $app->doctor_id,
-                'child_id'   => $app->child_id,
-                'date'       => $app->date,
-                'time'       => $app->time,
-                'price'      => $app->price,
-                'created_at' => $app->created_at,
-                'status'     => __('messages.' . $app->status)
+                'id'           => $app->id,
+                'doctor_id'    => $app->doctor_id,
+                'doctor_name'  => $app->doctor
+                    ? trim($app->doctor->first_name . ' ' . $app->doctor->last_name)
+                    : null,
+                'child_id'     => $app->child_id,
+                'child_name'   => $app->child
+                    ? trim($app->child->first_name . ' ' . $app->child->last_name)
+                    : null,
+                'date'         => $app->date,
+                'time'         => $app->time,
+                'price'        => $app->price,
+                'created_at'   => $app->created_at,
+                'status'       => __('messages.' . $app->status)
             ])
         ], 200);
     }
