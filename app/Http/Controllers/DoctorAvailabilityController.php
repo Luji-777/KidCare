@@ -66,87 +66,85 @@ class DoctorAvailabilityController extends Controller
     }
 
     public function deleteAvailability($id)
-{
-    $doctor = auth()->user();
-
-   
-    $availability = DoctorAvailability::where('id', $id)
-        ->where('doctor_id', $doctor->id)
-        ->first();
-
-    if (!$availability) {
-        return response()->json([
-            'status' => 'error',
-            'message' => __('messages.availability_not_found')
-        ], 404);
-    }
-
-    $day = strtolower($availability->day_of_week);
-
-    $startTime = $availability->start_time;
-
-    $endTime = Carbon::parse($availability->end_time)
-        ->format('H:i:s');
+    {
+        $doctor = auth()->user();
 
 
-    
-    $appointments = Appointment::with('child.parent')
-        ->where('doctor_id', $doctor->id)
-        ->whereDate('date', '>=', now()->toDateString())
-        ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
-        ->whereTime('time', '>=', $startTime)
-        ->whereTime('time', '<', $endTime)
-        ->whereNotIn('status', ['cancelled_by_clinic','cancelled_by_patient', 'completed'])
-        ->get();
+        $availability = DoctorAvailability::where('id', $id)
+            ->where('doctor_id', $doctor->id)
+            ->first();
+
+        if (!$availability) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.availability_not_found')
+            ], 404);
+        }
+
+        $day = strtolower($availability->day_of_week);
+
+        $startTime = $availability->start_time;
+
+        $endTime = Carbon::parse($availability->end_time)
+            ->format('H:i:s');
 
 
-    
-    foreach ($appointments as $appointment) {
 
-       
-        $appointment->update([
-            'status' => 'cancelled_by_clinic'
-        ]);
-
-
-        
-        $parent = $appointment->child->parent;
+        $appointments = Appointment::with('child.parent')
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
+            ->whereTime('time', '>=', $startTime)
+            ->whereTime('time', '<', $endTime)
+            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient', 'completed'])
+            ->get();
 
 
-       
-        if ($parent && $parent->fcm_token) {
 
-            $messaging = app('firebase.messaging');
+        foreach ($appointments as $appointment) {
 
-            $message = CloudMessage::withTarget(
-                'token',
-                $parent->fcm_token
-            )->withNotification(
-                Notification::create(
-                    'Appointment Cancelled',
-                    'Your appointment has been cancelled because the doctor is no longer available at this time.'
-                )
-            )->withData([
-                'appointment_id' => (string) $appointment->id,
-                'type' => 'appointment_cancelled',
-                'sound' => 'default'
+
+            $appointment->update([
+                'status' => 'cancelled_by_clinic'
             ]);
 
-            $messaging->send($message);
+
+
+            $parent = $appointment->child->parent;
+
+
+
+            if ($parent && $parent->fcm_token) {
+
+                $messaging = app('firebase.messaging');
+
+                $message = CloudMessage::withTarget(
+                    'token',
+                    $parent->fcm_token
+                )->withNotification(
+                    Notification::create(
+                        'Appointment Cancelled',
+                        'Your appointment has been cancelled because the doctor is no longer available at this time.'
+                    )
+                )->withData([
+                    'appointment_id' => (string) $appointment->id,
+                    'type' => 'appointment_cancelled',
+                    'sound' => 'default'
+                ]);
+
+                $messaging->send($message);
+            }
         }
+
+        $availability->delete();
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => __('messages.availability_deleted_success'),
+            'cancelled_appointments_count' => $appointments->count()
+        ], 200);
     }
-
-    $availability->delete();
-
-
-    return response()->json([
-        'status' => 'success',
-        'message' => __('messages.availability_deleted_success'),
-        'cancelled_appointments_count' => $appointments->count()
-    ], 200);
-}
-
-    
 
     public function availableTimes($doctorId, Request $request)
     {
@@ -213,6 +211,22 @@ class DoctorAvailabilityController extends Controller
             'message' => __('messages.available_times_fetched_success'),
             'day_name'      => $translatedDay,
             'times'   => $times
+        ], 200);
+    }
+
+    public function index($doctorId)
+    {
+        $availabilities = DoctorAvailability::where('doctor_id', $doctorId)->get();
+
+        $availabilities->map(function ($item) {
+            $item->day_name_translated = ("messages.days." . strtolower($item->day_of_week));
+            return $item;
+        });
+
+        return response()->json([
+            'status'         => 'success',
+            'message'        => ('messages.availabilities_fetched_success'),
+            'availabilities' => $availabilities
         ], 200);
     }
 }

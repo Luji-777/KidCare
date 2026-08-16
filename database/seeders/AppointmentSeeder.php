@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class AppointmentSeeder extends Seeder
 {
-    /* public function run(): void
+    public function run(): void
 
     {
         $childIds = Child::pluck('id')->toArray();
@@ -35,7 +35,7 @@ class AppointmentSeeder extends Seeder
                 'time'            => $now->copy()->subHours(2)->format('H:i:s'), // دائماً قبل ساعتين من تشغيل السيدر
                 'status'          => 'completed',
                 'price'           => 100,
-               // 'base_price' => 100,
+                // 'base_price' => 100,
                 'currency'        => 'USD',
                 'payment_status'  => 'paid_online',
                 'doctor_earnings' => 60,
@@ -63,7 +63,7 @@ class AppointmentSeeder extends Seeder
                 'time'            => $now->copy()->addHours(3)->format('H:i:s'), // دائماً بعد 3 ساعات من تشغيل السيدر
                 'status'          => 'confirmed',
                 'price'           => 100,
-               // 'base_price' => 100,
+                // 'base_price' => 100,
                 'currency'        => 'USD',
                 'payment_status'  => 'paid_online',
                 'doctor_earnings' => 60,
@@ -114,7 +114,7 @@ class AppointmentSeeder extends Seeder
                         'time'            => $slot->start_time,
                         'status'          => 'confirmed',
                         'price'           => 100,
-                       // 'base_price' => 100,
+                        // 'base_price' => 100,
                         'currency'        => 'USD',
                         'payment_status'  => 'paid_online',
                         'doctor_earnings' => 60,
@@ -148,9 +148,9 @@ class AppointmentSeeder extends Seeder
                 ]);
             }
         }
-    }*/
+    }
 
-    public function run(): void
+    /* public function run(): void
     {
         $childIds = Child::pluck('id')->toArray();
         $doctorIds = Doctor::pluck('id')->toArray();
@@ -181,5 +181,5 @@ class AppointmentSeeder extends Seeder
                 'doctor_earnings' => 50.00,
             ]);
         }
-    }
+    }*/
 }
