@@ -78,6 +78,7 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
         Route::delete('/doctor/availability/{id}', [DoctorAvailabilityController::class, 'deleteAvailability']);
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
+        Route::get('/doctors/availableWorkingPeriods',[DoctorAvailabilityController::class, 'availableWorkingPeriods']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
 

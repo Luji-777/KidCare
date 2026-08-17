@@ -1177,7 +1177,7 @@ class DoctorController extends Controller
 
     $doctor = auth()->user();
 
-    // كل مواعيد الدكتور بالتاريخ يلي بعتو
+    
     $appointments = Appointment::with('child.parent')
         ->where('doctor_id', $doctor->id)
         ->whereDate('date', $request->date)
@@ -1187,7 +1187,7 @@ class DoctorController extends Controller
     if ($appointments->isEmpty()) {
         return response()->json([
             'status' => 'error',
-            'message' => 'No appointments found for this date.',
+            'message' => __('messages.no_appointments')
         ], 404);
     }
 
@@ -1229,12 +1229,12 @@ class DoctorController extends Controller
 
 
 
-        // إذا ما عندو FCM token ما منقدر نبعت إشعار
+        
         if (!$parent || !$parent->fcm_token) {
             continue;
         }
 
-        // إنشاء الإشعار
+        
         $message = CloudMessage::withTarget(
             'token',
             $parent->fcm_token
@@ -1250,7 +1250,7 @@ class DoctorController extends Controller
             'time' => $appointment->time,
         ]);
 
-        // إرسال الإشعار
+
         $messaging->send($message);
     }
     DoctorNotification::create([
@@ -1264,7 +1264,7 @@ class DoctorController extends Controller
 
     return response()->json([
         'status' => 'success',
-        'message' => 'All appointments have been cancelled successfully.',
+        'message' =>  __('messages.all_appointments_cancelled'),
         'cancelled_count' => $appointments->count(),
     ]);
 }
@@ -1288,7 +1288,7 @@ class DoctorController extends Controller
     ])) {
         return response()->json([
             'status' => 'error',
-            'message' => 'This appointment cannot be cancelled.'
+            'message' => __('messages.appointment_cancelled'),
         ], 422);
     }
 
@@ -1321,7 +1321,7 @@ class DoctorController extends Controller
             . ' has been cancelled.',
     ]);
 
-    // إرسال الإشعار إذا كان عند الأب FCM token
+    
     if ($parent && $parent->fcm_token) {
 
         $messaging = app('firebase.messaging');

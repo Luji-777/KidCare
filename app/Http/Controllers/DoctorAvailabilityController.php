@@ -19,6 +19,96 @@ use App\Models\Doctor;
 
 class DoctorAvailabilityController extends Controller
 {
+    public function availableWorkingPeriods()
+{
+    $doctor = auth()->user();
+
+    // كل أطباء نفس القسم ما عدا الطبيب الحالي
+    $otherDoctorIds = Doctor::where('department_id', $doctor->department_id)
+        ->where('id', '!=', $doctor->id)
+        ->pluck('id');
+
+    $days = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+    ];
+
+    $result = [];
+
+    foreach ($days as $day) {
+
+        // الفترات المشغولة من أطباء نفس القسم بهذا اليوم
+        $availabilities = DoctorAvailability::whereIn(
+                'doctor_id',
+                $otherDoctorIds
+            )
+            ->whereRaw('LOWER(day_of_week) = ?', [$day])
+            ->orderBy('start_time')
+            ->get();
+
+        $freePeriods = [];
+
+        // إذا ما في أي دكتور شاغل بهذا اليوم
+        if ($availabilities->isEmpty()) {
+
+            $freePeriods[] = [
+                'start_time' => '09:00',
+                'end_time' => '19:00',
+            ];
+
+        } else {
+
+            $currentTime = Carbon::createFromTime(9, 0, 0);
+
+            foreach ($availabilities as $availability) {
+
+                $start = Carbon::parse($availability->start_time);
+                $end = Carbon::parse($availability->end_time);
+
+                // في وقت فاضي قبل بداية دوام الطبيب الآخر
+                if ($currentTime->lt($start)) {
+
+                    $freePeriods[] = [
+                        'start_time' => $currentTime->format('H:i'),
+                        'end_time' => $start->format('H:i'),
+                    ];
+                }
+
+                // ننتقل لنهاية الدوام المشغول
+                if ($end->gt($currentTime)) {
+                    $currentTime = $end;
+                }
+            }
+
+            // في وقت فاضي بعد آخر دوام
+            $endOfDay = Carbon::createFromTime(18, 0, 0);
+
+            if ($currentTime->lt($endOfDay)) {
+
+                $freePeriods[] = [
+                    'start_time' => $currentTime->format('H:i'),
+                    'end_time' => '18:00',
+                ];
+            }
+        }
+
+        $result[] = [
+            'day' => $day,
+            'day_name' => __("messages.days.$day"),
+            'free_periods' => $freePeriods,
+        ];
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'available_periods' => $result,
+    ]);
+}
 
     public function availability(StoreDoctorAvailabilityRequest $request)
     {

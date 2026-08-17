@@ -11,7 +11,7 @@ class AppointmentAdditionsController extends Controller
 
    public function store(Request $request, $appointmentId)
 {
-    // Validation
+    
     $request->validate([
         'item_name' => 'required|string|max:255',
         'price'     => 'required|numeric|min:0',
@@ -21,14 +21,14 @@ class AppointmentAdditionsController extends Controller
         $doctor = auth()->user();
 
 
-    // التأكد أن الموعد تابع لهذا الدكتور
+    
     $appointment = Appointment::where('id', $appointmentId)
         ->where('doctor_id', $doctor->id)
         ->firstOrFail();
 
         
 
-        // إنشاء الإضافة
+        
         Appointment_additions::create([
             'appointment_id' => $appointment->id,
             'item_name'      => $request->item_name,
@@ -36,41 +36,32 @@ class AppointmentAdditionsController extends Controller
         ]);
 
 
-    // جلب جميع إضافات الموعد
+    
     $additions = Appointment_additions::where(
         'appointment_id',
         $appointment->id
     )->get();
 
-    // مجموع أسعار الإضافات
+    
     $totalAdditions = $additions->sum('price');
 
-    // سعر الكشفية الأساسي
+    
     $appointmentPrice = $appointment->price;
 
-    // السعر النهائي
+    
     $finalPrice = $appointmentPrice + $totalAdditions;
 
     return response()->json([
         'status'  => 'success',
-        'message' => 'Addition added successfully',
+        'message' => __('messages.addition_added_successfully'),
 
         'appointment' => [
             'appointment_id' => $appointment->id,
 
-            // سعر الكشفية الأساسي
+            
             'appointment_price' => $appointmentPrice,
-
-        
-
-                // جميع الإضافات
-                'additions' => $additions,
-
-
-            // مجموع الإضافات
+            'additions' => $additions,
             'total_additions' => $totalAdditions,
-
-            // الكشفية + الإضافات
             'final_price' => $finalPrice,
         ]
     ], 201);
@@ -107,24 +98,15 @@ class AppointmentAdditionsController extends Controller
 
     return response()->json([
         'status'  => 'success',
-        'message' => 'Addition deleted successfully',
+        'message' => __('messages.addition_deleted_successfully'),
 
 
             'appointment' => [
                 'appointment_id' => $appointment->id,
-
-
-            
-            'appointment_price' => $appointmentPrice,
-
-           
-            'additions' => $additions,
-
-            
-            'total_additions' => $totalAdditions,
-
-            
-            'final_price' => $finalPrice,
+                'appointment_price' => $appointmentPrice,
+                'additions' => $additions,
+                'total_additions' => $totalAdditions,
+                'final_price' => $finalPrice,
         ]
     ], 200);
 }

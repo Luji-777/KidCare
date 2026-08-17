@@ -97,7 +97,7 @@ class VaccineController extends Controller
             ], 400);
         }
 
-        // إنشاء جدول اللقاح
+        
         $schedule = VaccineSchedule::create([
             'vaccine_id' => $request->vaccine_id,
             'date'       => $request->date,
@@ -107,22 +107,17 @@ class VaccineController extends Controller
             'notes'      => $request->notes,
         ]);
 
-        // جلب اللقاح مع معلومات العمر
+       
         $vaccine = $schedule->load('vaccine')->vaccine;
 
-        /*
-    |--------------------------------------------------------------------------
-    | تحديد الأطفال المناسبين للعمر
-    |--------------------------------------------------------------------------
-    */
 
         $scheduleDate = Carbon::parse($schedule->date);
 
-        // أصغر عمر مسموح
+        
         $minimumBirthDate = $scheduleDate->copy()
             ->subMonths($vaccine->min_age_months);
 
-        // أكبر عمر مسموح
+        
         $maximumBirthDate = $scheduleDate->copy()
             ->subMonths($vaccine->max_age_months);
 
@@ -131,15 +126,9 @@ class VaccineController extends Controller
             ->whereDate('birth_date', '>=', $maximumBirthDate->toDateString())
             ->get();
 
-        /*
-    |--------------------------------------------------------------------------
-    | إرسال الإشعارات للأهل
-    |--------------------------------------------------------------------------
-    */
-
         $messaging = app('firebase.messaging');
 
-        // حتى إذا كان عند الأب أكثر من طفل مناسب، يصله إشعار واحد فقط
+       
         $parents = $children
             ->filter(function ($child) {
                 return $child->parent && $child->parent->fcm_token;
@@ -183,7 +172,7 @@ class VaccineController extends Controller
     {
         $currentUser = auth()->user();
 
-        // التأكد أن المستخدم Receptionist
+        
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
@@ -191,7 +180,7 @@ class VaccineController extends Controller
             ], 403);
         }
 
-        // جلب جدول اللقاح مع اللقاح
+       
         $schedule = VaccineSchedule::with('vaccine')->find($scheduleId);
 
         if (!$schedule) {
@@ -201,7 +190,7 @@ class VaccineController extends Controller
             ], 404);
         }
 
-        // التحقق من الحالة
+        
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:available,finished,cancelled',
         ]);
@@ -213,22 +202,16 @@ class VaccineController extends Controller
             ], 422);
         }
 
-        // تحديث حالة الجدول
+    
         $schedule->update([
             'status' => $request->status
         ]);
-
-        /*
-    |--------------------------------------------------------------------------
-    | إرسال الإشعار عند انتهاء أو إلغاء جدول اللقاح
-    |--------------------------------------------------------------------------
-    */
 
         if (in_array($request->status, ['finished', 'cancelled'])) {
 
             $vaccine = $schedule->vaccine;
 
-            // جلب الأطفال الذين لديهم أب
+           
             $children = Child::with('parent')->get();
 
             $messaging = app('firebase.messaging');
@@ -237,16 +220,16 @@ class VaccineController extends Controller
 
                 $parent = $child->parent;
 
-                // إذا ما عند الأب FCM token
+            
                 if (!$parent || !$parent->fcm_token) {
                     continue;
                 }
 
-                // حساب عمر الطفل بالأشهر
+                
                 $ageInMonths = Carbon::parse($child->birth_date)
                     ->diffInMonths(Carbon::today());
 
-                // التأكد أن عمر الطفل مناسب للقاح
+                
                 if (
                     $ageInMonths >= $vaccine->min_age_months &&
                     $ageInMonths <= $vaccine->max_age_months

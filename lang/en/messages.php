@@ -25,6 +25,15 @@ return [
     'closest_appointments_fetched' => 'Closest available appointments per doctor fetched successfully.',
     'availability_deleted_success' => 'Time deleted successfully',
 
+    //Doctor
+    'no_appointments' => 'No appointments found on this day',
+    'all_appointments_cancelled' => 'All appointmrnts have been cancelled successfully',
+    'appointment_cancelled' => 'Appointment has been cancelled successfully',
+
+    //Addition
+    'addition_added_successfully'=>'addition added successfully',
+    'addition_deleted_successfully'=>'addition deleted successfully',
+
     // Auth & OTP
     'phone_not_registered'       => 'This phone number is not registered in our records. Please check the number or create a new account.',
     'otp_sent_success'           => 'A new verification code has been sent to your phone.',
@@ -59,6 +68,7 @@ return [
     'availabilities_fetched_success' => 'Doctor working hours fetched successfully.',
     'no_available_times'             => 'No available times for booking on this day.',
     'available_times_fetched_success' => 'Available time slots fetched successfully.',
+    'availability_deleted_success' => 'Available time deleted successfully',
 
     // Appointment Summary & Checkout
     'appointment_details_not_found'        => 'Appointment details not found.',
