@@ -179,6 +179,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/appointments/{appointment_id}/payment-summary-reception', [PaymentController::class, 'getSummaryForReception']);
         Route::get('/home/today-children-count', [ReceptionistController::class, 'getTodayAddedChildrenCount']);
         Route::get('/dashboard/children', [ChildController::class, 'dashboardIndex']);
+        Route::post('/appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn']);
 
 
         // Vaccine

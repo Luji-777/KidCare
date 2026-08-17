@@ -21,9 +21,6 @@ use App\Models\Doctor;
 use App\Models\Child;
 use App\Models\ParentModel;
 use App\Models\DoctorNotification;
-
-
-
 use App\Services\FirebaseNotificationService;
 
 
@@ -49,10 +46,26 @@ class PaymentController extends Controller
                 return response()->json(['message' => __('messages.unauthorized')], 403);
             }
 
+            $birthDate = Carbon::parse($child->birth_date);
+            $now = Carbon::now();
+
+            $years = (int) $birthDate->diffInYears($now);
+            $months = (int) $birthDate->diffInMonths($now);
+            $days = (int) $birthDate->diffInDays($now);
+
+            if ($years >= 1) {
+                $age = $years;
+                $ageType = 'year';
+            } elseif ($months >= 1) {
+                $age = $months;
+                $ageType = 'month';
+            } else {
+                $age = $days;
+                $ageType = 'day';
+            }
 
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
-            $patient_age       = Carbon::parse($child->birth_date)->age;
             $patient_image     = $child->image ?? '';
             $department_name   = $doctor->department->name;
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
@@ -75,7 +88,6 @@ class PaymentController extends Controller
 
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
             $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
-            $patient_age       = Carbon::parse($appointment->child->birth_date)->age;
             $patient_image     = $appointment->child->image ?? '';
             $department_name   = $appointment->doctor->department->name;
             $date_time         = $appointment->date . ' ' . $appointment->time;
@@ -85,7 +97,8 @@ class PaymentController extends Controller
 
         return response()->json([
             "patient_name"      => $patient_full_name,
-            "patient_age"       => (string)$patient_age,
+            "patient_age"       => (int) $age,
+            "age_type"          => $ageType,
             "patient_image_url" => $patient_image,
             "doctor_name"       => $doctor_full_name,
             "department_name"   => $department_name,

@@ -281,11 +281,30 @@ class ChildController extends Controller
     public function homeChildren()
     {
         $children = auth()->user()->children->map(function ($child) {
+            $birthDate = Carbon::parse($child->birth_date);
+            $now = Carbon::now();
+
+            $years = (int) $birthDate->diffInYears($now);
+            $months = (int) $birthDate->diffInMonths($now);
+            $days = (int) $birthDate->diffInDays($now);
+
+            if ($years >= 1) {
+                $age = $years;
+                $ageType = 'year'; // أو 'سنة'
+            } elseif ($months >= 1) {
+                $age = $months;
+                $ageType = 'month'; // أو 'شهر'
+            } else {
+                $age = $days;
+                $ageType = 'day'; // أو 'يوم'
+            }
+
             return [
-                'id' => $child->id,
-                'name' => $child->first_name . ' ' . $child->last_name,
-                'age' => Carbon::parse($child->birth_date)->age,
-                'image' => $child->image
+                'id'       => $child->id,
+                'name'     => $child->first_name . ' ' . $child->last_name,
+                'age'      => (int) $age,
+                'age_type' => $ageType,
+                'image'    => $child->image
             ];
         });
 

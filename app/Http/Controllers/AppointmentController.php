@@ -713,24 +713,45 @@ class AppointmentController extends Controller
             ->where('doctor_id', $doctor->id)
             ->findOrFail($id);
 
+        $child = $appointment->child;
+
+        $birthDate = Carbon::parse($child->birth_date);
+        $now = Carbon::now();
+
+        $years = (int) $birthDate->diffInYears($now);
+        $months = (int) $birthDate->diffInMonths($now);
+        $days = (int) $birthDate->diffInDays($now);
+
+        if ($years >= 1) {
+            $age = $years;
+            $ageType = 'year';
+        } elseif ($months >= 1) {
+            $age = $months;
+            $ageType = 'month';
+        } else {
+            $age = $days;
+            $ageType = 'day';
+        }
+
         return response()->json([
             'status' => true,
             'data' => [
-                'appointment_id' => $appointment->id,
-                'date' => $appointment->date,
-                'day' => Carbon::parse($appointment->date)->format('l'),
-                'time' => $appointment->time,
-                'status' => $appointment->status,
+                'appointment_id'   => $appointment->id,
+                'date'             => $appointment->date,
+                'day'              => Carbon::parse($appointment->date)->format('l'),
+                'time'             => $appointment->time,
+                'status'           => $appointment->status,
                 'consultation_fee' => $appointment->price,
-                'currency' => $appointment->currency,
-                'payment_status' => $appointment->payment_status,
+                'currency'         => $appointment->currency,
+                'payment_status'   => $appointment->payment_status,
 
                 'child' => [
-                    'id' => $appointment->child->id,
-                    'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
-                    'image' => $appointment->child->image,
-                    'gender' => $appointment->child->gender,
-                    'age' => Carbon::parse($appointment->child->birth_date)->age,
+                    'id'       => $child->id,
+                    'name'     => $child->first_name . ' ' . $child->last_name,
+                    'image'    => $child->image,
+                    'gender'   => $child->gender,
+                    'age'      => (int) $age,
+                    'age_type' => $ageType,
                 ],
             ]
         ]);

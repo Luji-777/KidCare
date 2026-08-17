@@ -26,9 +26,9 @@ class DepartmentController extends Controller
 
     public function doctors($id)
     {
-        $departmentExists = Department::where('id', $id)->exists();
+        $department = Department::select('id', 'name')->find($id);
 
-        if (!$departmentExists) {
+        if (!$department) {
             return response()->json([
                 'status'  => __('messages.error'),
                 'message' => __('messages.department_not_found')
@@ -40,9 +40,10 @@ class DepartmentController extends Controller
             ->get();
 
         return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.department_doctors_fetched_success'),
-            'doctors' => $doctors
+            'status'          => 'success',
+            'message'         => __('messages.department_doctors_fetched_success'),
+            'department_name' => __("messages.departments_names.{$department->name}"),
+            'doctors'         => $doctors
         ], 200);
     }
 }

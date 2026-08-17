@@ -371,11 +371,31 @@ class DoctorController extends Controller
             ]);
         }
 
+        $child = $appointment->child;
+        $birthDate = Carbon::parse($child->birth_date);
+        $now = Carbon::now();
+
+        $years  = (int) $birthDate->diffInYears($now);
+        $months = (int) $birthDate->diffInMonths($now);
+        $days   = (int) $birthDate->diffInDays($now);
+
+        if ($years >= 1) {
+            $age = $years;
+            $ageType = 'year';
+        } elseif ($months >= 1) {
+            $age = $months;
+            $ageType = 'month';
+        } else {
+            $age = $days;
+            $ageType = 'day';
+        }
+
         return response()->json([
             'appointment_id' => $appointment->id,
             'id' => $appointment->child->id,
             'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
-            'age' => Carbon::parse($appointment->child->birth_date)->age,
+            'age'              => (int) $age,
+            'age_type'         => $ageType,
             'gender' => $appointment->child->gender,
             'image' => $appointment->child->image,
             'appointment_time' => $appointment->time,
@@ -393,16 +413,35 @@ class DoctorController extends Controller
             ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->get();
-
+        $now = Carbon::now();
         return response()->json(
-            $appointments->map(function ($appointment) {
+            $appointments->map(function ($appointment) use ($now) {
+                $child = $appointment->child;
+                $birthDate = Carbon::parse($child->birth_date);
+
+                $years  = (int) $birthDate->diffInYears($now);
+                $months = (int) $birthDate->diffInMonths($now);
+                $days   = (int) $birthDate->diffInDays($now);
+
+                if ($years >= 1) {
+                    $age = $years;
+                    $ageType = 'year';
+                } elseif ($months >= 1) {
+                    $age = $months;
+                    $ageType = 'month';
+                } else {
+                    $age = $days;
+                    $ageType = 'day';
+                }
+
                 return [
-                    'appointment_id' => $appointment->id,
-                    'id' => $appointment->child->id,
-                    'name' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
-                    'age' => Carbon::parse($appointment->child->birth_date)->age,
-                    'gender' => $appointment->child->gender,
-                    'image' => $appointment->child->image,
+                    'appointment_id'   => $appointment->id,
+                    'id'               => $child->id,
+                    'name'             => $child->first_name . ' ' . $child->last_name,
+                    'age'              => (int) $age,
+                    'age_type'         => $ageType,
+                    'gender'           => $child->gender,
+                    'image'            => $child->image,
                     'appointment_time' => $appointment->time,
                 ];
             })
@@ -923,13 +962,28 @@ class DoctorController extends Controller
                 'appointments' => $appointments->map(function ($appointment) {
 
                     $child = $appointment->child;
+                    $birthDate = Carbon::parse($child->birth_date);
+                    $now = Carbon::now();
 
-                    $age = Carbon::parse($child->birth_date)->age;
+                    $years  = (int) $birthDate->diffInYears($now);
+                    $months = (int) $birthDate->diffInMonths($now);
+                    $days   = (int) $birthDate->diffInDays($now);
 
+                    if ($years >= 1) {
+                        $age = $years;
+                        $ageType = 'year';
+                    } elseif ($months >= 1) {
+                        $age = $months;
+                        $ageType = 'month';
+                    } else {
+                        $age = $days;
+                        $ageType = 'day';
+                    }
                     return [
                         'id' => $appointment->id,
                         'patient_name' => $child->first_name . ' ' . $child->last_name,
-                        'age' => $age,
+                        'age'              => (int) $age,
+                        'age_type'         => $ageType,
                         'gender' => $child->gender,
                         'image' => $child->image,
                         'time' => Carbon::parse($appointment->time)->format('H:i'),
@@ -959,17 +1013,35 @@ class DoctorController extends Controller
             ->get()
             ->unique('id')
             ->values();
+        $now = Carbon::now();
 
         return response()->json([
             'status' => true,
-            'patients' => $patients->map(function ($child) {
+            'patients' => $patients->map(function ($child) use ($now) {
+                $birthDate = Carbon::parse($child->birth_date);
+
+                $years  = (int) $birthDate->diffInYears($now);
+                $months = (int) $birthDate->diffInMonths($now);
+                $days   = (int) $birthDate->diffInDays($now);
+
+                if ($years >= 1) {
+                    $age = $years;
+                    $ageType = 'year';
+                } elseif ($months >= 1) {
+                    $age = $months;
+                    $ageType = 'month';
+                } else {
+                    $age = $days;
+                    $ageType = 'day';
+                }
                 return [
-                    'id' => $child->id,
-                    'name' => $child->first_name . ' ' . $child->last_name,
-                    'age' => Carbon::parse($child->birth_date)->age,
-                    'gender' => $child->gender,
-                    'image' => $child->image,
-                    'parent_phone' => $child->parent->phone_number,
+                    'id'           => $child->id,
+                    'name'         => $child->first_name . ' ' . $child->last_name,
+                    'age'          => (int) $age,
+                    'age_type'     => $ageType,
+                    'gender'       => $child->gender,
+                    'image'        => $child->image,
+                    'parent_phone' => optional($child->parent)->phone_number,
                 ];
             }),
         ]);
