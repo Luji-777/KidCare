@@ -230,7 +230,6 @@ class ChildController extends Controller
             ], 403);
         }
 
-        // 2. التحقق من وجود الطفل
         if (!$child) {
             return response()->json([
                 'status'  => __('messages.error'),

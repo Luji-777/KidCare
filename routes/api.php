@@ -151,6 +151,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
         Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'destroy']);
         Route::post('doctors/{doctor}/update', [DoctorController::class, 'update']);
+
         // Home dashboard
         Route::get('/home/patients-count', [AdminController::class, 'getPatientsCount']);
         Route::get('/home/present-doctors-count', [AdminController::class, 'getPresentDoctorsCount']);
@@ -180,14 +181,13 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/dashboard/children', [ChildController::class, 'dashboardIndex']);
 
 
-        // === راوتات الرسبشن ==
+        // Vaccine
         Route::post('/reception/vaccine-schedules', [VaccineController::class, 'createSchedule']);
         Route::put('/reception/vaccine-schedules/{schedule}/status', [VaccineController::class, 'updateScheduleStatus']);
         Route::post('/reception/child-vaccinations', [VaccineController::class, 'recordChildVaccination']);
         Route::post('/reception/vaccines', [VaccineController::class, 'storeVaccine']);
         Route::get('/vaccines', [VaccineController::class, 'getAllVaccines']);
 
-        // === راوتات الأب والرسبشن (مشتركة) ===
         Route::get('/vaccines/available-schedules', [VaccineController::class, 'getAvailableSchedules']);
         Route::get('/vaccines/child-history/{childId}', [VaccineController::class, 'getChildVaccinationHistory']);
 

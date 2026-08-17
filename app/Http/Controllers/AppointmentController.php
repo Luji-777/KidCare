@@ -336,12 +336,10 @@ class AppointmentController extends Controller
                     'amount' => $refundAmount
                 ]);
             }
-
             $parent = auth()->user();
             $child = Child::find($appointment->child_id);
             $doctor = Doctor::find($appointment->doctor_id);
 
-            // إشعار الطبيب داخل الداتابيز
             DoctorNotification::create([
                 'doctor_id' => $appointment->doctor_id,
                 'title' => 'Appointment Cancelled',
@@ -353,7 +351,6 @@ class AppointmentController extends Controller
                     $appointment->time,
             ]);
 
-            // إشعار الأب داخل الداتابيز
             DBNotification::create([
                 'parent_id' => $parent->id,
                 'message' => $notificationBody
@@ -376,7 +373,6 @@ class AppointmentController extends Controller
                 );
             }
 
-            // Push Notification للأب
             if (!empty($parent->fcm_token)) {
 
                 $firebase->send(

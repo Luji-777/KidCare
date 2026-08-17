@@ -1252,7 +1252,6 @@ class DoctorController extends Controller
             'cancelled_count' => $appointments->count(),
         ]);
     }
-
     public function cancelAppointment($appointmentId)
     {
         $doctor = auth()->user();
