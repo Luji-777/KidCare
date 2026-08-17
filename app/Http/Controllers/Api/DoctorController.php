@@ -1212,9 +1212,12 @@ class DoctorController extends Controller
                 ]);
             }
 
+
+
             if (!$parent || !$parent->fcm_token) {
                 continue;
             }
+
 
             $message = CloudMessage::withTarget(
                 'token',
@@ -1249,7 +1252,6 @@ class DoctorController extends Controller
             'cancelled_count' => $appointments->count(),
         ]);
     }
-
 
     public function cancelAppointment($appointmentId)
     {
