@@ -130,7 +130,7 @@ class ReceptionistController extends Controller
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status' => __('messages.error'),
-                'message' => 'Unauthorized. This resource is only accessible by receptionists.'
+                'message' => __('messages.unauthorized')
             ], 403);
         }
 
@@ -197,7 +197,7 @@ class ReceptionistController extends Controller
 
         return response()->json([
             'status'      => 'success',
-            'message'     => 'Appointment booked successfully.',
+            'message' => __('messages.appointment_booked_successfully'),
             'appointment' => $appointment,
         ], 201);
     }
@@ -208,7 +208,7 @@ class ReceptionistController extends Controller
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => __('messages.error'),
-                'message' => 'Unauthorized. This resource is only accessible by receptionists.',
+                'message' => '' . __('messages.unauthorized'),
             ], 403);
         }
 
@@ -335,7 +335,7 @@ class ReceptionistController extends Controller
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Unauthorized. Only receptionists can cancel appointments.',
+                'message' => '' . __('messages.unauthorized'),
             ], 403);
         }
 
@@ -367,7 +367,7 @@ class ReceptionistController extends Controller
                         'amount' => $refundAmountInCents,
                         'metadata' => [
                             'appointment_id' => $appointment->id,
-                            'reason' => 'Cancelled by clinic receptionist'
+                            'reason' =>  __('messages.cancelled_by_clinic')
                         ]
                     ]);
 
@@ -578,7 +578,7 @@ class ReceptionistController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => __('messages.error'),
-                'message' => 'Invalid date format. Please use Y-m-d.'
+                'message' => __('messages.invalid_date_format')
             ], 400);
         }
 
@@ -655,7 +655,6 @@ class ReceptionistController extends Controller
             $notifTitle = 'Patient Arrived 🏥';
             $notifMessage = "{$child->first_name} {$child->last_name} is now in the waiting room.";
 
-            // 4. إنشاء إشعار للطبيب في قاعدة البيانات
             DoctorNotification::create([
                 'doctor_id' => $appointment->doctor_id,
                 'title' => $notifTitle,
@@ -664,7 +663,6 @@ class ReceptionistController extends Controller
 
             DB::commit();
 
-            // 5. إرسال Push Notification للهاتف الخاص بالطبيب
             if ($doctor && !empty($doctor->fcm_token)) {
                 $firebase->send(
                     $doctor->fcm_token,
@@ -692,7 +690,7 @@ class ReceptionistController extends Controller
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Unauthorized. Only receptionists can block users.',
+                'message' => __('messages.unauthorized'),
             ], 403);
         }
 
@@ -750,7 +748,7 @@ class ReceptionistController extends Controller
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Unauthorized. Only receptionists can revoke tokens.',
+                'message' => '' . __('messages.unauthorized'),
             ], 403);
         }
 

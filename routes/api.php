@@ -144,8 +144,8 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/count/department/{department_id}', [DoctorController::class, 'getDoctorsCountByDepartment']);
         Route::get('/doctors/top-this-week', [DoctorController::class, 'getTopDoctorThisWeek']);
         Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
-        Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
-
+        Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'destroy']);
+        Route::post('doctors/{doctor}/update', [DoctorController::class, 'update']);
         // Home dashboard
         Route::get('/home/patients-count', [AdminController::class, 'getPatientsCount']);
         Route::get('/home/present-doctors-count', [AdminController::class, 'getPresentDoctorsCount']);
@@ -175,7 +175,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/dashboard/children', [ChildController::class, 'dashboardIndex']);
 
 
-        // === راوتات الرسبشن ===
+        // === راوتات الرسبشن ==
         Route::post('/reception/vaccine-schedules', [VaccineController::class, 'createSchedule']);
         Route::put('/reception/vaccine-schedules/{schedule}/status', [VaccineController::class, 'updateScheduleStatus']);
         Route::post('/reception/child-vaccinations', [VaccineController::class, 'recordChildVaccination']);

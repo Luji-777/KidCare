@@ -167,41 +167,38 @@ class GrowthController extends Controller
             return [
                 'bmi'   => $bmi,
                 'text'  => __('messages.bmi_underweight'),
-                'color' => '#FF3B30' // أحمر 🔴
+                'color' => '#FF3B30'
             ];
         } elseif ($bmi >= $minHealthy && $bmi <= $maxHealthy) {
             return [
                 'bmi'   => $bmi,
                 'text'  => __('messages.bmi_healthy'),
-                'color' => '#34C759' // أخضر 🟢
+                'color' => '#34C759'
             ];
         } else {
             return [
                 'bmi'   => $bmi,
                 'text'  => __('messages.bmi_overweight'),
-                'color' => '#FFCC00' // أصفر 🟡
+                'color' => '#FFCC00'
             ];
         }
     }
 
     public function destroy($id)
     {
-        // البحث عن سجل النمو
         $growth = Growth::find($id);
 
         if (!$growth) {
-            return response()->json(['message' => 'Record not found'], 404);
+            return response()->json(['message' => __('messages.record_not_found')], 404);
         }
-
-        // الأمان: التأكد أن هذا السجل تابع لطفل يملكه الأب الحالي
         $child = auth()->user()->children()->where('id', $growth->child_id)->exists();
 
         if (!$child) {
-            return response()->json(['message' => 'Unauthorized action.'], 403);
+            return response()->json(['message' => __('messages.unauthorized_role')], 403);
         }
 
         $growth->delete();
 
-        return response()->json(['message' => 'Growth record deleted successfully'], 200);
+        return response()->json(['message' => __('messages.growth_record_deleted_successfully')], 200);
     }
 }

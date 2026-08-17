@@ -71,7 +71,7 @@ class ChildController extends Controller
         ]));
 
         return response()->json([
-            'message' => 'Child added successfully.',
+            'message' => __('messages.child_added_successfully'),
             'child' => $child
         ], 201);
     }
@@ -134,7 +134,7 @@ class ChildController extends Controller
         $changes = $child->getChanges();
 
         return response()->json([
-            'message' => 'Child updated successfully.',
+            'message' => __('messages.child_updated_successfully'),
             'updated_fields' => $changes
         ]);
     }
@@ -202,7 +202,7 @@ class ChildController extends Controller
 
         return response()->json([
             'status'   => 'success',
-            'message'  => 'All children fetched successfully.',
+            'message' => __('messages.all_children_fetched_successfully'),
             'children' => $formattedChildren
         ]);
     }
@@ -214,21 +214,19 @@ class ChildController extends Controller
         if (!$currentUser) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Unauthorized.'
+                'message' => __('messages.unauthorized')
             ], 401);
         }
-
-        // 1. جلب الطفل بناءً على الصلاحيات
         if ($currentUser instanceof ParentModel) {
-            // الأب يبحث في أطفاله فقط
+
             $child = $currentUser->children()->find($id);
         } elseif ($currentUser instanceof Receptionist) {
-            // الرسبشن يبحث في كل الأطفال
+
             $child = Child::find($id);
         } else {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Unauthorized role.'
+                'message' => __('messages.unauthorized_role')
             ], 403);
         }
 
@@ -241,7 +239,7 @@ class ChildController extends Controller
         }
         return response()->json([
             'status'  => 'success',
-            'message' => 'Child fetched successfully.',
+            'message' => __('messages.child_fetched_success'),
             'data'    => $child
         ], 200);
     }
@@ -278,7 +276,7 @@ class ChildController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Child deleted successfully.'
+            'message' => __('messages.child_deleted_successfully')
         ]);
     }
     public function homeChildren()

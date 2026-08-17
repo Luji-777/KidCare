@@ -15,7 +15,6 @@ class DepartmentController extends Controller
             return [
                 'id'          => $dept->id,
                 'name'        => __("messages.departments_names.{$dept->name}"),
-                //'description' => __("messages.departments_descriptions.{$dept->name}"),
             ];
         });
         return response()->json([

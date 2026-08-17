@@ -37,7 +37,7 @@ class ParentModelController extends Controller
             ],
             'password'     => 'required|string|min:6|max:255|confirmed',
         ]);
-        $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
+        $otp = rand(1000, 9999);
 
 
         $pendingUserData = [
@@ -122,7 +122,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status'       => 'success',
-            'message'      => 'Phone number verified and account created successfully.',
+            'message' => __('messages.phone_verified_and_account_created_successfully'),
             'access_token' => $token,
             'token_type'   => 'Bearer',
             'user'         => $newParent
@@ -149,7 +149,6 @@ class ParentModelController extends Controller
         session(['otp' => $otp]);
         session(['otp_phone' => $request->phone_number]);
 
-        // أرسل عبر واتساب
         sendWhatsAppMessage(
             $request->phone_number,
             "Your confirmation code is: {$otp}. Do not share it with anyone."
@@ -263,7 +262,7 @@ class ParentModelController extends Controller
             if (!$parentId) {
                 return response()->json([
                     'status' => __('messages.error'),
-                    'message' => 'The parent_id field is required for receptionists.'
+                    'message' => __('messages.parent_id_required_for_receptionists')
                 ], 400);
             }
 
@@ -288,7 +287,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Parent profile fetched successfully.',
+            'message' => __('messages.parent_profile_fetched_successfully'),
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,
@@ -377,7 +376,7 @@ class ParentModelController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Profile updated successfully.',
+            'message' => __('messages.profile_updated_successfully'),
             'user' => [
                 'id'           => $parent->id,
                 'first_name'   => $parent->first_name,

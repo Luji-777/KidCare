@@ -223,8 +223,7 @@ class PaymentController extends Controller
                                 'payment_status' => 'paid_online',
                                 'price'          => $appointmentData['price'],
                                 'doctor_earnings' => $doctorEarnings,
-                                //    'type'           => $appointmentData['type'],
-                                //    'vaccine_id'     => $appointmentData['vaccine_id'],
+
                             ]);
 
                             $child = Child::find($appointment->child_id);
@@ -241,7 +240,7 @@ class PaymentController extends Controller
 
                             DBNotification::create([
                                 'parent_id' => $parent->id,
-                                'message'   => 'Your appointment has been confirmed successfully.'
+                                'message' => __('messages.appointment_confirmed_success')
                             ]);
 
                             if ($parent && $parent->fcm_token) {
@@ -304,7 +303,7 @@ class PaymentController extends Controller
 
             if ($appointment->status === 'cancelled_by_patient'  || $appointment->status === 'cancelled_by_clinic') {
                 return response()->json([
-                    'status'  => 'error',
+                    'status'  => 'messages.error',
                     'message' => __('messages.cannot_complete_payment_for_cancelled_appointment')
                 ], 400);
             }
@@ -407,104 +406,4 @@ class PaymentController extends Controller
             ]
         ], 200);
     }
-
-    //---------------Test----------------
-    /*  public function testAppointment(Request $request)
-    {
-        $pendingAppointmentId = $request->appointment_id;
-
-        $appointmentData = Cache::get("pending_appointment_{$pendingAppointmentId}");
-
-        if (!$appointmentData) {
-            return response()->json([
-                'message' => 'Appointment session expired or not found.'
-            ], 404);
-        }
-
-        $alreadyExists = Appointment::where('doctor_id', $appointmentData['doctor_id'])
-            ->where('date', $appointmentData['date'])
-            ->where('time', $appointmentData['time'])
-            ->exists();
-
-        if ($alreadyExists) {
-            return response()->json([
-                'message' => 'Appointment already exists'
-            ], 409);
-        }
-
-        DB::beginTransaction();
-
-        try {
-
-            $appointment = Appointment::create([
-                'child_id'       => $appointmentData['child_id'],
-                'doctor_id'      => $appointmentData['doctor_id'],
-                'date'           => $appointmentData['date'],
-                'time'           => $appointmentData['time'],
-                'status'         => 'confirmed',
-                'payment_status' => 'paid_online',
-                'price'          => $appointmentData['price'],
-            ]);
-
-            $child = Child::find($appointment->child_id);
-            $doctor = Doctor::find($appointment->doctor_id);
-            $parent = ParentModel::find($child->parent_id);
-
-            DoctorNotification::create([
-                'doctor_id' => $appointment->doctor_id,
-                'title' => 'New Appointment',
-                'message' => $child->first_name . ' ' . $child->last_name .
-                    ' booked an appointment on ' .
-                    $appointment->date . ' at ' . $appointment->time,
-            ]);
-            if ($doctor && !empty($doctor->fcm_token)) {
-
-                $firebase->send(
-                    $doctor->fcm_token,
-                    'New Appointment',
-                    $child->first_name . ' ' .
-                        $child->last_name .
-                        ' booked an appointment on ' .
-                        $appointment->date .
-                        ' at ' .
-                        $appointment->time
-                );
-            }
-
-            DBNotification::create([
-                'parent_id' => $parent->id,
-                'message'   => 'Your appointment has been confirmed successfully.'
-            ]);
-
-            if ($parent && $parent->fcm_token) {
-
-                $message = CloudMessage::withTarget(
-                    'token',
-                    $parent->fcm_token
-                )->withNotification(
-                    FirebaseNotification::create(
-                        'Appointment Confirmed',
-                        'Your appointment has been confirmed successfully.'
-                    )
-                );
-
-                app('firebase.messaging')->send($message);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Appointment created successfully',
-                'appointment' => $appointment
-            ]);
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'message' => 'Failed to create appointment',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }*/
 }
