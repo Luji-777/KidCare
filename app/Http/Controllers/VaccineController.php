@@ -107,9 +107,6 @@ class VaccineController extends Controller
         ]);
 
         $vaccine = $schedule->load('vaccine')->vaccine;
-
-
-
         $scheduleDate = Carbon::parse($schedule->date);
 
         $minimumBirthDate = $scheduleDate->copy()
@@ -170,13 +167,13 @@ class VaccineController extends Controller
     {
         $currentUser = auth()->user();
 
+
         if (!$currentUser || !($currentUser instanceof Receptionist)) {
             return response()->json([
                 'status'  => 'error',
                 'message' => __('messages.unauthorized')
             ], 403);
         }
-
         $schedule = VaccineSchedule::with('vaccine')->find($scheduleId);
 
         if (!$schedule) {
@@ -185,6 +182,7 @@ class VaccineController extends Controller
                 'message' => __('messages.schedule_not_found')
             ], 404);
         }
+
 
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:available,finished,cancelled',
@@ -197,14 +195,15 @@ class VaccineController extends Controller
             ], 422);
         }
 
+
         $schedule->update([
             'status' => $request->status
         ]);
 
-
         if (in_array($request->status, ['finished', 'cancelled'])) {
 
             $vaccine = $schedule->vaccine;
+
 
             $children = Child::with('parent')->get();
 
@@ -214,12 +213,15 @@ class VaccineController extends Controller
 
                 $parent = $child->parent;
 
+
                 if (!$parent || !$parent->fcm_token) {
                     continue;
                 }
 
+
                 $ageInMonths = Carbon::parse($child->birth_date)
                     ->diffInMonths(Carbon::today());
+
 
                 if (
                     $ageInMonths >= $vaccine->min_age_months &&

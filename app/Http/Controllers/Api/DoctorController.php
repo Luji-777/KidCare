@@ -6,6 +6,9 @@ use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use App\Models\Notification as DBNotification;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
+use App\Models\DoctorNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
@@ -41,7 +44,6 @@ class DoctorController extends Controller
         session(['otp' => $otp]);
         session(['otp_phone' => $request->phone_number]);
 
-        // أرسل عبر واتساب
         sendWhatsAppMessage(
             $request->phone_number,
             "Your confirmation code is: {$otp}. Do not share it with anyone."
@@ -905,6 +907,12 @@ class DoctorController extends Controller
         $appointments = Appointment::with('child')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', $date)
+
+            ->whereNotIn('status', [
+                'cancelled_by_patient',
+                'cancelled_by_clinic',
+            ])
+
             ->orderBy('time')
             ->get();
 
@@ -1160,7 +1168,6 @@ class DoctorController extends Controller
             ], 500);
         }
     }
-
     public function cancelAppointmentsByDate(Request $request)
     {
         $request->validate([
@@ -1169,7 +1176,7 @@ class DoctorController extends Controller
 
         $doctor = auth()->user();
 
-        // كل مواعيد الدكتور بالتاريخ يلي بعتو
+
         $appointments = Appointment::with('child.parent')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', $request->date)
@@ -1179,7 +1186,7 @@ class DoctorController extends Controller
         if ($appointments->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'No appointments found for this date.',
+                'message' => ('messages.no_appointments')
             ], 404);
         }
 
@@ -1194,13 +1201,21 @@ class DoctorController extends Controller
 
 
             $parent = $appointment->child->parent;
+            if ($parent) {
 
-            // إذا ما عندو FCM token ما منقدر نبعت إشعار
+                DBNotification::create([
+                    'parent_id' => $parent->id,
+                    'message' => 'Your appointment on ' .
+                        $appointment->date . ' at ' .
+                        $appointment->time .
+                        ' has been cancelled by the doctor.'
+                ]);
+            }
+
             if (!$parent || !$parent->fcm_token) {
                 continue;
             }
 
-            // إنشاء الإشعار
             $message = CloudMessage::withTarget(
                 'token',
                 $parent->fcm_token
@@ -1216,16 +1231,25 @@ class DoctorController extends Controller
                 'time' => $appointment->time,
             ]);
 
-            // إرسال الإشعار
+
             $messaging->send($message);
         }
+        DoctorNotification::create([
+            'doctor_id' => $doctor->id,
+            'title' => 'Appointments Cancelled',
+            'message' => 'All appointments on '
+                . $request->date
+                . ' have been cancelled. Total cancelled appointments: '
+                . $appointments->count(),
+        ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'All appointments have been cancelled successfully.',
+            'message' => ('messages.all_appointments_cancelled'),
             'cancelled_count' => $appointments->count(),
         ]);
     }
+
 
     public function cancelAppointment($appointmentId)
     {

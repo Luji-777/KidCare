@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentAdditionsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DoctorNotificationController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ChildController;
@@ -77,6 +78,7 @@ Route::middleware('set.locale')->group(function () {
         Route::post('/doctor-availabilities', [DoctorAvailabilityController::class, 'availability']);
         Route::delete('/doctor/availability/{id}', [DoctorAvailabilityController::class, 'deleteAvailability']);
         Route::get('/doctors/{id}/availabilities', [DoctorAvailabilityController::class, 'index']);
+        Route::get('/doctors/availableWorkingPeriods', [DoctorAvailabilityController::class, 'availableWorkingPeriods']);
         Route::post('/doctors/{doctorId}/favorite', [DoctorController::class, 'toggleFavorite']);
         Route::get('/favorite-doctors', [DoctorController::class, 'getFavorites']);
 
@@ -101,7 +103,10 @@ Route::middleware('set.locale')->group(function () {
             Route::get('/monthlyRevenue', [DoctorController::class, 'monthlyRevenue']);
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
-            Route::put('appointments/{appointmentId}/cancel', [AppointmentController::class, 'cancelAppointment']);
+            Route::put('appointments/{appointmentId}/cancel', [DoctorController::class, 'cancelAppointment']);
+
+            Route::get('/notification', [DoctorNotificationController::class, 'getDoctorNotifications']);
+
 
             Route::post('/{appointmentId}/diagnosis', [DoctorController::class, 'addDiagnosis']);
             Route::post('/{recordId}/medications', [DoctorController::class, 'addMedication']);

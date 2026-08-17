@@ -51,12 +51,22 @@ return [
     'favorite_added'             => 'تمت إضافته إلى المفضلة.',
     'favorites_fetched_success'  => 'تم جلب قائمة الأطباء المفضلين بنجاح.',
 
+    //Doctor
+    'no_appointments' => 'لا يوجد مواعيد في هذا اليوم',
+    'all_appointments_cancelled' => 'تم الغاء جميع المواعيد بنجاح',
+    'appointment_cancelled' => 'تم الغاء الموعد بنجاح',
+
+    //Addition
+    'addition_added_successfully'=>'تمت الاضافة بنجاح',
+    'addition_deleted_successfully'=>'تم الحذف بنجاح',
+
     // Doctor Availability
     'doctor_time_conflict'           => 'يوجد طبيب آخر متاح في نفس هذا القسم خلال الوقت المختار.',
     'availability_added_success'     => 'تم إضافة أوقات الدوام بنجاح.',
     'availabilities_fetched_success' => 'تم جلب أوقات دوام الطبيب بنجاح.',
     'no_available_times'             => 'لا توجد أوقات متاحة للحجز في هذا اليوم.',
     'available_times_fetched_success' => 'تم جلب الفترات الزمنية المتاحة بنجاح.',
+    'availability_deleted_success' => 'تم الحذف بنجاح',
 
     // Appointment Summary & Checkout
     'appointment_details_not_found'        => 'لم يتم العثور على تفاصيل الموعد.',

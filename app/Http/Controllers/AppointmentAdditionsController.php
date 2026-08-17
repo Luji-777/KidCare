@@ -20,35 +20,25 @@ class AppointmentAdditionsController extends Controller
 
         $doctor = auth()->user();
 
-
-        // التأكد أن الموعد تابع لهذا الدكتور
         $appointment = Appointment::where('id', $appointmentId)
             ->where('doctor_id', $doctor->id)
             ->firstOrFail();
 
-
-
-        // إنشاء الإضافة
         Appointment_additions::create([
             'appointment_id' => $appointment->id,
             'item_name'      => $request->item_name,
             'price'          => $request->price,
         ]);
 
-
-        // جلب جميع إضافات الموعد
         $additions = Appointment_additions::where(
             'appointment_id',
             $appointment->id
         )->get();
 
-        // مجموع أسعار الإضافات
         $totalAdditions = $additions->sum('price');
 
-        // سعر الكشفية الأساسي
         $appointmentPrice = $appointment->price;
 
-        // السعر النهائي
         $finalPrice = $appointmentPrice + $totalAdditions;
 
         return response()->json([
@@ -58,19 +48,12 @@ class AppointmentAdditionsController extends Controller
             'appointment' => [
                 'appointment_id' => $appointment->id,
 
-                // سعر الكشفية الأساسي
                 'appointment_price' => $appointmentPrice,
 
-
-
-                // جميع الإضافات
                 'additions' => $additions,
 
-
-                // مجموع الإضافات
                 'total_additions' => $totalAdditions,
 
-                // الكشفية + الإضافات
                 'final_price' => $finalPrice,
             ]
         ], 201);
@@ -96,34 +79,18 @@ class AppointmentAdditionsController extends Controller
             $appointment->id
         )->get();
 
-
         $totalAdditions = $additions->sum('price');
-
-
         $appointmentPrice = $appointment->price;
-
-
         $finalPrice = $appointmentPrice + $totalAdditions;
 
         return response()->json([
             'status'  => 'success',
             'message' => __('messages.addition_deleted_successfully'),
-
-
             'appointment' => [
                 'appointment_id' => $appointment->id,
-
-
-
                 'appointment_price' => $appointmentPrice,
-
-
                 'additions' => $additions,
-
-
                 'total_additions' => $totalAdditions,
-
-
                 'final_price' => $finalPrice,
             ]
         ], 200);
