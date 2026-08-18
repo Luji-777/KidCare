@@ -777,7 +777,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-        public function checkIn(Appointment $appointment, FirebaseNotificationService $firebase)
+    public function checkIn(Appointment $appointment, FirebaseNotificationService $firebase)
     {
         if ($appointment->status !== 'confirmed') {
             return response()->json([

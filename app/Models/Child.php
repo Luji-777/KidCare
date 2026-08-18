@@ -89,6 +89,9 @@ class Child extends Model
             return asset($value);
         }
 
-        return null;
+        // هنا يتم إرجاع الصورة الافتراضية إذا كان $value فارغاً أو null
+        return $this->gender === 'male'
+            ? asset('images/boy.png')
+            : asset('images/girl.png');
     }
 }

@@ -31,8 +31,8 @@ return [
     'appointment_cancelled' => 'Appointment has been cancelled successfully',
 
     //Addition
-    'addition_added_successfully'=>'addition added successfully',
-    'addition_deleted_successfully'=>'addition deleted successfully',
+    'addition_added_successfully' => 'addition added successfully',
+    'addition_deleted_successfully' => 'addition deleted successfully',
 
     // Auth & OTP
     'phone_not_registered'       => 'This phone number is not registered in our records. Please check the number or create a new account.',
@@ -132,6 +132,9 @@ return [
     'completed'              => 'Completed',
     'cancelled_by_patient'              => 'Cancelled by patient',
     'cancelled_by_clinic'              => 'Cancelled by clinic',
+    'missed'                 => 'Missed',
+    'finished' => 'Finished',
+
 
     'error' => 'Error',
 

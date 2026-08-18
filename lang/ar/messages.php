@@ -57,8 +57,8 @@ return [
     'appointment_cancelled' => 'تم الغاء الموعد بنجاح',
 
     //Addition
-    'addition_added_successfully'=>'تمت الاضافة بنجاح',
-    'addition_deleted_successfully'=>'تم الحذف بنجاح',
+    'addition_added_successfully' => 'تمت الاضافة بنجاح',
+    'addition_deleted_successfully' => 'تم الحذف بنجاح',
 
     // Doctor Availability
     'doctor_time_conflict'           => 'يوجد طبيب آخر متاح في نفس هذا القسم خلال الوقت المختار.',
@@ -129,6 +129,8 @@ return [
     'completed'              => 'مكتمل',
     'cancelled_by_clinic'              => 'ملغي من قبل العيادة',
     'cancelled_by_patient'              => 'ملغي من قبل المريض',
+    'missed'                 => 'فائت',
+    'finished' => 'مكتمل',
 
     'error' => 'خطأ',
 
