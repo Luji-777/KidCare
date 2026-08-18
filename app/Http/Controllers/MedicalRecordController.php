@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\MedicalRecord;
 
 
+
 class MedicalRecordController extends Controller
 {
     private $growthChart = [

@@ -7,15 +7,17 @@ use App\Models\Appointment;
 use App\Models\Medication;
 
 
-class medicalRecord extends Model
+class MedicalRecord extends Model
 {
-         protected $guarded=[];
+    protected $guarded = [];
 
-    public function appointment(){
+    public function appointment()
+    {
         return $this->belongsTo(Appointment::class);
     }
 
-    public function medications(){
+    public function medications()
+    {
         return $this->hasMany(Medication::class, 'record_id');
     }
 }
