@@ -82,16 +82,20 @@ class Child extends Model
     {
         return $query->where('birth_date', '>=', now()->subYears(6));
     }
-
     public function getImageAttribute($value)
     {
-        if ($value) {
+        if (!empty($value)) {
+            if (filter_var($value, FILTER_VALIDATE_URL)) {
+                return $value;
+            }
+
             return asset($value);
         }
 
-        // هنا يتم إرجاع الصورة الافتراضية إذا كان $value فارغاً أو null
-        return $this->gender === 'male'
-            ? asset('images/boy.png')
-            : asset('images/girl.png');
+        if ($this->gender === 'female') {
+            return asset('images/girl.png');
+        }
+
+        return asset('images/boy.png');
     }
 }
