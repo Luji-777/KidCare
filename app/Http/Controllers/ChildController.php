@@ -24,11 +24,12 @@ class ChildController extends Controller
                 'message' => __('messages.account_blocked')
             ], 403);
         }
+
         $currentUser = $request->user();
 
         if (!$currentUser) {
             return response()->json([
-                'status' => __('messages.error'),
+                'status'  => __('messages.error'),
                 'message' => __('messages.unauthorized')
             ], 401);
         }
@@ -44,23 +45,41 @@ class ChildController extends Controller
 
             if ($validator->fails()) {
                 return response()->json([
-                    'status' => __('messages.error'),
+                    'status'  => __('messages.error'),
                     'message' => __('messages.parent_id_required'),
-                    'errors' => $validator->errors()
+                    'errors'  => $validator->errors()
                 ], 422);
             }
 
             $parentId = $request->parent_id;
         } else {
             return response()->json([
-                'status' => __('messages.error'),
+                'status'  => __('messages.error'),
                 'message' => __('messages.unauthorized_role')
             ], 403);
         }
+
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/children'), $imageName);
+
+            // تحديد مسار public_html التابع لـ cPanel
+            $destinationPath = base_path('../public_html/uploads/children');
+
+            // في حال عدم وجود مجلد public_html (على اللوكال مثلاً)، يتم استخدام public_path العادي
+            if (!file_exists(base_path('../public_html'))) {
+                $destinationPath = public_path('uploads/children');
+            }
+
+            // التأكد من وجود المجلد وإلا يتم إنشاؤه
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            // حفظ الصورة في المكان الصحيح
+            $image->move($destinationPath, $imageName);
+
+            // حفظ المسار النسبي الموحد في قاعدة البيانات
             $data['image'] = 'uploads/children/' . $imageName;
         } else {
             $data['image'] = null;
@@ -72,7 +91,7 @@ class ChildController extends Controller
 
         return response()->json([
             'message' => __('messages.child_added_successfully'),
-            'child' => $child
+            'child'   => $child
         ], 201);
     }
 
