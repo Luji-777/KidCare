@@ -63,23 +63,18 @@ class ChildController extends Controller
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-            // تحديد مسار public_html التابع لـ cPanel
             $destinationPath = base_path('../public_html/uploads/children');
 
-            // في حال عدم وجود مجلد public_html (على اللوكال مثلاً)، يتم استخدام public_path العادي
             if (!file_exists(base_path('../public_html'))) {
                 $destinationPath = public_path('uploads/children');
             }
 
-            // التأكد من وجود المجلد وإلا يتم إنشاؤه
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0755, true);
             }
 
-            // حفظ الصورة في المكان الصحيح
             $image->move($destinationPath, $imageName);
 
-            // حفظ المسار النسبي الموحد في قاعدة البيانات
             $data['image'] = 'uploads/children/' . $imageName;
         } else {
             $data['image'] = null;
