@@ -726,4 +726,45 @@ class ReceptionistController extends Controller
             ], 500);
         }
     }
+
+    public function showAllProfiles(Request $request)
+    {
+        $currentUser = $request->user();
+
+        if (!$currentUser) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized')
+            ], 401);
+        }
+
+        if (!$currentUser instanceof Receptionist) {
+            return response()->json([
+                'status' => __('messages.error'),
+                'message' => __('messages.unauthorized_role')
+            ], 403);
+        }
+
+        $parents = ParentModel::with(['children' => function ($query) {
+            $query->select('parent_id', 'image', 'first_name');
+        }])->get();
+
+        $formattedUsers = $parents->map(function ($parent) {
+            return [
+                'id'           => $parent->id,
+                'first_name'   => $parent->first_name,
+                'last_name'    => $parent->last_name,
+                'email'        => $parent->email,
+                'phone_number' => $parent->phone_number,
+                'address'      => $parent->address,
+                'children_count'     => $parent->children->count()
+            ];
+        });
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.all_parent_profiles_fetched_successfully'),
+            'users'   => $formattedUsers
+        ], 200);
+    }
 }
