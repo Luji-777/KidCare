@@ -7,6 +7,8 @@ use App\Models\Growth;
 use App\Models\Child;
 use Carbon\Carbon;
 use App\Models\Appointment;
+use App\Models\MedicalRecord;
+
 
 class MedicalRecordController extends Controller
 {
@@ -51,7 +53,7 @@ class MedicalRecordController extends Controller
         $doctor = auth()->user();
         $lastAppointment = Appointment::where('child_id', $child->id)
             ->where('doctor_id', $doctor->id)
-            ->where('status', 'completed')
+            ->where('status', 'completed', 'finished')
             ->latest('date')
             ->with(['doctor', 'record'])
             ->first();
@@ -59,7 +61,7 @@ class MedicalRecordController extends Controller
 
         $previousVisits = Appointment::where('child_id', $child->id)
             ->where('doctor_id', $doctor->id)
-            ->where('status', 'completed')
+            ->where('status', 'completed', 'finished')
             ->when($lastAppointment, function ($q) use ($lastAppointment) {
                 $q->where('id', '!=', $lastAppointment->id);
             })
@@ -111,5 +113,37 @@ class MedicalRecordController extends Controller
         return ($height >= $range[0] && $height <= $range[1])
             ? 'normal'
             : 'abnormal';
+    }
+    public function showMedicalRecord($appointmentId)
+    {
+        $parent = auth()->user();
+
+        $record = MedicalRecord::with('medications')
+            ->whereHas('appointment', function ($query) use ($appointmentId, $parent) {
+                $query->where('id', $appointmentId)
+                    ->whereHas('child', function ($q) use ($parent) {
+                        $q->where('parent_id', $parent->id);
+                    });
+            })
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Medical record not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'medical_record' => [
+                'id' => $record->id,
+                'appointment_id' => $record->appointment_id,
+                'diagnosis' => $record->diagnosis,
+                'doctor_notes' => $record->doctor_notes,
+                //'medications' => $record->medications,
+                //'created_at' => $record->created_at,
+            ]
+        ]);
     }
 }

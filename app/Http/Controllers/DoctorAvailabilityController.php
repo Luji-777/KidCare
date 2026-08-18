@@ -23,9 +23,11 @@ class DoctorAvailabilityController extends Controller
     {
         $doctor = auth()->user();
 
-        $otherDoctorIds = Doctor::where('department_id', $doctor->department_id)
-            ->where('id', '!=', $doctor->id)
-            ->pluck('id');
+        // جلب جميع أطباء نفس القسم، بما فيهم الطبيب الحالي
+        $departmentDoctorIds = Doctor::where(
+            'department_id',
+            $doctor->department_id
+        )->pluck('id');
 
         $days = [
             'sunday',
@@ -41,9 +43,10 @@ class DoctorAvailabilityController extends Controller
 
         foreach ($days as $day) {
 
+            // جلب جميع أوقات دوام أطباء القسم في هذا اليوم
             $availabilities = DoctorAvailability::whereIn(
                 'doctor_id',
-                $otherDoctorIds
+                $departmentDoctorIds
             )
                 ->whereRaw('LOWER(day_of_week) = ?', [$day])
                 ->orderBy('start_time')
@@ -51,54 +54,79 @@ class DoctorAvailabilityController extends Controller
 
             $freePeriods = [];
 
+            // بداية ونهاية ساعات العمل العامة
+            $startOfDay = Carbon::createFromTime(9, 0, 0);
+            $endOfDay = Carbon::createFromTime(18, 0, 0);
+
+            // إذا لم يوجد أي دوام لأطباء القسم بهذا اليوم
             if ($availabilities->isEmpty()) {
 
                 $freePeriods[] = [
                     'start_time' => '09:00',
-                    'end_time' => '19:00',
+                    'end_time'   => '18:00',
                 ];
             } else {
 
-                $currentTime = Carbon::createFromTime(9, 0, 0);
+                $currentTime = $startOfDay->copy();
 
                 foreach ($availabilities as $availability) {
 
                     $start = Carbon::parse($availability->start_time);
                     $end = Carbon::parse($availability->end_time);
 
+                    // تجاهل أي وقت خارج ساعات العمل العامة
+                    if ($end->lte($startOfDay)) {
+                        continue;
+                    }
+
+                    if ($start->gte($endOfDay)) {
+                        break;
+                    }
+
+                    // ضبط بداية الفترة ضمن 09:00 - 18:00
+                    if ($start->lt($startOfDay)) {
+                        $start = $startOfDay->copy();
+                    }
+
+                    // ضبط نهاية الفترة ضمن 09:00 - 18:00
+                    if ($end->gt($endOfDay)) {
+                        $end = $endOfDay->copy();
+                    }
+
+                    // يوجد وقت فارغ قبل بداية الدوام الحالي
                     if ($currentTime->lt($start)) {
 
                         $freePeriods[] = [
                             'start_time' => $currentTime->format('H:i'),
-                            'end_time' => $start->format('H:i'),
+                            'end_time'   => $start->format('H:i'),
                         ];
                     }
 
+                    // تحريك currentTime إلى نهاية الدوام المشغول
                     if ($end->gt($currentTime)) {
-                        $currentTime = $end;
+                        $currentTime = $end->copy();
                     }
                 }
 
-                $endOfDay = Carbon::createFromTime(18, 0, 0);
-
+                // يوجد وقت فارغ بعد آخر دوام
                 if ($currentTime->lt($endOfDay)) {
 
                     $freePeriods[] = [
                         'start_time' => $currentTime->format('H:i'),
-                        'end_time' => '18:00',
+                        'end_time'   => $endOfDay->format('H:i'),
                     ];
                 }
             }
 
             $result[] = [
-                'day' => $day,
-                'day_name' => __("messages.days.$day"),
+                'day'          => $day,
+                'day_name'     => __("messages.days.$day"),
                 'free_periods' => $freePeriods,
             ];
         }
 
         return response()->json([
-            'status' => 'success',
+            'status'            => 'success',
             'available_periods' => $result,
         ]);
     }
@@ -106,26 +134,18 @@ class DoctorAvailabilityController extends Controller
     public function availability(StoreDoctorAvailabilityRequest $request)
     {
         $doctor = auth()->user();
+
+        // جلب جميع أطباء نفس القسم
         $doctorIds = Doctor::where('department_id', $doctor->department_id)
             ->pluck('id');
 
+        // التحقق من وجود تداخل فعلي في أوقات الدوام
         $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
-            ->where('day_of_week', $request->day_of_week)
-            ->where(function ($query) use ($request) {
-
-                $query->whereBetween('start_time', [
-                    $request->start_time,
-                    $request->end_time
-                ])
-                    ->orWhereBetween('end_time', [
-                        $request->start_time,
-                        $request->end_time
-                    ])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('start_time', '<=', $request->start_time)
-                            ->where('end_time', '>=', $request->end_time);
-                    });
-            })
+            ->whereRaw('LOWER(day_of_week) = ?', [
+                strtolower($request->day_of_week)
+            ])
+            ->where('start_time', '<', $request->end_time)
+            ->where('end_time', '>', $request->start_time)
             ->exists();
 
         if ($conflict) {
@@ -134,6 +154,7 @@ class DoctorAvailabilityController extends Controller
             ], 422);
         }
 
+        // إنشاء الدوام
         $availability = DoctorAvailability::create([
             'doctor_id'   => $doctor->id,
             'day_of_week' => $request->day_of_week,
@@ -147,7 +168,6 @@ class DoctorAvailabilityController extends Controller
             'availability' => $availability
         ]);
     }
-
     public function deleteAvailability($id)
     {
         $doctor = auth()->user();
@@ -179,7 +199,7 @@ class DoctorAvailabilityController extends Controller
             ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
             ->whereTime('time', '>=', $startTime)
             ->whereTime('time', '<', $endTime)
-            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient', 'completed'])
+            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient', 'completed', 'finished'])
             ->get();
 
 

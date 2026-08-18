@@ -252,7 +252,7 @@ class DoctorController extends Controller
 
 
         $appointment->update([
-            'status' => 'completed',
+            'status' => 'finished',
             'doctor_earnings' => $doctorCommission,
             'payment_status' => $totalAdditions > 0 ? 'partially_paid' : 'fully_paid'
         ]);
@@ -453,7 +453,7 @@ class DoctorController extends Controller
         $doctor = auth()->user();
 
         $count = Appointment::where('doctor_id', $doctor->id)
-            ->where('status', 'completed')
+            ->whereIn('status', ['completed', 'finished'])
             ->whereDate('date', today())
             ->count();
 
@@ -466,7 +466,7 @@ class DoctorController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        $appointment->status = 'completed';
+        $appointment->status = 'finished';
 
         $doctor = Doctor::find($appointment->doctor_id);
 
@@ -549,7 +549,7 @@ class DoctorController extends Controller
             ->join('appointments', 'doctors.id', '=', 'appointments.doctor_id')
             ->join('departments', 'doctors.department_id', '=', 'departments.id')
             ->whereBetween('appointments.date', [$startOfWeek, $endOfWeek])
-            ->whereIn('appointments.status', ['confirmed', 'completed'])
+            ->whereIn('appointments.status', ['confirmed', 'completed', 'finished'])
             ->groupBy('doctors.id', 'doctors.first_name', 'doctors.last_name', 'departments.name')
             ->orderBy('appointments_count', 'desc')
             ->first();
@@ -597,7 +597,7 @@ class DoctorController extends Controller
             ->withCount([
 
                 'appointments as unique_patients_count' => function ($query) {
-                    $query->whereIn('status', ['confirmed', 'completed'])
+                    $query->whereIn('status', ['confirmed', 'completed', 'finished'])
                         ->select(DB::raw('count(distinct(child_id))'));
                 },
 
@@ -727,7 +727,7 @@ class DoctorController extends Controller
 
         $activeDoctorsCount = Doctor::whereHas('appointments', function ($query) use ($startOfWeek, $endOfWeek) {
             $query->whereBetween('date', [$startOfWeek, $endOfWeek])
-                ->whereIn('status', ['confirmed', 'completed']);
+                ->whereIn('status', ['confirmed', 'completed', 'finished']);
         })->count();
 
         return response()->json([
@@ -771,7 +771,7 @@ class DoctorController extends Controller
 
         $appointmentsQuery = $doctor->appointments()
             ->whereBetween('date', [$startOfWeek, $endOfWeek])
-            ->whereIn('status', ['confirmed', 'completed']);
+            ->whereIn('status', ['confirmed', 'completed', 'finished']);
 
         $appointmentsCount = $appointmentsQuery->count();
 
@@ -1277,10 +1277,10 @@ class DoctorController extends Controller
 
                 DBNotification::create([
                     'parent_id' => $parent->id,
-                    'message' => 'Your appointment on ' .
-                        $appointment->date . ' at ' .
-                        $appointment->time .
-                        ' has been cancelled by the doctor.'
+                    'message' => __('messages.notification_appointment_cancelled_parent_body', [
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
                 ]);
             }
 
@@ -1296,8 +1296,11 @@ class DoctorController extends Controller
                 $parent->fcm_token
             )->withNotification(
                 Notification::create(
-                    'Appointment Cancelled',
-                    'Your appointment has been cancelled by the doctor.'
+                    __('messages.notification_appointment_cancelled_title'),
+                    __('messages.notification_appointment_cancelled_parent_body', [
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
                 )
             )->withData([
                 'appointment_id' => (string) $appointment->id,
@@ -1311,12 +1314,13 @@ class DoctorController extends Controller
         }
         DoctorNotification::create([
             'doctor_id' => $doctor->id,
-            'title' => 'Appointments Cancelled',
-            'message' => 'All appointments on '
-                . $request->date
-                . ' have been cancelled. Total cancelled appointments: '
-                . $appointments->count(),
+            'title' => __('messages.notification_all_appointments_cancelled_title'),
+            'message' => __('messages.notification_all_appointments_cancelled_doctor_body', [
+                'date' => $request->date,
+                'count' => $appointments->count(),
+            ]),
         ]);
+
 
         return response()->json([
             'status' => 'success',
@@ -1334,15 +1338,17 @@ class DoctorController extends Controller
             ->where('doctor_id', $doctor->id)
             ->firstOrFail();
 
+        // التأكد أن الموعد قابل للإلغاء
         if (in_array($appointment->status, [
             'cancelled_by_patient',
             'cancelled_by_clinic',
             'completed',
-            'missed'
+            'missed',
+            'finished'
         ])) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'This appointment cannot be cancelled.'
+                'message' => __('messages.appointment_cancelled'),
             ], 422);
         }
 
@@ -1352,7 +1358,25 @@ class DoctorController extends Controller
 
         $parent = $appointment->child->parent;
 
-        // إرسال الإشعار إذا كان عند الأب FCM token
+        //ما ترجمت
+        DBNotification::create([
+            'parent_id' => $parent->id,
+            'message' => 'Your appointment on ' .
+                $appointment->date . ' at ' .
+                $appointment->time .
+                ' has been cancelled by the doctor.'
+        ]);
+
+        DoctorNotification::create([
+            'doctor_id' => $doctor->id,
+            'title' => __('messages.notification_appointment_cancelled_title'),
+            'message' => __('messages.notification_single_appointment_cancelled_doctor_body', [
+                'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+                'date' => $appointment->date,
+                'time' => $appointment->time,
+            ]),
+        ]);
+
         if ($parent && $parent->fcm_token) {
 
             $messaging = app('firebase.messaging');
@@ -1362,8 +1386,11 @@ class DoctorController extends Controller
                 $parent->fcm_token
             )->withNotification(
                 Notification::create(
-                    'Appointment Cancelled',
-                    'Your appointment has been cancelled by the doctor.'
+                    __('messages.notification_appointment_cancelled_title'),
+                    __('messages.notification_appointment_cancelled_parent_body', [
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
                 )
             )->withData([
                 'type' => 'appointment_cancelled_by_doctor',
@@ -1377,7 +1404,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Appointment cancelled successfully.',
+            'message' => __('messages.appointment_cancelled'),
             'appointment' => [
                 'appointment_id' => $appointment->id,
                 'date' => $appointment->date,

@@ -54,32 +54,154 @@ class DoctorAvailabilitySeeder extends Seeder
         }
     }*/
     public function run(): void
-    {
-        $days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+{
+    $days = [
+        'Saturday',
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+    ];
 
-        $timeSlots = [
-            ['start' => '09:00:00', 'end' => '12:00:00'],
-            ['start' => '12:00:00', 'end' => '15:00:00'],
-            ['start' => '15:00:00', 'end' => '18:00:00'],
-        ];
+    $timeSlots = [
+        ['start' => '09:00:00', 'end' => '12:00:00'],
+        ['start' => '12:00:00', 'end' => '15:00:00'],
+        ['start' => '15:00:00', 'end' => '18:00:00'],
+    ];
 
-        $doctors = Doctor::all();
+    $doctors = Doctor::orderBy('department_id')
+        ->orderBy('id')
+        ->get();
 
-        foreach ($doctors as $doctor) {
-            $slotIndex = rand(0, count($timeSlots) - 1);
-            $dayIndex = rand(0, count($days) - 1);
-            for ($i = 0; $i < 3; $i++) {
-                DoctorAvailability::create([
-                    'doctor_id'   => $doctor->id,
-                    'day_of_week' => $days[$dayIndex],
-                    'start_time'  => $timeSlots[$slotIndex]['start'],
-                    'end_time'    => $timeSlots[$slotIndex]['end'],
-                    'is_booked'   => false,
-                ]);
+    foreach ($doctors as $doctor) {
 
-                $slotIndex = ($slotIndex + 1) % count($timeSlots);
-                $dayIndex = ($dayIndex + 1) % count($days);
+        $created = 0;
+
+        /*
+         * نبدأ من ترتيب مختلف لكل دكتور
+         * حتى ما يأخذوا نفس الأيام.
+         */
+        $startDayIndex = ($doctor->id - 1) % count($days);
+
+        for ($dayOffset = 0; $dayOffset < count($days); $dayOffset++) {
+
+            if ($created >= 3) {
+                break;
+            }
+
+            // اختيار يوم مختلف
+            $dayIndex = ($startDayIndex + $dayOffset) % count($days);
+            $day = $days[$dayIndex];
+
+            /*
+             * نمر على أوقات اليوم الثلاثة
+             * ونختار أول وقت غير مستخدم من دكتور
+             * آخر في نفس القسم.
+             */
+            foreach ($timeSlots as $slot) {
+
+                if ($created >= 3) {
+                    break;
+                }
+
+                // التحقق من عدم وجود تعارض
+                // مع دكتور من نفس القسم في نفس اليوم والوقت
+                $conflict = DoctorAvailability::whereHas(
+                    'doctor',
+                    function ($query) use ($doctor) {
+                        $query->where(
+                            'department_id',
+                            $doctor->department_id
+                        );
+                    }
+                )
+                    ->where('day_of_week', $day)
+                    ->where('start_time', '<', $slot['end'])
+                    ->where('end_time', '>', $slot['start'])
+                    ->exists();
+
+                if (!$conflict) {
+
+                    DoctorAvailability::create([
+                        'doctor_id'   => $doctor->id,
+                        'day_of_week' => $day,
+                        'start_time'  => $slot['start'],
+                        'end_time'    => $slot['end'],
+                        'is_booked'   => false,
+                    ]);
+
+                    $created++;
+
+                    // مهم:
+                    // بعد ما أخذنا Slot بهذا اليوم،
+                    // ننتقل لليوم التالي.
+                    break;
+                }
             }
         }
     }
+}
+       /* public function run(): void
+{
+    $days = [
+        'Saturday',
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+    ];
+
+    $timeSlots = [
+        ['start' => '09:00:00', 'end' => '12:00:00'],
+        ['start' => '12:00:00', 'end' => '15:00:00'],
+        ['start' => '15:00:00', 'end' => '18:00:00'],
+    ];
+
+    $doctors = Doctor::orderBy('department_id')
+        ->orderBy('id')
+        ->get();
+
+    // حفظ آخر Slot مستخدم لكل قسم
+    $departmentSlotIndex = [];
+
+    // حفظ آخر Day مستخدم لكل قسم
+    $departmentDayIndex = [];
+
+    foreach ($doctors as $doctor) {
+
+        $departmentId = $doctor->department_id;
+
+        // أول طبيب بهذا القسم
+        if (!isset($departmentSlotIndex[$departmentId])) {
+            $departmentSlotIndex[$departmentId] = 0;
+            $departmentDayIndex[$departmentId] = 0;
+        }
+
+        $slotIndex = $departmentSlotIndex[$departmentId];
+        $dayIndex = $departmentDayIndex[$departmentId];
+
+        $slot = $timeSlots[$slotIndex];
+        $day = $days[$dayIndex];
+
+        DoctorAvailability::create([
+            'doctor_id'   => $doctor->id,
+            'day_of_week' => $day,
+            'start_time'  => $slot['start'],
+            'end_time'    => $slot['end'],
+            'is_booked'   => false,
+        ]);
+
+        // الانتقال للـ Slot التالي
+        $departmentSlotIndex[$departmentId] =
+            ($slotIndex + 1) % count($timeSlots);
+
+        // إذا خلصنا الـ Slots ننتقل لليوم التالي
+        if ($slotIndex === count($timeSlots) - 1) {
+            $departmentDayIndex[$departmentId] =
+                ($dayIndex + 1) % count($days);
+        }
+    }
+}*/
 }

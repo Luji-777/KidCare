@@ -83,7 +83,13 @@ return [
     // Firebase Push Notifications
     'notification_appointment_confirmed_title' => 'تم تأكيد الموعد بنجاح',
     'notification_appointment_confirmed_body'  => 'تمت عملية الدفع وتأكيد موعد طفلك في العيادة بنجاح.',
-
+    'notification_appointment_cancelled_title' => 'تم إلغاء الموعد',
+    'notification_appointment_cancelled_doctor_body' =>'قام :child بإلغاء الموعد بتاريخ :date الساعة :time.',
+    'notification_appointment_cancelled_parent_body' =>'تم إلغاء موعد طفلك بتاريخ :date الساعة :time من قبل الطبيب.',
+    'notification_all_appointments_cancelled_title' =>'تم إلغاء جميع المواعيد',
+    'notification_all_appointments_cancelled_doctor_body' =>'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغاة: :count.',
+    'notification_single_appointment_cancelled_doctor_body' =>'تم إلغاء موعد الطفل :child بتاريخ :date الساعة :time.',
+    
     // Children Management
     'child_added_success'      => 'تم إضافة ملف الطفل بنجاح.',
     'child_updated_success'    => 'تم تحديث بيانات الطفل بنجاح.',
