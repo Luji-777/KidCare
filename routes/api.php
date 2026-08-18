@@ -91,6 +91,7 @@ Route::middleware('set.locale')->group(function () {
         Route::apiResource('appointment', AppointmentController::class)->except(['index']);
 
         Route::get('/prescription/{recordId}', [MedicationController::class, 'showPrescription']);
+        Route::get('/medical-record/{appointmentId}',[MedicalRecordController::class, 'showMedicalRecord']);
 
 
         // Doctor app

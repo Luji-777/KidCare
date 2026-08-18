@@ -186,7 +186,7 @@ class DoctorAvailabilityController extends Controller
             ->whereRaw('LOWER(DAYNAME(date)) = ?', [$day])
             ->whereTime('time', '>=', $startTime)
             ->whereTime('time', '<', $endTime)
-            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient', 'completed'])
+            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient', 'completed','finished'])
             ->get();
 
 
