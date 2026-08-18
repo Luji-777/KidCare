@@ -38,4 +38,13 @@ class Doctor extends Authenticatable
     {
         return $this->hasMany(DoctorNotification::class);
     }
+
+    public function getImageAttribute($value)
+    {
+        if ($value) {
+            return asset($value);
+        }
+
+        return null;
+    }
 }

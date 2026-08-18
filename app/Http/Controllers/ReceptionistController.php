@@ -89,6 +89,22 @@ class ReceptionistController extends Controller
             'token'   => $token
         ], 200);
     }
+    public function logout(Request $request)
+    {
+        if ($request->user()) {
+            $request->user()->currentAccessToken()->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => __('messages.logout_succssfuly')
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => __('messages.error'),
+            'message' => __('messages.no_active_session')
+        ], 401);
+    }
     public function getTodayAddedChildrenCount()
     {
         $todayCount = Child::whereDate('created_at', Carbon::today())->count();

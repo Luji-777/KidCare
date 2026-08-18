@@ -72,20 +72,23 @@ class Child extends Model
     ];
 
 
-    /**
-     * فحص هل الطفل ما زال ضمن السن المسموح للعيادة (أصغر من أو يساوي 6 سنوات)
-     */
     public function isEligibleForClinic(): bool
     {
-        // 6 سنوات × 12 شهر = 72 شهراً
         return $this->age_in_months <= 72;
     }
 
-    /**
-     * Scope لجلب الأطفال المؤهلين فقط للعيادة مباشرة من قاعدة البيانات
-     */
+
     public function scopeEligibleForClinic($query)
     {
         return $query->where('birth_date', '>=', now()->subYears(6));
+    }
+
+    public function getImageAttribute($value)
+    {
+        if ($value) {
+            return asset($value);
+        }
+
+        return null;
     }
 }

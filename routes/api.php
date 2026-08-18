@@ -49,6 +49,8 @@ Route::middleware('set.locale')->group(function () {
             return $request->user();
         });
         Route::post('/logout', [ParentModelController::class, 'logout']);
+        Route::post('/logoutReception', [ReceptionistController::class, 'logout']);
+
 
         // Parent
         Route::get('parentProfile', [ParentModelController::class, 'showProfile']);
