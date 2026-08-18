@@ -776,4 +776,61 @@ class AppointmentController extends Controller
             //'appointment' => $appointment
         ]);
     }
+
+        public function checkIn(Appointment $appointment, FirebaseNotificationService $firebase)
+    {
+        if ($appointment->status !== 'confirmed') {
+            return response()->json([
+                'message' => __('messages.invalid_status_for_checkin')
+            ], 400);
+        }
+
+        if (!\Carbon\Carbon::parse($appointment->date)->isToday()) {
+            return response()->json([
+                'message' => __('messages.checkin_today_only')
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $appointment->update([
+                'status' => 'checked_in',
+            ]);
+
+            $child = Child::find($appointment->child_id);
+            $doctor = Doctor::find($appointment->doctor_id);
+
+            $notifTitle = 'Patient Arrived';
+            $notifMessage = "{$child->first_name} {$child->last_name} is now in the waiting room.";
+
+            DoctorNotification::create([
+                'doctor_id' => $appointment->doctor_id,
+                'title' => $notifTitle,
+                'message' => $notifMessage,
+            ]);
+
+            DB::commit();
+
+            if ($doctor && !empty($doctor->fcm_token)) {
+                $firebase->send(
+                    $doctor->fcm_token,
+                    $notifTitle,
+                    $notifMessage
+                );
+            }
+
+            return response()->json([
+                'message' => __('messages.patient_checked_in_successfully'),
+                'appointment' => $appointment
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Check-in failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
