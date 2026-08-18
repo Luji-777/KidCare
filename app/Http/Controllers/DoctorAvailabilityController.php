@@ -23,10 +23,11 @@ class DoctorAvailabilityController extends Controller
 {
     $doctor = auth()->user();
 
-    // كل أطباء نفس القسم ما عدا الطبيب الحالي
-    $otherDoctorIds = Doctor::where('department_id', $doctor->department_id)
-        ->where('id', '!=', $doctor->id)
-        ->pluck('id');
+    // جلب جميع أطباء نفس القسم، بما فيهم الطبيب الحالي
+    $departmentDoctorIds = Doctor::where(
+        'department_id',
+        $doctor->department_id
+    )->pluck('id');
 
     $days = [
         'sunday',
@@ -42,10 +43,10 @@ class DoctorAvailabilityController extends Controller
 
     foreach ($days as $day) {
 
-        // الفترات المشغولة من أطباء نفس القسم بهذا اليوم
+        // جلب جميع أوقات دوام أطباء القسم في هذا اليوم
         $availabilities = DoctorAvailability::whereIn(
                 'doctor_id',
-                $otherDoctorIds
+                $departmentDoctorIds
             )
             ->whereRaw('LOWER(day_of_week) = ?', [$day])
             ->orderBy('start_time')
@@ -53,108 +54,121 @@ class DoctorAvailabilityController extends Controller
 
         $freePeriods = [];
 
-        // إذا ما في أي دكتور شاغل بهذا اليوم
+        // بداية ونهاية ساعات العمل العامة
+        $startOfDay = Carbon::createFromTime(9, 0, 0);
+        $endOfDay = Carbon::createFromTime(18, 0, 0);
+
+        // إذا لم يوجد أي دوام لأطباء القسم بهذا اليوم
         if ($availabilities->isEmpty()) {
 
             $freePeriods[] = [
                 'start_time' => '09:00',
-                'end_time' => '19:00',
+                'end_time'   => '18:00',
             ];
 
         } else {
 
-            $currentTime = Carbon::createFromTime(9, 0, 0);
+            $currentTime = $startOfDay->copy();
 
             foreach ($availabilities as $availability) {
 
                 $start = Carbon::parse($availability->start_time);
                 $end = Carbon::parse($availability->end_time);
 
-                // في وقت فاضي قبل بداية دوام الطبيب الآخر
+                // تجاهل أي وقت خارج ساعات العمل العامة
+                if ($end->lte($startOfDay)) {
+                    continue;
+                }
+
+                if ($start->gte($endOfDay)) {
+                    break;
+                }
+
+                // ضبط بداية الفترة ضمن 09:00 - 18:00
+                if ($start->lt($startOfDay)) {
+                    $start = $startOfDay->copy();
+                }
+
+                // ضبط نهاية الفترة ضمن 09:00 - 18:00
+                if ($end->gt($endOfDay)) {
+                    $end = $endOfDay->copy();
+                }
+
+                // يوجد وقت فارغ قبل بداية الدوام الحالي
                 if ($currentTime->lt($start)) {
 
                     $freePeriods[] = [
                         'start_time' => $currentTime->format('H:i'),
-                        'end_time' => $start->format('H:i'),
+                        'end_time'   => $start->format('H:i'),
                     ];
                 }
 
-                // ننتقل لنهاية الدوام المشغول
+                // تحريك currentTime إلى نهاية الدوام المشغول
                 if ($end->gt($currentTime)) {
-                    $currentTime = $end;
+                    $currentTime = $end->copy();
                 }
             }
 
-            // في وقت فاضي بعد آخر دوام
-            $endOfDay = Carbon::createFromTime(18, 0, 0);
-
+            // يوجد وقت فارغ بعد آخر دوام
             if ($currentTime->lt($endOfDay)) {
 
                 $freePeriods[] = [
                     'start_time' => $currentTime->format('H:i'),
-                    'end_time' => '18:00',
+                    'end_time'   => $endOfDay->format('H:i'),
                 ];
             }
         }
 
         $result[] = [
-            'day' => $day,
-            'day_name' => __("messages.days.$day"),
+            'day'          => $day,
+            'day_name'     => __("messages.days.$day"),
             'free_periods' => $freePeriods,
         ];
     }
 
     return response()->json([
-        'status' => 'success',
+        'status'            => 'success',
         'available_periods' => $result,
     ]);
 }
 
     public function availability(StoreDoctorAvailabilityRequest $request)
-    {
-        $doctor = auth()->user();
-        $doctorIds = Doctor::where('department_id', $doctor->department_id)
-            ->pluck('id');
+{
+    $doctor = auth()->user();
 
-        $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
-            ->where('day_of_week', $request->day_of_week)
-            ->where(function ($query) use ($request) {
+    // جلب جميع أطباء نفس القسم
+    $doctorIds = Doctor::where('department_id', $doctor->department_id)
+        ->pluck('id');
 
-                $query->whereBetween('start_time', [
-                    $request->start_time,
-                    $request->end_time
-                ])
-                    ->orWhereBetween('end_time', [
-                        $request->start_time,
-                        $request->end_time
-                    ])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('start_time', '<=', $request->start_time)
-                            ->where('end_time', '>=', $request->end_time);
-                    });
-            })
-            ->exists();
+    // التحقق من وجود تداخل فعلي في أوقات الدوام
+    $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
+        ->whereRaw('LOWER(day_of_week) = ?', [
+            strtolower($request->day_of_week)
+        ])
+        ->where('start_time', '<', $request->end_time)
+        ->where('end_time', '>', $request->start_time)
+        ->exists();
 
-        if ($conflict) {
-            return response()->json([
-                'message' => __('messages.doctor_time_conflict')
-            ], 422);
-        }
-
-        $availability = DoctorAvailability::create([
-            'doctor_id'   => $doctor->id,
-            'day_of_week' => $request->day_of_week,
-            'start_time'  => $request->start_time,
-            'end_time'    => $request->end_time,
-        ]);
-
+    if ($conflict) {
         return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.availability_added_success'),
-            'availability' => $availability
-        ]);
+            'message' => __('messages.doctor_time_conflict')
+        ], 422);
     }
 
+    // إنشاء الدوام
+    $availability = DoctorAvailability::create([
+        'doctor_id'   => $doctor->id,
+        'day_of_week' => $request->day_of_week,
+        'start_time'  => $request->start_time,
+        'end_time'    => $request->end_time,
+    ]);
+
+    return response()->json([
+        'status'       => 'success',
+        'message'      => __('messages.availability_added_success'),
+        'availability' => $availability
+    ]);
+}
     public function deleteAvailability($id)
     {
         $doctor = auth()->user();

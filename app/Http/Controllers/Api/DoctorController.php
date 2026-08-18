@@ -1205,12 +1205,12 @@ class DoctorController extends Controller
         if ($parent) {
 
         DBNotification::create([
-            'parent_id' => $parent->id,
-            'message' => 'Your appointment on ' .
-                $appointment->date . ' at ' .
-                $appointment->time .
-                ' has been cancelled by the doctor.'
-        ]);
+                'parent_id' => $parent->id,
+                'message' => __('messages.notification_appointment_cancelled_parent_body', [
+                    'date' => $appointment->date,
+                    'time' => $appointment->time,
+                ])
+            ]);
     }
 
 
@@ -1224,9 +1224,12 @@ class DoctorController extends Controller
             'token',
             $parent->fcm_token
         )->withNotification(
-            Notification::create(
-                'Appointment Cancelled',
-                'Your appointment has been cancelled by the doctor.'
+           Notification::create(
+                __('messages.notification_appointment_cancelled_title'),
+                __('messages.notification_appointment_cancelled_parent_body', [
+                    'date' => $appointment->date,
+                    'time' => $appointment->time,
+                ])
             )
         )->withData([
             'appointment_id' => (string) $appointment->id,
@@ -1239,13 +1242,14 @@ class DoctorController extends Controller
         $messaging->send($message);
     }
     DoctorNotification::create([
-    'doctor_id' => $doctor->id,
-    'title' => 'Appointments Cancelled',
-    'message' => 'All appointments on '
-        . $request->date
-        . ' have been cancelled. Total cancelled appointments: '
-        . $appointments->count(),
-]);
+        'doctor_id' => $doctor->id,
+        'title' => __('messages.notification_all_appointments_cancelled_title'),
+        'message' => __('messages.notification_all_appointments_cancelled_doctor_body', [
+            'date' => $request->date,
+            'count' => $appointments->count(),
+        ]),
+    ]);
+
 
     return response()->json([
         'status' => 'success',
@@ -1284,7 +1288,7 @@ class DoctorController extends Controller
 
     $parent = $appointment->child->parent;
 
-    
+    //ما ترجمت
     DBNotification::create([
     'parent_id' => $parent->id,
     'message' => 'Your appointment on ' .
@@ -1295,18 +1299,13 @@ class DoctorController extends Controller
 
     DoctorNotification::create([
         'doctor_id' => $doctor->id,
-        'title' => 'Appointment Cancelled',
-        'message' => 'The appointment for '
-            . $appointment->child->first_name
-            . ' '
-            . $appointment->child->last_name
-            . ' on '
-            . $appointment->date
-            . ' at '
-            . $appointment->time
-            . ' has been cancelled.',
+        'title' => __('messages.notification_appointment_cancelled_title'),
+        'message' => __('messages.notification_single_appointment_cancelled_doctor_body', [
+            'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+            'date' => $appointment->date,
+            'time' => $appointment->time,
+        ]),
     ]);
-
     
     if ($parent && $parent->fcm_token) {
 
@@ -1317,8 +1316,11 @@ class DoctorController extends Controller
             $parent->fcm_token
         )->withNotification(
             Notification::create(
-                'Appointment Cancelled',
-                'Your appointment has been cancelled by the doctor.'
+                __('messages.notification_appointment_cancelled_title'),
+                __('messages.notification_appointment_cancelled_parent_body', [
+                    'date' => $appointment->date,
+                    'time' => $appointment->time,
+                ])
             )
         )->withData([
             'type' => 'appointment_cancelled_by_doctor',
@@ -1332,7 +1334,7 @@ class DoctorController extends Controller
 
     return response()->json([
         'status' => 'success',
-        'message' => 'Appointment cancelled successfully.',
+        'message' => __('messages.appointment_cancelled'),
         'appointment' => [
             'appointment_id' => $appointment->id,
             'date' => $appointment->date,
