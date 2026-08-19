@@ -148,7 +148,7 @@ class VaccineController extends Controller
                 'schedule_id' => (string) $schedule->id,
                 'vaccine_id'  => (string) $vaccine->id,
                 'vaccine_name' => $vaccine->name,
-                'date'        => $schedule->date->toDateString(),
+                'date' => \Carbon\Carbon::parse($request->scheduled_date)->toDateString(),
                 'start_time'  => $schedule->start_time,
                 'end_time'    => $schedule->end_time,
             ]);

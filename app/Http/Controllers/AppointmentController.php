@@ -69,7 +69,8 @@ class AppointmentController extends Controller
         $isBooked = Appointment::where('doctor_id', $request->doctor_id)
             ->where('date', $date)
             ->where('time', $time)
-            ->where('status', '!=', 'canceled')
+            ->where('status', '!=', 'cancelled_by_patient')
+            ->where('status', '!=', 'cancelled_by_clinic')
             ->exists();
 
         if ($isBooked) {
@@ -362,27 +363,27 @@ class AppointmentController extends Controller
             if ($doctor && !empty($doctor->fcm_token)) {
 
                 $firebase->send(
-    $doctor->fcm_token,
+                    $doctor->fcm_token,
 
-    __('messages.notification_appointment_cancelled_title'),
+                    __('messages.notification_appointment_cancelled_title'),
 
-    __('messages.notification_appointment_cancelled_doctor_body', [
-        'child' => $child->first_name . ' ' . $child->last_name,
-        'date' => $appointment->date,
-        'time' => $appointment->time,
-    ])
-);
+                    __('messages.notification_appointment_cancelled_doctor_body', [
+                        'child' => $child->first_name . ' ' . $child->last_name,
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
+                );
             }
 
             if (!empty($parent->fcm_token)) {
 
-               $firebase->send(
-    $parent->fcm_token,
+                $firebase->send(
+                    $parent->fcm_token,
 
-    __('messages.notification_appointment_cancelled_title'),
+                    __('messages.notification_appointment_cancelled_title'),
 
-    $notificationBody
-);
+                    $notificationBody
+                );
             }
 
             return response()->json([

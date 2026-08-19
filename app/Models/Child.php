@@ -13,7 +13,9 @@ use Carbon\Carbon;
 class Child extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
+
 
     public function parent()
     {
@@ -97,5 +99,9 @@ class Child extends Model
         }
 
         return asset('images/boy.png');
+    }
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d');
     }
 }
