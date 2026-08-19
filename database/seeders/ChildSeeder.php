@@ -12,7 +12,6 @@ class ChildSeeder extends Seeder
 {
     public function run(): void
     {
-
         $parents = [
             [
                 'first_name'   => 'Louay',
@@ -51,9 +50,7 @@ class ChildSeeder extends Seeder
             ],
         ];
 
-
         foreach ($parents as $data) {
-
 
             $parent = ParentModel::create([
                 'first_name'     => $data['first_name'],
@@ -66,10 +63,12 @@ class ChildSeeder extends Seeder
                 'otp_expires_at' => Carbon::now()->addMinutes(10),
             ]);
 
-
             Child::factory()->count(3)->create([
-                'parent_id' => $parent->id,
-                'last_name' => $parent->last_name,
+                'parent_id'     => $parent->id,
+                'last_name'     => $parent->last_name,
+                'birth_date' => fn() => fake()->dateTimeBetween('-7 years', 'now')->format('Y-m-d'),
+
+
             ]);
         }
     }
