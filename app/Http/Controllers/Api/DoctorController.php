@@ -1303,10 +1303,10 @@ class DoctorController extends Controller
                     ])
                 )
             )->withData([
-                'type' => 'appointment_cancelled_by_doctor',
+                'type'           => 'appointment_cancelled_by_doctor',
                 'appointment_id' => (string) $appointment->id,
-                'date' => $appointment->date->toDateString(),
-                'time' => $appointment->time,
+                'date'           => \Carbon\Carbon::parse($appointment->date)->toDateString(),
+                'time'           => $appointment->time,
             ]);
 
             $messaging->send($message);
@@ -1379,10 +1379,10 @@ class DoctorController extends Controller
                     ])
                 )
             )->withData([
+                'type'           => 'appointment_cancelled_by_doctor',
                 'appointment_id' => (string) $appointment->id,
-                'type' => 'appointment_cancelled',
-                'date' => $appointment->date->toDateString(),
-                'time' => $appointment->time,
+                'date'           => \Carbon\Carbon::parse($appointment->date)->toDateString(),
+                'time'           => $appointment->time,
             ]);
 
 
