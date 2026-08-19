@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class AppointmentSeeder extends Seeder
 {
-    /*public function run(): void
+    public function run(): void
 
     {
         $childIds = Child::pluck('id')->toArray();
@@ -148,9 +148,9 @@ class AppointmentSeeder extends Seeder
                 ]);
             }
         }
-    }*/
+    }
 
-    public function run(): void
+    /*public function run(): void
     {
         $childIds = Child::pluck('id')->toArray();
         $doctorIds = Doctor::pluck('id')->toArray();
@@ -181,5 +181,5 @@ class AppointmentSeeder extends Seeder
                 'doctor_earnings' => 50.00,
             ]);
         }
-    }
+    }*/
 }

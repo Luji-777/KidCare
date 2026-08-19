@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 class DoctorAvailabilitySeeder extends Seeder
 {
 
-    /* public function run(): void
+    public function run(): void
     {
         $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         $timeSlots = [
@@ -52,97 +52,89 @@ class DoctorAvailabilitySeeder extends Seeder
                 }
             }
         }
-    }*/
-    public function run(): void
-{
-    $days = [
-        'Saturday',
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-    ];
+    }
+    /* public function run(): void
+    {
+        $days = [
+            'Saturday',
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+        ];
 
-    $timeSlots = [
-        ['start' => '09:00:00', 'end' => '12:00:00'],
-        ['start' => '12:00:00', 'end' => '15:00:00'],
-        ['start' => '15:00:00', 'end' => '18:00:00'],
-    ];
+        $timeSlots = [
+            ['start' => '09:00:00', 'end' => '12:00:00'],
+            ['start' => '12:00:00', 'end' => '15:00:00'],
+            ['start' => '15:00:00', 'end' => '18:00:00'],
+        ];
 
-    $doctors = Doctor::orderBy('department_id')
-        ->orderBy('id')
-        ->get();
+        $doctors = Doctor::orderBy('department_id')
+            ->orderBy('id')
+            ->get();
 
-    foreach ($doctors as $doctor) {
+        foreach ($doctors as $doctor) {
 
-        $created = 0;
+            $created = 0;
 
-        /*
-         * نبدأ من ترتيب مختلف لكل دكتور
-         * حتى ما يأخذوا نفس الأيام.
-         */
-        $startDayIndex = ($doctor->id - 1) % count($days);
 
-        for ($dayOffset = 0; $dayOffset < count($days); $dayOffset++) {
+            $startDayIndex = ($doctor->id - 1) % count($days);
 
-            if ($created >= 3) {
-                break;
-            }
-
-            // اختيار يوم مختلف
-            $dayIndex = ($startDayIndex + $dayOffset) % count($days);
-            $day = $days[$dayIndex];
-
-            /*
-             * نمر على أوقات اليوم الثلاثة
-             * ونختار أول وقت غير مستخدم من دكتور
-             * آخر في نفس القسم.
-             */
-            foreach ($timeSlots as $slot) {
+            for ($dayOffset = 0; $dayOffset < count($days); $dayOffset++) {
 
                 if ($created >= 3) {
                     break;
                 }
 
-                // التحقق من عدم وجود تعارض
-                // مع دكتور من نفس القسم في نفس اليوم والوقت
-                $conflict = DoctorAvailability::whereHas(
-                    'doctor',
-                    function ($query) use ($doctor) {
-                        $query->where(
-                            'department_id',
-                            $doctor->department_id
-                        );
+                // اختيار يوم مختلف
+                $dayIndex = ($startDayIndex + $dayOffset) % count($days);
+                $day = $days[$dayIndex];
+
+                foreach ($timeSlots as $slot) {
+
+                    if ($created >= 3) {
+                        break;
                     }
-                )
-                    ->where('day_of_week', $day)
-                    ->where('start_time', '<', $slot['end'])
-                    ->where('end_time', '>', $slot['start'])
-                    ->exists();
 
-                if (!$conflict) {
+                    // التحقق من عدم وجود تعارض
+                    // مع دكتور من نفس القسم في نفس اليوم والوقت
+                    $conflict = DoctorAvailability::whereHas(
+                        'doctor',
+                        function ($query) use ($doctor) {
+                            $query->where(
+                                'department_id',
+                                $doctor->department_id
+                            );
+                        }
+                    )
+                        ->where('day_of_week', $day)
+                        ->where('start_time', '<', $slot['end'])
+                        ->where('end_time', '>', $slot['start'])
+                        ->exists();
 
-                    DoctorAvailability::create([
-                        'doctor_id'   => $doctor->id,
-                        'day_of_week' => $day,
-                        'start_time'  => $slot['start'],
-                        'end_time'    => $slot['end'],
-                        'is_booked'   => false,
-                    ]);
+                    if (!$conflict) {
 
-                    $created++;
+                        DoctorAvailability::create([
+                            'doctor_id'   => $doctor->id,
+                            'day_of_week' => $day,
+                            'start_time'  => $slot['start'],
+                            'end_time'    => $slot['end'],
+                            'is_booked'   => false,
+                        ]);
 
-                    // مهم:
-                    // بعد ما أخذنا Slot بهذا اليوم،
-                    // ننتقل لليوم التالي.
-                    break;
+                        $created++;
+
+                        // مهم:
+                        // بعد ما أخذنا Slot بهذا اليوم،
+                        // ننتقل لليوم التالي.
+                        break;
+                    }
                 }
             }
         }
-    }
-}
-       /* public function run(): void
+    }*/
+    /*public function run(): void
 {
     $days = [
         'Saturday',
