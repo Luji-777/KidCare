@@ -1250,7 +1250,6 @@ class DoctorController extends Controller
             ->where('doctor_id', $doctor->id)
             ->firstOrFail();
 
-        // التأكد أن الموعد قابل للإلغاء
         if (in_array($appointment->status, [
             'cancelled_by_patient',
             'cancelled_by_clinic',
@@ -1270,7 +1269,6 @@ class DoctorController extends Controller
 
         $parent = $appointment->child->parent;
 
-        //ما ترجمت
         DBNotification::create([
             'parent_id' => $parent->id,
             'message' => 'Your appointment on ' .
@@ -1332,8 +1330,6 @@ class DoctorController extends Controller
         ]);
 
         $doctor = auth()->user();
-
-
         $appointments = Appointment::with('child.parent')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', $request->date)
@@ -1351,7 +1347,6 @@ class DoctorController extends Controller
 
         foreach ($appointments as $appointment) {
 
-            // إلغاء الموعد
             $appointment->update([
                 'status' => 'cancelled_by_clinic',
             ]);
@@ -1369,13 +1364,9 @@ class DoctorController extends Controller
                 ]);
             }
 
-
-
             if (!$parent || !$parent->fcm_token) {
                 continue;
             }
-
-
             $message = CloudMessage::withTarget(
                 'token',
                 $parent->fcm_token
