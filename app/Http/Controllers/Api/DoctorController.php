@@ -177,6 +177,7 @@ class DoctorController extends Controller
         }
 
         $doctor = Doctor::create($data);
+        $doctor->refresh();
 
         return response()->json([
             'status'  => 'success',
@@ -189,7 +190,6 @@ class DoctorController extends Controller
         $doctor = Doctor::findOrFail($id);
         $data = $request->validated();
 
-        // 1. معالجة تحديث الصورة الشخصية
         if ($request->hasFile('profile_picture')) {
             $image = $request->file('profile_picture');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
@@ -205,7 +205,6 @@ class DoctorController extends Controller
             $data['profile_picture'] = 'uploads/doctors/' . $imageName;
         }
 
-        // 2. معالجة تحديث السيرة الذاتية (CV)
         if ($request->hasFile('cv')) {
             $cv = $request->file('cv');
             $cvName = time() . '_' . uniqid() . '.' . $cv->getClientOriginalExtension();
