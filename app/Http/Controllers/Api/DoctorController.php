@@ -1514,4 +1514,59 @@ class DoctorController extends Controller
             ]
         ]);
     }
+    public function patientVisitsSummary($childId)
+{
+    $doctor = auth()->user();
+
+
+
+    // كل المواعيد السابقة (completed أو finished)
+    $appointments = Appointment::with(['doctor', 'record'])
+        ->where('doctor_id',$doctor->id)
+        ->where('child_id', $childId)
+        ->whereIn('status', ['completed', 'finished'])
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get();
+
+    if ($appointments->isEmpty()) {
+        return response()->json([
+            'status' => 'success',
+            'summary' => [
+                'last_visit' => null,
+                'previous_visits' => []
+            ]
+        ]);
+    }
+
+    // أول زيارة = آخر موعد
+    $last = $appointments->first();
+
+    $lastVisit = [
+        'date' => $last->date,
+        'doctor_name' => $last->doctor->first_name . ' ' . $last->doctor->last_name,
+        'diagnosis' => $last->record?->diagnosis,
+        'record_id' => $last->record?->id,
+        'appointment_id' => $last->id,
+    ];
+
+    // باقي الزيارات
+    $previousVisits = $appointments->skip(1)->map(function ($appointment) {
+        return [
+            'date' => $appointment->date,
+            'doctor_name' => $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name,
+            'diagnosis' => $appointment->record?->diagnosis,
+            'record_id' => $appointment->record?->id,
+            'appointment_id' => $appointment->id,
+        ];
+    })->values();
+
+    return response()->json([
+        'status' => 'success',
+        'summary' => [
+            'last_visit' => $lastVisit,
+            'previous_visits' => $previousVisits,
+        ]
+    ]);
+}
 }

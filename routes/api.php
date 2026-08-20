@@ -107,6 +107,7 @@ Route::middleware('set.locale')->group(function () {
             Route::delete('/account/terminate', [DoctorController::class, 'destroyAccount']);
             Route::put('appointments/cancelAppointments', [DoctorController::class, 'cancelAppointmentsByDate']);
             Route::put('appointments/{appointmentId}/cancel', [DoctorController::class, 'cancelAppointment']);
+            Route::get('/patient-visits/{childId}', [DoctorController::class, 'patientVisitsSummary']);
 
             Route::get('/notification', [DoctorNotificationController::class, 'getDoctorNotifications']);
 
