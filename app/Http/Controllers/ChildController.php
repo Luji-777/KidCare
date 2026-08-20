@@ -60,14 +60,15 @@ class ChildController extends Controller
         }
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . uniqid() . '.' . $image->extension();
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-            $basePath = file_exists(base_path('../public_html'))
-                ? base_path('../public_html/uploads/children')
-                : public_path('uploads/children');
+            $destinationPath = '/home/lujainka/public_html/uploads/children';
 
-            // move تقوم بإنشاء المجلد تلقائياً إن لم يكن موجوداً
-            $image->move($basePath, $imageName);
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            $image->move($destinationPath, $imageName);
 
             $data['image'] = 'uploads/children/' . $imageName;
         } else {

@@ -86,19 +86,10 @@ class Child extends Model
     }
     public function getImageAttribute($value)
     {
-        if (!empty($value)) {
-            if (filter_var($value, FILTER_VALIDATE_URL)) {
-                return $value;
-            }
-
+        if ($value && file_exists(base_path('../public_html/' . $value))) {
             return asset($value);
         }
-
-        if ($this->gender === 'female') {
-            return asset('images/girl.png');
-        }
-
-        return asset('images/boy.png');
+        return asset('assets/default-child.png');
     }
     protected function serializeDate(\DateTimeInterface $date)
     {
