@@ -61,7 +61,9 @@ class GrowthController extends Controller
 
         $whoStandards = [];
 
-        for ($month = 0; $month <= $currentAgeInMonths; $month++) {
+        $maxMonths = max(24, $currentAgeInMonths);
+
+        for ($month = 0; $month <= $maxMonths; $month++) {
             $whoStandards[] = $this->generateWhoWeightStandards($month, $gender);
         }
 

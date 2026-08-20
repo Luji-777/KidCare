@@ -67,7 +67,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_image     = $child->image ?? '';
-            $department_name   = $doctor->department->name;
+            $department_name   = __($doctor->department->name);
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
             $currency          = 'USD';
@@ -89,7 +89,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
             $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
             $patient_image     = $appointment->child->image ?? '';
-            $department_name   = $appointment->doctor->department->name;
+            $department_name   = __($appointment->doctor->department->name);
             $date_time         = $appointment->date . ' ' . $appointment->time;
             $price             = (string)$appointment->price;
             $currency          = $appointment->currency ?? 'USD';
