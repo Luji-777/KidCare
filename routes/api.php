@@ -154,7 +154,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/doctors/top-this-week', [DoctorController::class, 'getTopDoctorThisWeek']);
         Route::get('/doctors/active-count', [DoctorController::class, 'getActiveDoctorsCountThisWeek']);
         Route::apiResource('doctors', DoctorController::class)->only(['index', 'show', 'store', 'destroy']);
-        Route::post('doctors/{doctor}/update', [DoctorController::class, 'update']);
+        Route::put('doctors/{doctor}/update', [DoctorController::class, 'update']);
 
         // Home dashboard
         Route::get('/home/patients-count', [AdminController::class, 'getPatientsCount']);

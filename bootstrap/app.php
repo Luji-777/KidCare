@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->booted(function () {
-        app()->usePublicPath(base_path('public'));
+        app()->usePublicPath(base_path('../public_html'));
     })
     ->withMiddleware(function (Middleware $middleware): void {
 
