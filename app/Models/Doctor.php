@@ -41,10 +41,14 @@ class Doctor extends Authenticatable
 
     public function getImageAttribute($value)
     {
-        if ($value) {
+        if (!empty($value)) {
             return asset($value);
         }
 
-        return null;
+        if ($this->gender === 'female') {
+            return asset('images/doctorgirl.png');
+        }
+
+        return asset('images/doctorboy.png');
     }
 }
