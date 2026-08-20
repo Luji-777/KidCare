@@ -17,7 +17,22 @@ use Illuminate\Notifications\Notifiable;
 class Doctor extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
-    protected $guarded = [];
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'email',
+        'phone_number',
+        'address',
+        'experience_years',
+        'education',
+        'department_id',
+        'profile_picture',
+        'fee',
+        'commission_percentage',
+        'gender',
+        'cv'
+    ];
+    protected $appends = ['profile_picture'];
     public function department()
     {
         return $this->belongsTo(Department::class);
@@ -39,9 +54,12 @@ class Doctor extends Authenticatable
         return $this->hasMany(DoctorNotification::class);
     }
 
-    public function getImageAttribute($value)
+    public function getProfilePictureAttribute($value)
     {
         if (!empty($value)) {
+            if (str_starts_with($value, 'http')) {
+                return $value;
+            }
             return asset($value);
         }
 
