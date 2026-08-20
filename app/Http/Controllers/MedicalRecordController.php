@@ -142,6 +142,8 @@ class MedicalRecordController extends Controller
                 'appointment_id' => $record->appointment_id,
                 'diagnosis' => $record->diagnosis,
                 'doctor_notes' => $record->doctor_notes,
+                'required_tests' => $record->appointment->required_tests,
+                'required_imaging' => $record->appointment->required_imaging,
                 //'medications' => $record->medications,
                 //'created_at' => $record->created_at,
             ]
