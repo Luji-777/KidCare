@@ -245,43 +245,43 @@ class PaymentController extends Controller
 
                             $doctor = Doctor::find($appointment->doctor_id);
 
-$doctorTitle = __('messages.notification_new_appointment_title');
+                            $doctorTitle = __('messages.notification_new_appointment_title');
 
-$doctorBody = __('messages.notification_new_appointment_doctor_body', [
-    'child' => $child->first_name . ' ' . $child->last_name,
-    'date'  => $appointment->date,
-    'time'  => $appointment->time,
-]);
+                            $doctorBody = __('messages.notification_new_appointment_doctor_body', [
+                                'child' => $child->first_name . ' ' . $child->last_name,
+                                'date'  => $appointment->date,
+                                'time'  => $appointment->time,
+                            ]);
 
-// حفظ الإشعار في قاعدة البيانات للطبيب
-DoctorNotification::create([
-    'doctor_id' => $appointment->doctor_id,
-    'title'     => $doctorTitle,
-    'message'   => $doctorBody,
-]);
+                            // حفظ الإشعار في قاعدة البيانات للطبيب
+                            DoctorNotification::create([
+                                'doctor_id' => $appointment->doctor_id,
+                                'title'     => $doctorTitle,
+                                'message'   => $doctorBody,
+                            ]);
 
-// Push Notification للطبيب
-if ($doctor && $doctor->fcm_token) {
+                            // Push Notification للطبيب
+                            if ($doctor && $doctor->fcm_token) {
 
-    $doctorMessage = CloudMessage::withTarget(
-        'token',
-        $doctor->fcm_token
-    )->withNotification(
-        FirebaseNotification::create(
-            $doctorTitle,
-            $doctorBody
-        )
-    )->withData([
-        'type'           => 'new_appointment',
-        'appointment_id' => (string) $appointment->id,
-        'child_id'       => (string) $child->id,
-        'date'           => $appointment->date->toDateString(),
-        'time'           => $appointment->time,
-        'sound'          => 'default',
-    ]);
+                                $doctorMessage = CloudMessage::withTarget(
+                                    'token',
+                                    $doctor->fcm_token
+                                )->withNotification(
+                                    FirebaseNotification::create(
+                                        $doctorTitle,
+                                        $doctorBody
+                                    )
+                                )->withData([
+                                    'type'           => 'new_appointment',
+                                    'appointment_id' => (string) $appointment->id,
+                                    'child_id'       => (string) $child->id,
+                                    'date'           => \Carbon\Carbon::parse($appointment->date)->toDateString(),
+                                    'time'           => $appointment->time,
+                                    'sound'          => 'default',
+                                ]);
 
-    app('firebase.messaging')->send($doctorMessage);
-}
+                                app('firebase.messaging')->send($doctorMessage);
+                            }
 
                             DBNotification::create([
                                 'parent_id' => $parent->id,
