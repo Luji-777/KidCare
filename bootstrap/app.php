@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+    ->booted(function () {
+        app()->usePublicPath(base_path('../public_html'));
+    })
     ->withMiddleware(function (Middleware $middleware): void {
 
         $middleware->alias([
