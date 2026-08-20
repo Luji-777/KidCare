@@ -5,15 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Growth;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\ParentModel;
+use App\Models\Receptionist;
+use App\Models\Child;
+use App\Models\Doctor;
+
 
 class GrowthController extends Controller
 {
     public function index($child_id)
     {
-        $child = auth()->user()->children()->where('id', $child_id)->first();
+        $user = auth()->user();
+
+        if ($user instanceof ParentModel) {
+            $child = $user->children()->where('id', $child_id)->first();
+        } elseif ($user instanceof Doctor || $user instanceof Receptionist) {
+            $child = Child::find($child_id);
+        } else {
+            return response()->json([
+                'message' => __('messages.unauthorized_role')
+            ], 403);
+        }
 
         if (!$child) {
-            return response()->json(['message' => __('messages.child_not_found')], 404);
+            return response()->json([
+                'message' => __('messages.child_not_found')
+            ], 404);
         }
 
         $growthRecords = Growth::where('child_id', $child_id)
@@ -23,7 +40,6 @@ class GrowthController extends Controller
         $birthDate = Carbon::parse($child->birth_date);
         $currentAgeInMonths = $birthDate->diffInMonths(Carbon::now());
         $gender = $child->gender;
-
 
         $formattedHistory = $growthRecords->map(function ($record) use ($birthDate, $gender) {
             $recordDate = Carbon::parse($record->date);
@@ -50,11 +66,11 @@ class GrowthController extends Controller
         }
 
         return response()->json([
-            'child_name'        => $child->first_name,
-            'child_gender'      => $gender,
+            'child_name'         => $child->first_name,
+            'child_gender'       => $gender,
             'current_age_months' => $currentAgeInMonths,
-            'growth_history'    => $formattedHistory,
-            'who_standards'     => $whoStandards
+            'growth_history'     => $formattedHistory,
+            'who_standards'      => $whoStandards
         ], 200);
     }
 

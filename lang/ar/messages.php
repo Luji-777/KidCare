@@ -84,16 +84,16 @@ return [
     'notification_appointment_confirmed_title' => 'تم تأكيد الموعد بنجاح',
     'notification_appointment_confirmed_body'  => 'تمت عملية الدفع وتأكيد موعد طفلك في العيادة بنجاح.',
     'notification_appointment_cancelled_title' => 'تم إلغاء الموعد',
-    'notification_appointment_cancelled_doctor_body' =>'قام :child بإلغاء الموعد بتاريخ :date الساعة :time.',
-    'notification_appointment_cancelled_parent_body' =>'تم إلغاء موعد طفلك بتاريخ :date الساعة :time من قبل الطبيب.',
-    'notification_all_appointments_cancelled_title' =>'تم إلغاء جميع المواعيد',
-    'notification_all_appointments_cancelled_doctor_body' =>'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغاة: :count.',
-    'notification_single_appointment_cancelled_doctor_body' =>'تم إلغاء موعد الطفل :child بتاريخ :date الساعة :time.',
+    'notification_appointment_cancelled_doctor_body' => 'قام :child بإلغاء الموعد بتاريخ :date الساعة :time.',
+    'notification_appointment_cancelled_parent_body' => 'تم إلغاء موعد طفلك بتاريخ :date الساعة :time من قبل الطبيب.',
     'notification_all_appointments_cancelled_title' => 'تم إلغاء جميع المواعيد',
-    'notification_all_appointments_cancelled_doctor_body' =>'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغية: :count.',
-    'notification_new_appointment_title'=>'موعد جديد',
-    'notification_new_appointment_doctor_body'=>'تم حجز موعد جديد',
-    
+    'notification_all_appointments_cancelled_doctor_body' => 'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغاة: :count.',
+    'notification_single_appointment_cancelled_doctor_body' => 'تم إلغاء موعد الطفل :child بتاريخ :date الساعة :time.',
+    'notification_all_appointments_cancelled_title' => 'تم إلغاء جميع المواعيد',
+    'notification_all_appointments_cancelled_doctor_body' => 'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغية: :count.',
+    'notification_new_appointment_title' => 'موعد جديد',
+    'notification_new_appointment_doctor_body' => 'تم حجز موعد جديد',
+
     // Children Management
     'child_added_success'      => 'تم إضافة ملف الطفل بنجاح.',
     'child_updated_success'    => 'تم تحديث بيانات الطفل بنجاح.',
@@ -141,6 +141,7 @@ return [
     'cancelled_by_patient'              => 'ملغي من قبل المريض',
     'missed'                 => 'فائت',
     'finished' => 'مكتمل',
+    'check_in' => 'في الانتظار',
 
     'error' => 'خطأ',
 
