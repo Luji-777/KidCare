@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Doctor;
 use App\Models\Child;
-use App\Models\medicalRecord;
+use App\Models\MedicalRecord;
 use App\Models\ِAppointment_additions;
 
 
@@ -24,7 +24,7 @@ class Appointment extends Model
 
     public function record()
     {
-        return $this->hasOne(medicalRecord::class);
+        return $this->hasOne(MedicalRecord::class);
     }
     public function transactions()
     {
