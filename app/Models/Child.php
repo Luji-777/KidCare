@@ -31,23 +31,6 @@ class Child extends Model
     {
         return $this->hasMany(Appointment::class);
     }
-    protected function image(): Attribute
-    {
-        return Attribute::make(
-            get: function ($value) {
-
-                if ($value && file_exists(public_path($value))) {
-                    return asset($value);
-                }
-
-                if ($this->gender === 'male') {
-                    return asset('images/boy.png');
-                }
-
-                return asset('images/girl.png');
-            },
-        );
-    }
 
     public function childVaccinations()
     {
@@ -86,11 +69,15 @@ class Child extends Model
     }
     public function getImageAttribute($value)
     {
-        if ($value && file_exists('/home/lujainka/public_html/' . $value)) {
+        if (!empty($value)) {
             return asset($value);
         }
 
-        return asset('assets/default-child.png');
+        if ($this->gender === 'female') {
+            return asset('images/girl.png');
+        }
+
+        return asset('images/boy.png');
     }
     protected function serializeDate(\DateTimeInterface $date)
     {
