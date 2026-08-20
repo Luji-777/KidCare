@@ -27,10 +27,8 @@ return new class extends Migration
             $table->string('fee');
             $table->unsignedInteger('commission_percentage')->default(100);
             $table->enum('gender', ['male', 'female']);
-
-            $table->string('otp_code')->nullable(); // رمز التحقق
-            $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق
             $table->text('fcm_token')->nullable();
+
             $table->timestamp('deleted_at')->nullable();
             $table->string('deletion_reason')->nullable();
             $table->boolean('is_active')->default(true);

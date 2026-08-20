@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('stripe_payment_intent_id')->unique()->nullable();
             $table->decimal('amount', 8, 2);
             $table->string('currency', 3)->default('USD');
-            $table->string('status'); // requires_payment_method, succeeded, failed
+            $table->string('status');
             $table->enum('payment_method', ['cash', 'stripe'])->default('stripe');
             $table->enum('type', ['fixed', 'additions'])->default('fixed');
             $table->timestamps();

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->enum('status', ['available', 'finished', 'cancelled'])->default('available');
-            $table->text('notes')->nullable(); // ملاحظات من الرسبشن للأهل
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

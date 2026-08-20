@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('child_id')->constrained('children')->onDelete('cascade');
             $table->foreignId('vaccine_id')->constrained('vaccines')->onDelete('cascade');
-            $table->date('given_date'); // تاريخ إعطاء الجرعة الفعلي
-            $table->text('notes')->nullable(); // ملاحظات الطبيب أو الرسبشن بعد الجرعة
+            $table->date('given_date');
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
