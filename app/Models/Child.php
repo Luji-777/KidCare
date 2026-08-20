@@ -86,9 +86,10 @@ class Child extends Model
     }
     public function getImageAttribute($value)
     {
-        if ($value && file_exists(base_path('../public_html/' . $value))) {
+        if ($value && file_exists('/home/lujainka/public_html/' . $value)) {
             return asset($value);
         }
+
         return asset('assets/default-child.png');
     }
     protected function serializeDate(\DateTimeInterface $date)
