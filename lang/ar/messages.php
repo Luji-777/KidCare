@@ -89,6 +89,10 @@ return [
     'notification_all_appointments_cancelled_title' =>'تم إلغاء جميع المواعيد',
     'notification_all_appointments_cancelled_doctor_body' =>'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغاة: :count.',
     'notification_single_appointment_cancelled_doctor_body' =>'تم إلغاء موعد الطفل :child بتاريخ :date الساعة :time.',
+    'notification_all_appointments_cancelled_title' => 'تم إلغاء جميع المواعيد',
+    'notification_all_appointments_cancelled_doctor_body' =>'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغية: :count.',
+    'notification_new_appointment_title'=>'موعد جديد',
+    'notification_new_appointment_doctor_body'=>'تم حجز موعد جديد',
     
     // Children Management
     'child_added_success'      => 'تم إضافة ملف الطفل بنجاح.',

@@ -91,6 +91,13 @@ return [
     'notification_all_appointments_cancelled_title' =>'All Appointments Cancelled',
     'notification_all_appointments_cancelled_doctor_body' =>'All appointments on :date have been cancelled. Total cancelled appointments: :count.',
     'notification_single_appointment_cancelled_doctor_body' =>'The appointment for :child on :date at :time has been cancelled.',
+    'notification_all_appointments_cancelled_title' => 'All Appointments Cancelled',
+    'notification_all_appointments_cancelled_doctor_body' => 'All appointments on :date have been cancelled. Total cancelled appointments: :count.',
+    'notification_new_appointment_title'=>'New appointment',
+    'notification_new_appointment_doctor_body'=>'New appointment was booked',
+    
+
+
 
     // Children Management
     'child_added_success'      => 'Child profile created successfully.',

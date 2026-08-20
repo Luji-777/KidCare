@@ -485,7 +485,7 @@ class DoctorController extends Controller
         $doctor = auth()->user();
 
         $revenue = Appointment::where('doctor_id', $doctor->id)
-            ->where('status', 'completed')
+            ->where('status', 'completed', 'finished')
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->sum('doctor_earnings');
@@ -1054,7 +1054,7 @@ class DoctorController extends Controller
         $income = Appointment::where('doctor_id', $doctor->id)
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
-            // ->where('status', 'completed')
+            ->where('status', 'completed', 'finished')
             ->whereIn('payment_status', ['paid_online', 'fully_paid'])
             ->sum('doctor_earnings');
 
@@ -1240,16 +1240,130 @@ class DoctorController extends Controller
             ], 500);
         }
     }
+    public function cancelAppointmentsByDate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $doctor = auth()->user();
+
+
+        $appointments = Appointment::with('child.parent')
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->get();
+
+        if ($appointments->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('messages.no_appointments')
+            ], 404);
+        }
+
+        $messaging = app('firebase.messaging');
+
+        foreach ($appointments as $appointment) {
+
+            // إلغاء الموعد
+            $appointment->update([
+                'status' => 'cancelled_by_clinic',
+            ]);
+
+
+            $parent = $appointment->child->parent;
+            if ($parent) {
+
+                DBNotification::create([
+                    'parent_id' => $parent->id,
+                    'message' => __('messages.notification_appointment_cancelled_parent_body', [
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
+                ]);
+            }
+
+
+
+            if (!$parent || !$parent->fcm_token) {
+                continue;
+            }
+
+
+            $message = CloudMessage::withTarget(
+                'token',
+                $parent->fcm_token
+            )->withNotification(
+                Notification::create(
+                    __('messages.notification_appointment_cancelled_title'),
+                    __('messages.notification_appointment_cancelled_parent_body', [
+                        'date' => $appointment->date,
+                        'time' => $appointment->time,
+                    ])
+                )
+            )->withData([
+                'appointment_id' => (string) $appointment->id,
+                'type' => 'appointment_cancelled',
+                'date' => $appointment->date->toDateString(),
+                'time' => $appointment->time,
+            ]);
+
+
+            $messaging->send($message);
+        }
+        $title = __('messages.notification_all_appointments_cancelled_title');
+
+        $body = __('messages.notification_all_appointments_cancelled_doctor_body', [
+            'date' => $request->date,
+            'count' => $appointments->count(),
+        ]);
+
+        // حفظ الإشعار في قاعدة البيانات
+        DoctorNotification::create([
+            'doctor_id' => $doctor->id,
+            'title' => $title,
+            'message' => $body,
+        ]);
+
+        // Push Notification للطبيب
+        if ($doctor->fcm_token) {
+
+            $message = CloudMessage::withTarget(
+                'token',
+                $doctor->fcm_token
+            )->withNotification(
+                Notification::create(
+                    $title,
+                    $body
+                )
+            )->withData([
+                'type' => 'all_appointments_cancelled',
+                'date' => $request->date,
+                'cancelled_count' => (string) $appointments->count(),
+                'sound' => 'default',
+            ]);
+
+            $messaging->send($message);
+        }
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' =>  __('messages.all_appointments_cancelled'),
+            'cancelled_count' => $appointments->count(),
+        ]);
+    }
     public function cancelAppointment($appointmentId)
     {
         $doctor = auth()->user();
-
 
         $appointment = Appointment::with('child.parent')
             ->where('id', $appointmentId)
             ->where('doctor_id', $doctor->id)
             ->firstOrFail();
 
+        // التأكد أن الموعد قابل للإلغاء
         if (in_array($appointment->status, [
             'cancelled_by_patient',
             'cancelled_by_clinic',
@@ -1269,29 +1383,38 @@ class DoctorController extends Controller
 
         $parent = $appointment->child->parent;
 
-        DBNotification::create([
-            'parent_id' => $parent->id,
-            'message' => 'Your appointment on ' .
-                $appointment->date . ' at ' .
-                $appointment->time .
-                ' has been cancelled by the doctor.'
+        // إشعار للـ Parent في قاعدة البيانات
+        if ($parent) {
+            DBNotification::create([
+                'parent_id' => $parent->id,
+                'message' => __('messages.notification_appointment_cancelled_parent_body', [
+                    'date' => $appointment->date,
+                    'time' => $appointment->time,
+                ])
+            ]);
+        }
+
+        // إشعار للطبيب في قاعدة البيانات
+        $doctorTitle = __('messages.notification_appointment_cancelled_title');
+
+        $doctorBody = __('messages.notification_single_appointment_cancelled_doctor_body', [
+            'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+            'date' => $appointment->date,
+            'time' => $appointment->time,
         ]);
 
         DoctorNotification::create([
             'doctor_id' => $doctor->id,
-            'title' => __('messages.notification_appointment_cancelled_title'),
-            'message' => __('messages.notification_single_appointment_cancelled_doctor_body', [
-                'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
-                'date' => $appointment->date,
-                'time' => $appointment->time,
-            ]),
+            'title' => $doctorTitle,
+            'message' => $doctorBody,
         ]);
 
+        // Push Notification للـ Parent
         if ($parent && $parent->fcm_token) {
 
             $messaging = app('firebase.messaging');
 
-            $message = CloudMessage::withTarget(
+            $parentMessage = CloudMessage::withTarget(
                 'token',
                 $parent->fcm_token
             )->withNotification(
@@ -1303,105 +1426,48 @@ class DoctorController extends Controller
                     ])
                 )
             )->withData([
-                'type'           => 'appointment_cancelled_by_doctor',
+                'type' => 'appointment_cancelled_by_doctor',
                 'appointment_id' => (string) $appointment->id,
-                'date'           => \Carbon\Carbon::parse($appointment->date)->toDateString(),
-                'time'           => $appointment->time,
+                'date' => $appointment->date->toDateString(),
+                'time' => $appointment->time,
             ]);
 
-            $messaging->send($message);
+            $messaging->send($parentMessage);
+        }
+
+        // Push Notification للطبيب
+        if ($doctor->fcm_token) {
+
+            $messaging = app('firebase.messaging');
+
+            $doctorMessage = CloudMessage::withTarget(
+                'token',
+                $doctor->fcm_token
+            )->withNotification(
+                Notification::create(
+                    $doctorTitle,
+                    $doctorBody
+                )
+            )->withData([
+                'type' => 'appointment_cancelled',
+                'appointment_id' => (string) $appointment->id,
+                'date' => $appointment->date->toDateString(),
+                'time' => $appointment->time,
+                'sound' => 'default',
+            ]);
+
+            $messaging->send($doctorMessage);
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => ('messages.appointment_cancelled'),
+            'message' => __('messages.appointment_cancelled'),
             'appointment' => [
                 'appointment_id' => $appointment->id,
                 'date' => $appointment->date,
                 'time' => $appointment->time,
                 'status' => $appointment->status,
             ]
-        ]);
-    }
-    public function cancelAppointmentsByDate(Request $request)
-    {
-        $request->validate([
-            'date' => 'required|date',
-        ]);
-
-        $doctor = auth()->user();
-        $appointments = Appointment::with('child.parent')
-            ->where('doctor_id', $doctor->id)
-            ->whereDate('date', $request->date)
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->get();
-
-        if ($appointments->isEmpty()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => __('messages.no_appointments')
-            ], 404);
-        }
-
-        $messaging = app('firebase.messaging');
-
-        foreach ($appointments as $appointment) {
-
-            $appointment->update([
-                'status' => 'cancelled_by_clinic',
-            ]);
-
-
-            $parent = $appointment->child->parent;
-            if ($parent) {
-
-                DBNotification::create([
-                    'parent_id' => $parent->id,
-                    'message' => __('messages.notification_appointment_cancelled_parent_body', [
-                        'date' => $appointment->date,
-                        'time' => $appointment->time,
-                    ])
-                ]);
-            }
-
-            if (!$parent || !$parent->fcm_token) {
-                continue;
-            }
-            $message = CloudMessage::withTarget(
-                'token',
-                $parent->fcm_token
-            )->withNotification(
-                Notification::create(
-                    __('messages.notification_appointment_cancelled_title'),
-                    __('messages.notification_appointment_cancelled_parent_body', [
-                        'date' => $appointment->date,
-                        'time' => $appointment->time,
-                    ])
-                )
-            )->withData([
-                'type'           => 'appointment_cancelled_by_doctor',
-                'appointment_id' => (string) $appointment->id,
-                'date'           => \Carbon\Carbon::parse($appointment->date)->toDateString(),
-                'time'           => $appointment->time,
-            ]);
-
-
-            $messaging->send($message);
-        }
-        DoctorNotification::create([
-            'doctor_id' => $doctor->id,
-            'title' => __('messages.notification_all_appointments_cancelled_title'),
-            'message' => __('messages.notification_all_appointments_cancelled_doctor_body', [
-                'date' => $request->date,
-                'count' => $appointments->count(),
-            ]),
-        ]);
-
-
-        return response()->json([
-            'status' => 'success',
-            'message' =>  __('messages.all_appointments_cancelled'),
-            'cancelled_count' => $appointments->count(),
         ]);
     }
 }
