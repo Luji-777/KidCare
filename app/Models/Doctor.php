@@ -32,7 +32,6 @@ class Doctor extends Authenticatable
         'gender',
         'cv'
     ];
-    protected $appends = ['profile_picture'];
     public function department()
     {
         return $this->belongsTo(Department::class);
