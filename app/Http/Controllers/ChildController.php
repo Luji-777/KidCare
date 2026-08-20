@@ -126,14 +126,20 @@ class ChildController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
+            $destinationPath = '/home/lujainka/public_html/uploads/children';
+
             $oldImagePath = $child->getRawOriginal('image');
-            if ($oldImagePath && file_exists(public_path($oldImagePath))) {
-                unlink(public_path($oldImagePath));
+            if ($oldImagePath && file_exists('/home/lujainka/public_html/' . $oldImagePath)) {
+                @unlink('/home/lujainka/public_html/' . $oldImagePath);
+            }
+
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
             }
 
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/children'), $imageName);
+            $image->move($destinationPath, $imageName);
 
             $data['image'] = 'uploads/children/' . $imageName;
         }

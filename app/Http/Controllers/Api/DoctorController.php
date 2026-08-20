@@ -147,42 +147,87 @@ class DoctorController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('profile_picture')) {
-            $data['profile_picture'] = $request->file('profile_picture')->store('doctors/photos', 'public');
+            $image = $request->file('profile_picture');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            $photoDestination = '/home/lujainka/public_html/uploads/doctors';
+
+            if (!file_exists($photoDestination)) {
+                mkdir($photoDestination, 0755, true);
+            }
+
+            $image->move($photoDestination, $imageName);
+
+            $data['profile_picture'] = 'uploads/doctors/' . $imageName;
         }
 
         if ($request->hasFile('cv')) {
-            $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
+            $cv = $request->file('cv');
+            $cvName = time() . '_' . uniqid() . '.' . $cv->getClientOriginalExtension();
+
+            $cvDestination = '/home/lujainka/public_html/uploads/doctors/cvs';
+
+            if (!file_exists($cvDestination)) {
+                mkdir($cvDestination, 0755, true);
+            }
+
+            $cv->move($cvDestination, $cvName);
+
+            $data['cv'] = 'uploads/doctors/cvs/' . $cvName;
         }
 
         $doctor = Doctor::create($data);
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => __('messages.doctor_created_success'),
-            'data' => $doctor
+            'data'    => $doctor
         ], 201);
     }
     public function update(UpdateDoctorRequest $request, string $id)
-    { {
-            $doctor = Doctor::findOrFail($id);
-            $data = $request->validated();
+    {
+        $doctor = Doctor::findOrFail($id);
+        $data = $request->validated();
 
-            if ($request->hasFile('profile_picture')) {
-                $data['profile_picture'] = $request->file('profile_picture')->store('doctors/profiles', 'public');
+        // 1. معالجة تحديث الصورة الشخصية
+        if ($request->hasFile('profile_picture')) {
+            $image = $request->file('profile_picture');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            $photoDestination = '/home/lujainka/public_html/uploads/doctors';
+
+            if (!file_exists($photoDestination)) {
+                mkdir($photoDestination, 0755, true);
             }
 
-            if ($request->hasFile('cv')) {
-                $data['cv'] = $request->file('cv')->store('doctors/cvs', 'public');
-            }
+            $image->move($photoDestination, $imageName);
 
-            $doctor->update($data);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => __('messages.doctor_updated_success'),
-                'data'    => $doctor
-            ], 200);
+            $data['profile_picture'] = 'uploads/doctors/' . $imageName;
         }
+
+        // 2. معالجة تحديث السيرة الذاتية (CV)
+        if ($request->hasFile('cv')) {
+            $cv = $request->file('cv');
+            $cvName = time() . '_' . uniqid() . '.' . $cv->getClientOriginalExtension();
+
+            $cvDestination = '/home/lujainka/public_html/uploads/doctors/cvs';
+
+            if (!file_exists($cvDestination)) {
+                mkdir($cvDestination, 0755, true);
+            }
+
+            $cv->move($cvDestination, $cvName);
+
+            $data['cv'] = 'uploads/doctors/cvs/' . $cvName;
+        }
+
+        $doctor->update($data);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.doctor_updated_success'),
+            'data'    => $doctor
+        ], 200);
     }
     public function destroy(Request $request, string $id)
     {
