@@ -364,15 +364,12 @@ class AppointmentController extends Controller
             // Push Notification للطبيب
             if ($doctor && !empty($doctor->fcm_token)) {
 
-                $firebase->send(
-    $doctor->fcm_token,
-
-    __('messages.notification_appointment_cancelled_title'),
-
-    __('messages.notification_appointment_cancelled_doctor_body', [
-        'child' => $child->first_name . ' ' . $child->last_name,
-        'date' => $appointment->date,
-        'time' => $appointment->time,
+                $firebase->send($doctor->fcm_token,
+                 __('messages.notification_appointment_cancelled_title'),
+                 __('messages.notification_appointment_cancelled_doctor_body', [
+                'child' => $child->first_name . ' ' . $child->last_name,
+                'date' => $appointment->date,
+                'time' => $appointment->time,
     ])
 );
             }

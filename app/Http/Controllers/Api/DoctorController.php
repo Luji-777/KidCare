@@ -447,7 +447,7 @@ class DoctorController extends Controller
         $doctor = auth()->user();
 
         $revenue = Appointment::where('doctor_id', $doctor->id)
-            ->where('status', 'completed')
+            ->where('status', 'completed','finished')
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->sum('doctor_earnings');
@@ -982,7 +982,7 @@ class DoctorController extends Controller
         $income = Appointment::where('doctor_id', $doctor->id)
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
-            // ->where('status', 'completed')
+             ->where('status', 'completed','finished')
             ->whereIn('payment_status', ['paid_online', 'fully_paid'])
             ->sum('doctor_earnings');
 
@@ -1241,14 +1241,40 @@ class DoctorController extends Controller
 
         $messaging->send($message);
     }
-    DoctorNotification::create([
-        'doctor_id' => $doctor->id,
-        'title' => __('messages.notification_all_appointments_cancelled_title'),
-        'message' => __('messages.notification_all_appointments_cancelled_doctor_body', [
-            'date' => $request->date,
-            'count' => $appointments->count(),
-        ]),
+    $title = __('messages.notification_all_appointments_cancelled_title');
+
+$body = __('messages.notification_all_appointments_cancelled_doctor_body', [
+    'date' => $request->date,
+    'count' => $appointments->count(),
+]);
+
+// حفظ الإشعار في قاعدة البيانات
+DoctorNotification::create([
+    'doctor_id' => $doctor->id,
+    'title' => $title,
+    'message' => $body,
+]);
+
+// Push Notification للطبيب
+if ($doctor->fcm_token) {
+
+    $message = CloudMessage::withTarget(
+        'token',
+        $doctor->fcm_token
+    )->withNotification(
+        Notification::create(
+            $title,
+            $body
+        )
+    )->withData([
+        'type' => 'all_appointments_cancelled',
+        'date' => $request->date,
+        'cancelled_count' => (string) $appointments->count(),
+        'sound' => 'default',
     ]);
+
+    $messaging->send($message);
+}
 
 
     return response()->json([
@@ -1262,7 +1288,6 @@ class DoctorController extends Controller
 {
     $doctor = auth()->user();
 
-  
     $appointment = Appointment::with('child.parent')
         ->where('id', $appointmentId)
         ->where('doctor_id', $doctor->id)
@@ -1288,30 +1313,38 @@ class DoctorController extends Controller
 
     $parent = $appointment->child->parent;
 
-    //ما ترجمت
-    DBNotification::create([
-    'parent_id' => $parent->id,
-    'message' => 'Your appointment on ' .
-        $appointment->date . ' at ' .
-        $appointment->time .
-        ' has been cancelled by the doctor.'
+    // إشعار للـ Parent في قاعدة البيانات
+    if ($parent) {
+        DBNotification::create([
+            'parent_id' => $parent->id,
+            'message' => __('messages.notification_appointment_cancelled_parent_body', [
+                'date' => $appointment->date,
+                'time' => $appointment->time,
+            ])
+        ]);
+    }
+
+    // إشعار للطبيب في قاعدة البيانات
+    $doctorTitle = __('messages.notification_appointment_cancelled_title');
+
+    $doctorBody = __('messages.notification_single_appointment_cancelled_doctor_body', [
+        'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
+        'date' => $appointment->date,
+        'time' => $appointment->time,
     ]);
 
     DoctorNotification::create([
         'doctor_id' => $doctor->id,
-        'title' => __('messages.notification_appointment_cancelled_title'),
-        'message' => __('messages.notification_single_appointment_cancelled_doctor_body', [
-            'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
-            'date' => $appointment->date,
-            'time' => $appointment->time,
-        ]),
+        'title' => $doctorTitle,
+        'message' => $doctorBody,
     ]);
-    
+
+    // Push Notification للـ Parent
     if ($parent && $parent->fcm_token) {
 
         $messaging = app('firebase.messaging');
 
-        $message = CloudMessage::withTarget(
+        $parentMessage = CloudMessage::withTarget(
             'token',
             $parent->fcm_token
         )->withNotification(
@@ -1329,7 +1362,31 @@ class DoctorController extends Controller
             'time' => $appointment->time,
         ]);
 
-        $messaging->send($message);
+        $messaging->send($parentMessage);
+    }
+
+    // Push Notification للطبيب
+    if ($doctor->fcm_token) {
+
+        $messaging = app('firebase.messaging');
+
+        $doctorMessage = CloudMessage::withTarget(
+            'token',
+            $doctor->fcm_token
+        )->withNotification(
+            Notification::create(
+                $doctorTitle,
+                $doctorBody
+            )
+        )->withData([
+            'type' => 'appointment_cancelled',
+            'appointment_id' => (string) $appointment->id,
+            'date' => $appointment->date->toDateString(),
+            'time' => $appointment->time,
+            'sound' => 'default',
+        ]);
+
+        $messaging->send($doctorMessage);
     }
 
     return response()->json([
