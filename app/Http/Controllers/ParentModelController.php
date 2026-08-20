@@ -282,7 +282,7 @@ class ParentModelController extends Controller
         }
 
         $children = $parent->children()
-            ->select('parent_id', 'image', 'first_name')
+            ->select('parent_id', 'image', 'first_name', 'child_id')
             ->get();
 
         return response()->json([
