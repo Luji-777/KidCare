@@ -698,7 +698,7 @@ class AppointmentController extends Controller
     public function getClosestAppointmentPerDoctor($departmentId)
     {
         $doctors = Doctor::where('department_id', $departmentId)
-            ->select('id', 'first_name', 'last_name', 'profile_picture')
+            ->select('id', 'first_name', 'last_name', 'profile_picture', 'gender')
             ->get();
 
         if ($doctors->isEmpty()) {
@@ -771,6 +771,7 @@ class AppointmentController extends Controller
             $result[] = [
                 'doctor_id'           => $doctor->id,
                 'doctor_name'         => trim($doctor->first_name . ' ' . $doctor->last_name),
+                'gender' => $doctor->gender,
                 'profile_picture_url' => $doctor->profile_picture,
                 'closest_appointment' => $closestAppointment
             ];
