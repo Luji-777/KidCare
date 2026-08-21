@@ -307,10 +307,13 @@ class ReceptionistController extends Controller
         $appointments = Appointment::whereHas('child')
             ->with([
                 'child:id,first_name,last_name',
-                'doctor:id,first_name,last_name'
+                'doctor' => function ($query) {
+                    $query->withTrashed()->select('id', 'first_name', 'last_name');
+                }
             ])
             ->orderBy('date', 'desc')
             ->orderBy('time', 'asc')
+
             ->get([
                 'id',
                 'doctor_id',
@@ -598,7 +601,7 @@ class ReceptionistController extends Controller
         }
 
         $appointments = Appointment::with([
-            'child:id,first_name,parent_id',
+            'child:id,first_name,parent_id,gender,image',
             'child.parent:id,first_name,last_name,phone_number',
             'doctor:id,first_name,last_name,department_id',
             'doctor.department:id,name'

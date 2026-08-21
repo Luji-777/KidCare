@@ -636,6 +636,7 @@ class AppointmentController extends Controller
 
         $appointments = $query->with([
             'child:id,first_name,image,gender',
+            'image',
             'doctor:id,first_name,last_name,department_id',
             'doctor.department:id,name',
         ])
