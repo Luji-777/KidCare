@@ -144,10 +144,13 @@ class AdminController extends Controller
 
     public function getMonthlyRevenueReport()
     {
-        $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d H:i:s');
-        $endOfMonth   = Carbon::now()->endOfMonth()->format('Y-m-d H:i:s');
-        $monthlyTransactions = Transaction::where('status', 'succeeded')
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
+        $endOfMonth   = Carbon::now()->endOfMonth()->toDateString();
+
+        $monthlyTransactions = Transaction::where('transactions.status', 'succeeded')
+            ->join('appointments', 'transactions.appointment_id', '=', 'appointments.id')
+            ->whereBetween('appointments.date', [$startOfMonth, $endOfMonth])
+            ->select('transactions.*')
             ->get();
 
         $totalRevenue    = $monthlyTransactions->sum('amount');
@@ -161,7 +164,7 @@ class AdminController extends Controller
             ->join('doctors', 'appointments.doctor_id', '=', 'doctors.id')
             ->where('transactions.status', 'succeeded')
             ->where('transactions.type', 'fixed')
-            ->whereBetween('transactions.created_at', [$startOfMonth, $endOfMonth])
+            ->whereBetween('appointments.date', [$startOfMonth, $endOfMonth])
             ->sum(DB::raw('transactions.amount * (doctors.commission_percentage / 100)'));
 
         $clinicNetProfit = $fixedTypeTotal - $doctorsCommission;
@@ -190,12 +193,12 @@ class AdminController extends Controller
 
     public function getDailyRevenueReport()
     {
-        $startOfToday = Carbon::today()->startOfDay()->format('Y-m-d H:i:s');
-        $endOfToday   = Carbon::today()->endOfDay()->format('Y-m-d H:i:s');
+        $todayDate = Carbon::today()->toDateString();
 
-
-        $todayTransactions = Transaction::where('status', 'succeeded')
-            ->whereBetween('created_at', [$startOfToday, $endOfToday])
+        $todayTransactions = Transaction::where('transactions.status', 'succeeded')
+            ->join('appointments', 'transactions.appointment_id', '=', 'appointments.id')
+            ->whereDate('appointments.date', $todayDate)
+            ->select('transactions.*')
             ->get();
 
         $totalRevenue    = $todayTransactions->sum('amount');
@@ -209,7 +212,7 @@ class AdminController extends Controller
             ->join('doctors', 'appointments.doctor_id', '=', 'doctors.id')
             ->where('transactions.status', 'succeeded')
             ->where('transactions.type', 'fixed')
-            ->whereBetween('transactions.created_at', [$startOfToday, $endOfToday])
+            ->whereDate('appointments.date', $todayDate)
             ->sum(DB::raw('transactions.amount * (doctors.commission_percentage / 100)'));
 
         $clinicNetProfit = $fixedTypeTotal - $doctorsCommission;
