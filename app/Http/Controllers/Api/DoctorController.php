@@ -1321,7 +1321,7 @@ class DoctorController extends Controller
             $parent = $appointment->child->parent;
             if ($parent) {
 
-                DBNotification::create([
+                FirebaseNotification::create([
                     'parent_id' => $parent->id,
                     'message' => __('messages.notification_appointment_cancelled_parent_body', [
                         'date' => $appointment->date,
@@ -1379,7 +1379,7 @@ class DoctorController extends Controller
                 'token',
                 $doctor->fcm_token
             )->withNotification(
-                Notification::create(
+                FirebaseNotification::create(
                     $title,
                     $body
                 )
@@ -1464,7 +1464,7 @@ class DoctorController extends Controller
                 'token',
                 $parent->fcm_token
             )->withNotification(
-                Notification::create(
+                FirebaseNotification::create(
                     __('messages.notification_appointment_cancelled_title'),
                     __('messages.notification_appointment_cancelled_parent_body', [
                         'date' => $appointment->date,
@@ -1490,7 +1490,7 @@ class DoctorController extends Controller
                 'token',
                 $doctor->fcm_token
             )->withNotification(
-                Notification::create(
+                FirebaseNotification::create(
                     $doctorTitle,
                     $doctorBody
                 )

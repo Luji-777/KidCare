@@ -913,7 +913,7 @@ class AppointmentController extends Controller
             ], 500);
         }
     }
-    public function cancelledِAppointments()
+    public function cancelledAppointments()
 {
     $appointments = Appointment::whereHas('child', function ($query) {
         $query->where('parent_id', auth()->id());
