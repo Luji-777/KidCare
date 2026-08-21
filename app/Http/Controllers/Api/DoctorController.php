@@ -21,6 +21,7 @@ use App\Models\DoctorAvailability;
 use App\Models\Growth;
 use App\Models\Child;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class DoctorController extends Controller
 {
@@ -146,6 +147,9 @@ class DoctorController extends Controller
     {
         $data = $request->validated();
 
+        $plainPassword = Str::random(6);
+        $data['password'] = Hash::make($plainPassword);
+
         if ($request->hasFile('profile_picture')) {
             $image = $request->file('profile_picture');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
@@ -182,6 +186,7 @@ class DoctorController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => __('messages.doctor_created_success'),
+            'generated_password' => $plainPassword,
             'data'    => $doctor
         ], 201);
     }

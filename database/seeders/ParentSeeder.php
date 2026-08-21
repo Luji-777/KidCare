@@ -54,7 +54,7 @@ class ParentSeeder extends Seeder
             ],
             [
                 'first_name'   => 'Lojain',
-                'last_name'    => 'Qaraoush',
+                'last_name'    => 'Karaoush',
                 'phone_number' => '963968539434',
                 'address'      => 'Tartous, Corniche Road',
                 'email'        => 'lojain@example.com',

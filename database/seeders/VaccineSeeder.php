@@ -10,7 +10,6 @@ class VaccineSeeder extends Seeder
     public function run(): void
     {
         $vaccines = [
-            // --- At Birth (0 - 1 Month) ---
             [
                 'name'              => 'BCG (Tuberculosis)',
                 'min_age_months'    => 0,
@@ -30,7 +29,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Birth dose for early immunity against poliomyelitis.'
             ],
 
-            // --- 2 Months (Min 2 - Max 3 Months) ---
             [
                 'name'              => 'Pentavalent 1 (DTP-HepB-Hib)',
                 'min_age_months'    => 2,
@@ -50,7 +48,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'First dose protecting against severe rotavirus gastroenteritis and diarrhea.'
             ],
 
-            // --- 4 Months (Min 4 - Max 5 Months) ---
             [
                 'name'              => 'Pentavalent 2 (DTP-HepB-Hib)',
                 'min_age_months'    => 4,
@@ -76,7 +73,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Second dose protecting against rotavirus gastroenteritis.'
             ],
 
-            // --- 6 Months (Min 6 - Max 8 Months) ---
             [
                 'name'              => 'Pentavalent 3 (DTP-HepB-Hib)',
                 'min_age_months'    => 6,
@@ -90,7 +86,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Second dose of injectable polio vaccine.'
             ],
 
-            // --- 9 Months (Min 9 - Max 11 Months) ---
             [
                 'name'              => 'Measles & Rubella 1 (MR-1)',
                 'min_age_months'    => 9,
@@ -98,7 +93,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'First dose protecting against Measles and Rubella viruses.'
             ],
 
-            // --- 12 - 15 Months (Min 12 - Max 18 Months) ---
             [
                 'name'              => 'MMR 1 (Measles, Mumps, Rubella)',
                 'min_age_months'    => 12,
@@ -106,7 +100,6 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Combined first dose protecting against Measles, Mumps, and Rubella.'
             ],
 
-            // --- 18 - 24 Months (Min 18 - Max 24 Months) ---
             [
                 'name'              => 'DTP Booster 1',
                 'min_age_months'    => 18,
@@ -126,9 +119,7 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Second dose for long-term Hepatitis A protection (given 6 months after HepA-1).'
             ],
 
-            // ==========================================
-            // 8. Age: 2 Years (24 - 36 Months)
-            // ==========================================
+
             [
                 'name'              => 'Typhoid Conjugate Vaccine',
                 'min_age_months'    => 24,
@@ -136,25 +127,23 @@ class VaccineSeeder extends Seeder
                 'description'       => 'Single dose protecting against typhoid fever.'
             ],
 
-            // ==========================================
-            // 9. Preschool Boosters: 4 to 6 Years (48 - 84 Months / 4 to 7 Years)
-            // ==========================================
+
             [
                 'name'              => 'DTaP / DTP Booster 2',
                 'min_age_months'    => 48,
-                'max_age_months'    => 84, // 4 to 7 years
+                'max_age_months'    => 84,
                 'description'       => 'Second booster dose before entering school for Diphtheria, Tetanus, and Pertussis.'
             ],
             [
                 'name'              => 'Polio Booster (IPV Booster)',
                 'min_age_months'    => 48,
-                'max_age_months'    => 84, // 4 to 7 years
+                'max_age_months'    => 84,
                 'description'       => 'Preschool booster dose against Poliovirus.'
             ],
             [
                 'name'              => 'Varicella 2 (Chickenpox Booster)',
                 'min_age_months'    => 48,
-                'max_age_months'    => 84, // 4 to 7 years
+                'max_age_months'    => 84,
                 'description'       => 'Second dose of chickenpox vaccine for preschool entry.'
             ],
         ];

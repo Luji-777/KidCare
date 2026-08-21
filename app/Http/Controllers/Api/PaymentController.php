@@ -67,6 +67,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($child->first_name . ' ' . $child->last_name);
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_image     = $child->image ?? '';
+            $department_name   = __('messages.' . strtolower($doctor->department->name));
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
             $currency          = 'USD';

@@ -8,12 +8,9 @@ use Carbon\Carbon;
 
 class ChildSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+
     public function run(): void
     {
-        // Get all parent IDs ordered by ID to assign 2 children per parent
         $parentIds = DB::table('parent_models')->orderBy('id')->pluck('id')->toArray();
 
         if (empty($parentIds)) {
@@ -22,7 +19,7 @@ class ChildSeeder extends Seeder
         }
 
         $childrenData = [
-            // Parent 1: Louay Khneifas
+
             [
                 'parent_index'    => 0,
                 'first_name'      => 'Kareem',
@@ -44,7 +41,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 2: Ahmad Al-Rahali
             [
                 'parent_index'    => 1,
                 'first_name'      => 'Sami',
@@ -66,7 +62,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 3: Jana Hassan
             [
                 'parent_index'    => 2,
                 'first_name'      => 'Zaid',
@@ -88,7 +83,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 4: Batoul Khodari
             [
                 'parent_index'    => 3,
                 'first_name'      => 'Yaseen',
@@ -110,11 +104,10 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'Eggs',
             ],
 
-            // Parent 5: Lojain Qaraoush
             [
                 'parent_index'    => 4,
                 'first_name'      => 'Hamza',
-                'last_name'       => 'Qaraoush',
+                'last_name'       => 'Karaoush',
                 'gender'          => 'male',
                 'birth_date'      => '2020-09-30',
                 'blood_type'      => 'O+',
@@ -124,7 +117,7 @@ class ChildSeeder extends Seeder
             [
                 'parent_index'    => 4,
                 'first_name'      => 'Mariam',
-                'last_name'       => 'Qaraoush',
+                'last_name'       => 'Karaoush',
                 'gender'          => 'female',
                 'birth_date'      => '2023-07-12',
                 'blood_type'      => 'B-',
@@ -132,7 +125,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 6: Tarek Al-Masri
             [
                 'parent_index'    => 5,
                 'first_name'      => 'Omar',
@@ -154,7 +146,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 7: Nour Al-Din
             [
                 'parent_index'    => 6,
                 'first_name'      => 'Jad',
@@ -176,7 +167,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 8: Omar Kabbani
             [
                 'parent_index'    => 7,
                 'first_name'      => 'Faris',
@@ -198,7 +188,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'Strawberries',
             ],
 
-            // Parent 9: Reem Al-Saleh
             [
                 'parent_index'    => 8,
                 'first_name'      => 'Amir',
@@ -220,7 +209,6 @@ class ChildSeeder extends Seeder
                 'allergies'       => 'None reported',
             ],
 
-            // Parent 10: Youssef Al-Hamwi
             [
                 'parent_index'    => 9,
                 'first_name'      => 'Adnan',

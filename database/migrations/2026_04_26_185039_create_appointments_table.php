@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('USD');
             $table->text('required_tests')->nullable();
             $table->text('required_imaging')->nullable();
-            $table->enum('payment_status', ['unpaid', 'paid_online', 'partially_paid', 'fully_paid'])->default('unpaid');
+            $table->enum('payment_status', ['unpaid', 'paid_online', 'refunded', 'fully_paid'])->default('unpaid');
             $table->decimal('doctor_earnings', 8, 2)->default(0);
             $table->boolean('reminder_24_sent')->default(false);
             $table->boolean('reminder_2h_sent')->default(false);

@@ -4,58 +4,76 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Appointment;
-use App\Models\Transaction;
-use App\Models\Appointment_additions;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TransactionSeeder extends Seeder
 {
     public function run(): void
     {
+        $appointments = Appointment::with('additions')->get();
 
-        $appointments = Appointment::take(5)->get();
+        foreach ($appointments as $appointment) {
 
-        foreach ($appointments as $index => $appointment) {
+            $isOnline = $appointment->booking_source === 'online';
+            $fixedPaymentMethod = $isOnline ? 'stripe' : 'cash';
 
-            $appointment->update([
-                'date' => Carbon::now()->subDays($index)->format('Y-m-d'),
-                'price' => 100.00,
-                'booking_source' => $index % 2 == 0 ? 'online' : 'reception',
-            ]);
+            if ($appointment->status === 'confirmed') {
+                if ($isOnline) {
+                    $this->createTransaction(
+                        $appointment->id,
+                        $appointment->price,
+                        'succeeded',
+                        'stripe',
+                        'fixed',
+                        'pi_' . Str::random(24)
+                    );
+                }
+            } elseif ($appointment->status === 'completed') {
 
-            Transaction::create([
-                'appointment_id' => $appointment->id,
-                'stripe_payment_intent_id' => $appointment->booking_source == 'online' ? 'pi_test_' . uniqid() : null,
-                'amount' => 100.00,
-                'currency' => 'USD',
-                'status' => 'succeeded',
-                'payment_method' => $appointment->booking_source == 'online' ? 'stripe' : 'cash',
-                'type' => 'fixed',
-                'created_at' => Carbon::now()->subDays($index),
-            ]);
+                $this->createTransaction(
+                    $appointment->id,
+                    $appointment->price,
+                    'succeeded',
+                    $fixedPaymentMethod,
+                    'fixed',
+                    $isOnline ? 'pi_' . Str::random(24) : null
+                );
 
-            $addition1 = Appointment_additions::create([
-                'appointment_id' => $appointment->id,
-                'item_name' => 'Medical Supplies',
-                'price' => 25.00,
-            ]);
+                $additionsTotal = $appointment->additions->sum('price');
 
-            $addition2 = Appointment_additions::create([
-                'appointment_id' => $appointment->id,
-                'item_name' => 'Lab Test',
-                'price' => 50.00,
-            ]);
-
-            Transaction::create([
-                'appointment_id' => $appointment->id,
-                'stripe_payment_intent_id' => null,
-                'amount' => 75.00,
-                'currency' => 'USD',
-                'status' => 'succeeded',
-                'payment_method' => 'cash',
-                'type' => 'additions',
-                'created_at' => Carbon::now()->subDays($index),
-            ]);
+                if ($additionsTotal > 0) {
+                    $this->createTransaction(
+                        $appointment->id,
+                        $additionsTotal,
+                        'succeeded',
+                        'cash',
+                        'additions',
+                        null
+                    );
+                }
+            }
         }
+    }
+
+    private function createTransaction(
+        int $appointmentId,
+        float $amount,
+        string $status,
+        string $paymentMethod,
+        string $type,
+        ?string $stripeIntentId = null
+    ): void {
+        DB::table('transactions')->insert([
+            'appointment_id'           => $appointmentId,
+            'stripe_payment_intent_id' => $stripeIntentId,
+            'amount'                   => $amount,
+            'currency'                 => 'USD',
+            'status'                   => $status,
+            'payment_method'           => $paymentMethod,
+            'type'                     => $type,
+            'created_at'               => now(),
+            'updated_at'               => now(),
+        ]);
     }
 }
