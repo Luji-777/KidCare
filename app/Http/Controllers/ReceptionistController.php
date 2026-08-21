@@ -625,6 +625,8 @@ class ReceptionistController extends Controller
                 'patient' => [
                     'child_id'   => $appointment->child_id,
                     'child_name' => $appointment->child?->first_name,
+                    'gender' => $appointment->child->gender,
+                    'child_image' => $appointment->child?->image,
                     'parent_name' => $parent ? $parent->first_name . ' ' . $parent->last_name : null,
                     'parent_phone' => $parent?->phone_number,
                 ],

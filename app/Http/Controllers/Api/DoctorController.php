@@ -368,7 +368,8 @@ class DoctorController extends Controller
                 'doctors.first_name',
                 'doctors.last_name',
                 'doctors.profile_picture',
-                'doctors.department_id'
+                'doctors.department_id',
+                'doctors.gender'
             )
             ->with('department:id,name')
             ->get()
@@ -378,6 +379,7 @@ class DoctorController extends Controller
                     'first_name' => $doctor->first_name,
                     'last_name' => $doctor->last_name,
                     'image' => $doctor->profile_picture,
+                    'gender' => $doctor->gender,
                     'department' => $doctor->department?->name,
                     'is_favorite' => true,
                 ];
@@ -1332,7 +1334,6 @@ class DoctorController extends Controller
 
         foreach ($appointments as $appointment) {
 
-            // 1. مرونة في البحث عن حالة الدفع الناجحة
             $transaction = Transaction::where('appointment_id', $appointment->id)
                 ->whereIn('status', ['succeeded', 'paid', 'completed', 'successful'])
                 ->first();
@@ -1345,7 +1346,6 @@ class DoctorController extends Controller
                     $refundAmount = $transaction->amount;
                     $refundAmountInCents = (int) round($refundAmount * 100);
 
-                    // إعداد معلمات الـ Refund بمرونة (سواء PaymentIntent أو Charge)
                     $refundParams = [
                         'amount' => $refundAmountInCents,
                         'metadata' => [
@@ -1363,7 +1363,6 @@ class DoctorController extends Controller
                     $refund = \Stripe\Refund::create($refundParams);
                     $stripeRefundId = $refund->id;
                 } catch (\Exception $e) {
-                    // تسجيل الخطأ بدقة لمعرفة السبب إذا فشل Stripe
                     \Log::error("Stripe refund exception for appointment {$appointment->id}: " . $e->getMessage());
                 }
             } else {
