@@ -253,7 +253,6 @@ class PaymentController extends Controller
                                 'time'  => $appointment->time,
                             ]);
 
-                            // حفظ الإشعار في قاعدة البيانات للطبيب
                             DoctorNotification::create([
                                 'doctor_id' => $appointment->doctor_id,
                                 'title'     => $doctorTitle,
@@ -318,7 +317,6 @@ class PaymentController extends Controller
                             }
 
                             DB::commit();
-
 
                             Cache::forget("pending_appointment_{$pendingAppointmentId}");
                             Cache::forget("booked_slot_{$appointmentData['doctor_id']}_{$appointmentData['date']}_{$appointmentData['time']}");

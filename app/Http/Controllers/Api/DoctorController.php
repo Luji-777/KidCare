@@ -248,6 +248,17 @@ class DoctorController extends Controller
             ], 404);
         }
 
+        $hasConfirmedAppointments = Appointment::where('doctor_id', $doctor->id)
+            ->where('status', 'confirmed')
+            ->exists();
+
+        if ($hasConfirmedAppointments) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('messages.cannot_delete_doctor_has_confirmed_appointments')
+            ], 400);
+        }
+
         $request->validate([
             'reason' => 'nullable|string|max:255',
         ]);

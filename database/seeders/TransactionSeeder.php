@@ -11,7 +11,6 @@ class TransactionSeeder extends Seeder
 {
     public function run(): void
     {
-        // جلب المواعيد ذات الحالات المطلوبة فقط لتوفير الأداء
         Appointment::whereIn('status', ['confirmed', 'completed'])
             ->with('additions')
             ->chunk(100, function ($appointments) {
@@ -20,7 +19,6 @@ class TransactionSeeder extends Seeder
                     $isOnline = $appointment->booking_source === 'online';
                     $fixedPaymentMethod = $isOnline ? 'stripe' : 'cash';
 
-                    // 1. المواعيد المؤكدة (confirmed)
                     if ($appointment->status === 'confirmed') {
                         // فقط أونلاين، أما الرسبشن فلا يتم إنشاء شيء له
                         if ($isOnline) {
@@ -33,11 +31,8 @@ class TransactionSeeder extends Seeder
                                 'pi_' . Str::random(24)
                             );
                         }
-                    }
-                    // 2. المواعيد المكتملة (completed)
-                    elseif ($appointment->status === 'completed') {
+                    } elseif ($appointment->status === 'completed') {
 
-                        // أ) الدفعة الأساسية (type = fixed)
                         $this->createTransaction(
                             $appointment->id,
                             $appointment->price,
@@ -47,8 +42,6 @@ class TransactionSeeder extends Seeder
                             $isOnline ? 'pi_' . Str::random(24) : null
                         );
 
-                        // ب) دفعة الإضافات (type = additions) - دائماً كاش
-                        // ملاحظة: تم مراعاة جلب السعر سواء من جدول الـ Pivot أو من الموديل المباشر
                         $additionsTotal = $appointment->additions->sum(function ($addition) {
                             return $addition->pivot->price ?? $addition->price ?? 0;
                         });
@@ -58,7 +51,7 @@ class TransactionSeeder extends Seeder
                                 $appointment->id,
                                 $additionsTotal,
                                 'succeeded',
-                                'cash', // دائماً كاش حسب شرطك
+                                'cash',
                                 'additions',
                                 null
                             );

@@ -130,7 +130,6 @@ class DoctorAvailabilitySeeder extends Seeder
             }
         }
 
-        // إدخال أو تحديث المواعيد في قاعدة البيانات
         foreach ($availabilities as $slot) {
             DB::table('doctor_availabilities')->updateOrInsert(
                 [

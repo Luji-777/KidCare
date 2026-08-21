@@ -119,7 +119,6 @@ class AppointmentSeeder extends Seeder
                 $time = $workingHours[array_rand($workingHours)];
             }
 
-            // التحقق من عدم وجود تضارب
             if (!isset($bookedSlots[$doctor->id][$date][$time])) {
                 $this->createAppointmentRecord($child, $doctor, $date, $time, $status, $bookedSlots);
                 break;
@@ -135,7 +134,6 @@ class AppointmentSeeder extends Seeder
         string $status,
         array &$bookedSlots
     ): void {
-        // حجز الموعد في الذاكرة لمنع التكرار
         $bookedSlots[$doctor->id][$date][$time] = true;
 
         if ($status === 'completed') {
