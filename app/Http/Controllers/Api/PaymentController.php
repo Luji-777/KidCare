@@ -68,7 +68,7 @@ class PaymentController extends Controller
             $doctor_full_name  = trim($doctor->first_name . ' ' . $doctor->last_name);
             $patient_image     = $child->image ?? '';
             $cleanDeptKey = str_replace('messages.', '', strtolower(trim($doctor->department->name ?? '')));
-            $department_name = __('messages.' . $cleanDeptKey);
+            $department_name = __('messages.departments_names.' . strtolower($doctor->department->name));
             $date_time         = $appointmentData['date'] . ' ' . $appointmentData['time'];
             $price             = (string)$appointmentData['price'];
             $currency          = 'USD';
@@ -90,8 +90,7 @@ class PaymentController extends Controller
             $patient_full_name = trim($appointment->child->first_name . ' ' . $appointment->child->last_name);
             $doctor_full_name  = trim($appointment->doctor->first_name . ' ' . $appointment->doctor->last_name);
             $patient_image     = $appointment->child->image ?? '';
-            $cleanDeptKey = str_replace('messages.', '', strtolower(trim($doctor->department->name ?? '')));
-            $department_name = __('messages.' . $cleanDeptKey);
+            $department_name = __('messages.departments_names.' . strtolower($appointment->doctor->department->name));
             $date_time         = $appointment->date . ' ' . $appointment->time;
             $price             = (string)$appointment->price;
             $currency          = $appointment->currency ?? 'USD';
