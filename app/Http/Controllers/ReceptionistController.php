@@ -306,17 +306,16 @@ class ReceptionistController extends Controller
     }
     public function indexReception()
     {
-        $appointments = Appointment::whereHas('child', function ($query) {
-            $query->withTrashed();
-        })
-            ->with([
-                'child' => function ($query) {
-                    $query->withTrashed()->select('id', 'first_name', 'last_name');
-                },
-                'doctor' => function ($query) {
-                    $query->withTrashed()->select('id', 'first_name', 'last_name');
-                }
-            ])
+        // جلب المواعيد مباشرة مع تحميل علاقات الأطفال والأطباء المحذوفين ناعماً
+        $appointments = Appointment::with([
+            'child' => function ($query) {
+                $query->withTrashed()->select('id', 'first_name', 'last_name');
+            },
+            'doctor' => function ($query) {
+                $query->withTrashed()->select('id', 'first_name', 'last_name');
+            }
+        ])
+            ->whereNotNull('child_id') // التأكد من وجود طفل مرتبط بدلاً من whereHas الثقيلة
             ->orderBy('date', 'desc')
             ->orderBy('time', 'asc')
 
