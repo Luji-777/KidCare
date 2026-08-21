@@ -36,7 +36,7 @@ class DepartmentController extends Controller
         }
 
         $doctors = \App\Models\Doctor::where('department_id', $id)
-            ->select('id', 'department_id', 'first_name', 'last_name', 'email', 'address')
+            ->select('id', 'department_id', 'first_name', 'last_name', 'email', 'address', 'profile_picture')
             ->get();
 
         return response()->json([
