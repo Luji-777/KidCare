@@ -11,49 +11,61 @@ class TransactionSeeder extends Seeder
 {
     public function run(): void
     {
-        $appointments = Appointment::with('additions')->get();
+        // جلب المواعيد ذات الحالات المطلوبة فقط لتوفير الأداء
+        Appointment::whereIn('status', ['confirmed', 'completed'])
+            ->with('additions')
+            ->chunk(100, function ($appointments) {
+                foreach ($appointments as $appointment) {
 
-        foreach ($appointments as $appointment) {
+                    $isOnline = $appointment->booking_source === 'online';
+                    $fixedPaymentMethod = $isOnline ? 'stripe' : 'cash';
 
-            $isOnline = $appointment->booking_source === 'online';
-            $fixedPaymentMethod = $isOnline ? 'stripe' : 'cash';
+                    // 1. المواعيد المؤكدة (confirmed)
+                    if ($appointment->status === 'confirmed') {
+                        // فقط أونلاين، أما الرسبشن فلا يتم إنشاء شيء له
+                        if ($isOnline) {
+                            $this->createTransaction(
+                                $appointment->id,
+                                $appointment->price,
+                                'succeeded',
+                                'stripe',
+                                'fixed',
+                                'pi_' . Str::random(24)
+                            );
+                        }
+                    }
+                    // 2. المواعيد المكتملة (completed)
+                    elseif ($appointment->status === 'completed') {
 
-            if ($appointment->status === 'confirmed') {
-                if ($isOnline) {
-                    $this->createTransaction(
-                        $appointment->id,
-                        $appointment->price,
-                        'succeeded',
-                        'stripe',
-                        'fixed',
-                        'pi_' . Str::random(24)
-                    );
+                        // أ) الدفعة الأساسية (type = fixed)
+                        $this->createTransaction(
+                            $appointment->id,
+                            $appointment->price,
+                            'succeeded',
+                            $fixedPaymentMethod,
+                            'fixed',
+                            $isOnline ? 'pi_' . Str::random(24) : null
+                        );
+
+                        // ب) دفعة الإضافات (type = additions) - دائماً كاش
+                        // ملاحظة: تم مراعاة جلب السعر سواء من جدول الـ Pivot أو من الموديل المباشر
+                        $additionsTotal = $appointment->additions->sum(function ($addition) {
+                            return $addition->pivot->price ?? $addition->price ?? 0;
+                        });
+
+                        if ($additionsTotal > 0) {
+                            $this->createTransaction(
+                                $appointment->id,
+                                $additionsTotal,
+                                'succeeded',
+                                'cash', // دائماً كاش حسب شرطك
+                                'additions',
+                                null
+                            );
+                        }
+                    }
                 }
-            } elseif ($appointment->status === 'completed') {
-
-                $this->createTransaction(
-                    $appointment->id,
-                    $appointment->price,
-                    'succeeded',
-                    $fixedPaymentMethod,
-                    'fixed',
-                    $isOnline ? 'pi_' . Str::random(24) : null
-                );
-
-                $additionsTotal = $appointment->additions->sum('price');
-
-                if ($additionsTotal > 0) {
-                    $this->createTransaction(
-                        $appointment->id,
-                        $additionsTotal,
-                        'succeeded',
-                        'cash',
-                        'additions',
-                        null
-                    );
-                }
-            }
-        }
+            });
     }
 
     private function createTransaction(

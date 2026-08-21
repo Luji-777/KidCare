@@ -27,12 +27,19 @@ class DoctorAvailabilitySeeder extends Seeder
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+        // الفترات الزمانية العامة لباقي الأطباء
         $timeSlots = [
             ['start' => '09:00:00', 'end' => '11:00:00'],
             ['start' => '11:00:00', 'end' => '13:00:00'],
             ['start' => '13:00:00', 'end' => '15:00:00'],
             ['start' => '15:00:00', 'end' => '17:00:00'],
             ['start' => '17:00:00', 'end' => '18:00:00'],
+        ];
+
+        // الفترات الخاصة المطلوبة حصراً للطبيب رقم 1 (من 12:00 إلى 17:00)
+        $docOneSlots = [
+            ['start' => '12:00:00', 'end' => '14:30:00'],
+            ['start' => '14:30:00', 'end' => '17:00:00'],
         ];
 
         $availabilities = [];
@@ -42,11 +49,11 @@ class DoctorAvailabilitySeeder extends Seeder
         $todayDayName = Carbon::today()->format('l');
         $tomorrowDayName = Carbon::tomorrow()->format('l');
 
-        // 1. إضافة إتاحة خاصة ومضمونة للطبيب صاحب ID = 1 اليوم وبكراً
+        // 1. إضافة مواعيد الطبيب رقم 1 الخاصة (اليوم وبكراً من 12 إلى 5)
         $docOne = DB::table('doctors')->where('id', 1)->first();
         if ($docOne) {
             foreach ([$todayDayName, $tomorrowDayName] as $targetDay) {
-                foreach ($timeSlots as $slot) {
+                foreach ($docOneSlots as $slot) {
                     $availabilities[] = [
                         'doctor_id'   => 1,
                         'day_of_week' => $targetDay,
@@ -58,10 +65,10 @@ class DoctorAvailabilitySeeder extends Seeder
                     ];
                 }
             }
-            $doctorSlotCount[1] = count($timeSlots) * 2;
+            $doctorSlotCount[1] = count($docOneSlots) * 2;
         }
 
-        // 2. توزيع باقي المواعيد للأطباء لمنع التضارب
+        // 2. توزيع باقي المواعيد لمنع التضارب بالتساوي بين الأطباء
         foreach ($departments as $departmentId => $doctors) {
             $doctorIds = $doctors->pluck('id')->toArray();
             $doctorCount = count($doctorIds);
@@ -72,6 +79,9 @@ class DoctorAvailabilitySeeder extends Seeder
                 }
             }
 
+            // عداد متسلسل لضمان التناوب الصحيح ومنع التضارب بين أطباء نفس القسم
+            $globalSlotCounter = 0;
+
             foreach ($days as $dayIndex => $day) {
                 $activeSlotIndexes = match ($dayIndex % 3) {
                     0 => [0, 2, 4],
@@ -80,9 +90,11 @@ class DoctorAvailabilitySeeder extends Seeder
                 };
 
                 foreach ($activeSlotIndexes as $slotIdx) {
-                    $assignedDoctorId = $doctorIds[($dayIndex * 2 + $slotIdx) % $doctorCount];
+                    // اختيار الطبيب بالتناوب
+                    $assignedDoctorId = $doctorIds[$globalSlotCounter % $doctorCount];
+                    $globalSlotCounter++;
 
-                    // لتجنب التعارض: إذا كان اليوم ينطبق على اليوم/غداً والطبيب المسند هو 1، نجتاز التكرار لأن الطبيب 1 أضيفت أوقاته سابقاً
+                    // لتجنب التضارب: إذا كان اليوم هو (اليوم أو غداً) والطبيب المحدد هو 1، نتخطاه لأن موعده ثبت بـ (12-5)
                     if ($assignedDoctorId == 1 && in_array($day, [$todayDayName, $tomorrowDayName])) {
                         continue;
                     }
@@ -101,6 +113,7 @@ class DoctorAvailabilitySeeder extends Seeder
                 }
             }
 
+            // ضمان وجود موعد واحد على الأقل للأطباء الذين لم يتلقوا أي موعد
             foreach ($doctorIds as $docId) {
                 if ($doctorSlotCount[$docId] === 0) {
                     $availabilities[] = [
@@ -117,6 +130,7 @@ class DoctorAvailabilitySeeder extends Seeder
             }
         }
 
+        // إدخال أو تحديث المواعيد في قاعدة البيانات
         foreach ($availabilities as $slot) {
             DB::table('doctor_availabilities')->updateOrInsert(
                 [
