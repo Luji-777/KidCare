@@ -31,7 +31,9 @@ class Doctor extends Authenticatable
         'commission_percentage',
         'gender',
         'cv',
-        'password'
+        'password',
+        'fcm_token'
+
     ];
     public function department()
     {
