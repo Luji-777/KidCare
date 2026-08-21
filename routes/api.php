@@ -50,6 +50,7 @@ Route::middleware('set.locale')->group(function () {
         });
         Route::post('/logout', [ParentModelController::class, 'logout']);
         Route::post('/logoutReception', [ReceptionistController::class, 'logout']);
+        Route::post('/logout', [DoctorController::class, 'logout']);
 
 
         // Parent

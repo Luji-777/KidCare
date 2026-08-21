@@ -218,4 +218,6 @@ return [
     'user_blocked_successfully' => 'تم حظر المستخدم بنجاح.',
     'user_tokens_revoked_successfully' => 'تم إلغاء رموز وصول المستخدم بنجاح.',
     'user_tokens_revoked_successfully' => 'تم إلغاء رموز وصول المستخدم بنجاح.',
+
+    'cannot_delete_child_has_appointments' => ' لا يمكن حذف الطفل لأنه لديه مواعيد مؤكدة أو قادمة.',
 ];

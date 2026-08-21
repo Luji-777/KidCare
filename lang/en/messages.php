@@ -221,4 +221,5 @@ return [
     'user_blocked_successfully' => 'User blocked successfully.',
     'user_tokens_revoked_successfully' => 'User tokens revoked successfully.',
     'user_tokens_revoked_successfully' => 'User tokens revoked successfully.',
+    'cannot_delete_child_has_appointments' => 'Cannot delete child has appointments'
 ];

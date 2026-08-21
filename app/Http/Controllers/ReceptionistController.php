@@ -306,7 +306,7 @@ class ReceptionistController extends Controller
     }
     public function indexReception()
     {
-        // جلب المواعيد مباشرة مع تحميل علاقات الأطفال والأطباء المحذوفين ناعماً
+
         $appointments = Appointment::with([
             'child' => function ($query) {
                 $query->withTrashed()->select('id', 'first_name', 'last_name');
@@ -315,7 +315,7 @@ class ReceptionistController extends Controller
                 $query->withTrashed()->select('id', 'first_name', 'last_name');
             }
         ])
-            ->whereNotNull('child_id') // التأكد من وجود طفل مرتبط بدلاً من whereHas الثقيلة
+            ->whereNotNull('child_id')
             ->orderBy('date', 'desc')
             ->orderBy('time', 'asc')
 

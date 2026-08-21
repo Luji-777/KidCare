@@ -339,7 +339,6 @@ class ChildController extends Controller
         ]);
     }
 
-
     /*  public function childAllergies($id)
     {
         $child = auth()->user()
