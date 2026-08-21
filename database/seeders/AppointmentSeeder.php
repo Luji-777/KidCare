@@ -61,7 +61,15 @@ class AppointmentSeeder extends Seeder
             $paymentStatus = 'fully_paid';
             $bookingSource = (rand(0, 1) === 1) ? 'online' : 'reception';
         } else {
-            $date = $today->copy()->addDays(rand(0, 60))->toDateString();
+            // 80% من المواعيد القادمة ستكون في الأسبوع القادم (من اليوم وحتى 7 أيام)
+            if (rand(1, 100) <= 80) {
+                $daysToAdd = rand(0, 7);
+            } else {
+                // 20% تتوزع على باقي الأيام المستقبلية (من 8 إلى 60 يوم)
+                $daysToAdd = rand(8, 60);
+            }
+
+            $date = $today->copy()->addDays($daysToAdd)->toDateString();
             $status = 'confirmed';
             $bookingSource = (rand(0, 1) === 1) ? 'online' : 'reception';
             $paymentStatus = ($bookingSource === 'online') ? 'paid_online' : 'unpaid';
