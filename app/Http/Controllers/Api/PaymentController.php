@@ -343,7 +343,7 @@ class PaymentController extends Controller
 
         return DB::transaction(function () use ($appointment_id) {
 
-            $appointment = Appointment::with('additions')->findOrFail($appointment_id);
+            $appointment = Appointment::with('additions', 'doctor')->findOrFail($appointment_id);
             $additionsTotal = $appointment->additions->sum('price');
 
             if ($appointment->status === 'cancelled_by_patient'  || $appointment->status === 'cancelled_by_clinic') {
@@ -380,6 +380,9 @@ class PaymentController extends Controller
                         'status'         => 'succeeded',
                     ]);
                 }
+                $commission = $appointment->doctor->commission_percentage ?? 0;
+                $doctorEarnings = $appointment->price * ($commission / 100);
+                $appointment->doctor_earnings = $doctorEarnings;
             }
 
             $appointment->update(['status' => 'completed']);

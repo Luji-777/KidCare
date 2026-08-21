@@ -422,7 +422,7 @@ class DoctorController extends Controller
             'id' => $doctor->id,
             'name' => $doctor->first_name . ' ' . $doctor->last_name,
             'specialization' => $doctor->department
-                ? __('departments_names.' . $doctor->department->name) : null,
+                ? __('messages.departments_names.' . $appointment->doctor->department->name) : null,
             'image' => $doctor->profile_picture,
         ]);
     }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->text('medical_history')->nullable();
             $table->text('allergies')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->string('deletion_reason')->nullable();
             $table->timestamps();
         });
     }

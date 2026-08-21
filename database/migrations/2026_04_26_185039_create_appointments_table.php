@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('child_id')->constrained('children')->cascadeOnDelete();
+            $table->foreignId('child_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('doctor_id')->nullable()->constrained()->onDelete('set null');
             $table->date('date');
             $table->time('time');

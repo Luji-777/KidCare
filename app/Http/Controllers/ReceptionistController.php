@@ -306,9 +306,13 @@ class ReceptionistController extends Controller
     }
     public function indexReception()
     {
-        $appointments = Appointment::whereHas('child')
+        $appointments = Appointment::whereHas('child', function ($query) {
+            $query->withTrashed();
+        })
             ->with([
-                'child:id,first_name,last_name',
+                'child' => function ($query) {
+                    $query->withTrashed()->select('id', 'first_name', 'last_name');
+                },
                 'doctor' => function ($query) {
                     $query->withTrashed()->select('id', 'first_name', 'last_name');
                 }

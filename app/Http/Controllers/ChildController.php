@@ -286,12 +286,23 @@ class ChildController extends Controller
             ], 404);
         }
 
+        $hasActiveAppointments = $child->appointments()
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->exists();
+
+        if ($hasActiveAppointments) {
+            return response()->json([
+                'status'  => __('messages.error'),
+                'message' => __('messages.cannot_delete_child_has_appointments')
+            ], 400);
+        }
+
         $child->delete();
 
         return response()->json([
             'status'  => 'success',
             'message' => __('messages.child_deleted_successfully')
-        ]);
+        ], 200);
     }
     public function homeChildren()
     {
