@@ -439,7 +439,9 @@ class AppointmentController extends Controller
                 'full_name'  => $appointment->doctor
                     ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
                     : null,
-                'department' => $appointment->doctor?->department?->name,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
             ]
         ];
     });
@@ -497,7 +499,9 @@ class AppointmentController extends Controller
                 'full_name'  => $appointment->doctor
                     ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
                     : null,
-                'department' => $appointment->doctor?->department?->name,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
             ]
         ];
     });
@@ -586,7 +590,9 @@ class AppointmentController extends Controller
                 'full_name' => $appointment->doctor
                     ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
                     : null,
-                'department' => $appointment->doctor?->department?->name,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
             ]
         ];
     });
@@ -679,7 +685,9 @@ class AppointmentController extends Controller
                 'full_name' => $appointment->doctor
                     ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
                     : null,
-                'department' => $appointment->doctor?->department?->name,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
             ]
         ];
     });
@@ -905,4 +913,55 @@ class AppointmentController extends Controller
             ], 500);
         }
     }
+    public function cancelledِAppointments()
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+        $query->where('parent_id', auth()->id());
+    })
+        ->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
+        ->whereIn('status', [
+            'cancelled_by_patient',
+            'cancelled_by_clinic'
+        ])
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get();
+
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
+
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id'         => $appointment->doctor_id,
+                'full_name'  => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ],
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        //'message'      => __('messages.cancelled_success'),
+        'appointments' => $formattedAppointments,
+    ], 200);
+}
 }

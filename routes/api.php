@@ -87,6 +87,7 @@ Route::middleware('set.locale')->group(function () {
         // Appointments
         Route::get('/appointments/past', [AppointmentController::class, 'past']);
         Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
+        Route::get('/appointments/cancelled', [AppointmentController::class, 'cancelledAppointment']);
         Route::get('/appointments/past/{childId}', [AppointmentController::class, 'pastByChild']);
         Route::get('/appointments/upcoming/{childId}', [AppointmentController::class, 'upcomingByChild']);
         Route::get('departments/{department_id}/closest-appointments', [AppointmentController::class, 'getClosestAppointmentPerDoctor']);

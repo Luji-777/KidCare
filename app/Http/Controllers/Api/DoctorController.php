@@ -488,6 +488,7 @@ class DoctorController extends Controller
                     'gender'           => $child->gender,
                     'image'            => $child->image,
                     'appointment_time' => $appointment->time,
+                    'status'           => __('messages.' . $appointment->status),
                 ];
             })
         );
@@ -1032,7 +1033,7 @@ class DoctorController extends Controller
                         'gender' => $child->gender,
                         'image' => $child->image,
                         'time' => Carbon::parse($appointment->time)->format('H:i'),
-                        'status' => $appointment->status,
+                        'status'           => __('messages.' . $appointment->status),
                     ];
                 })
             ]
