@@ -328,7 +328,7 @@ class DoctorAvailabilityController extends Controller
 
         return response()->json([
             'status'         => 'success',
-            'message'        => ('messages.availabilities_fetched_success'),
+            'message'        => __('messages.availabilities_fetched_success'),
             'availabilities' => $availabilities
         ], 200);
     }

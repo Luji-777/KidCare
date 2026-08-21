@@ -399,227 +399,305 @@ class AppointmentController extends Controller
     }
 
     public function upcoming()
-    {
-        $appointments = Appointment::whereHas('child', function ($query) {
-            $query->where('parent_id', auth()->id());
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+        $query->where('parent_id', auth()->id());
+    })
+        ->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
+        ->where(function ($query) {
+            $query->whereDate('date', '>', now()->toDateString())
+                ->orWhere(function ($q) {
+                    $q->whereDate('date', now()->toDateString())
+                        ->whereIn('status', ['pending', 'confirmed', 'checked_in']);
+                });
         })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
-            ->whereDate('date', '>=', now()->toDateString())
-            ->orderBy('date')
-            ->orderBy('time')
-            ->get();
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get();
 
-        $formattedAppointments = $appointments->map(function ($appointment) {
-            return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
-                    'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child?->first_name,
-                    'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
-                ],
-                'doctor' => [
-                    'id'         => $appointment->doctor_id,
-                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
-                ]
-            ];
-        });
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
 
-        return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.upcoming_success'),
-            'appointments' => $formattedAppointments
-        ], 200);
-    }
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id'         => $appointment->doctor_id,
+                'full_name'  => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ]
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        'message'      => __('messages.upcoming_success'),
+        'appointments' => $formattedAppointments
+    ], 200);
+}
 
     public function past()
-    {
-        $appointments = Appointment::whereHas('child', function ($query) {
-            $query->where('parent_id', auth()->id());
-        })
-            ->with([
-                'child:id,first_name,image,gender',
-                'doctor:id,first_name,last_name,department_id',
-                'doctor.department:id,name',
-            ])
-            ->whereDate('date', '<', now()->toDateString())
-            ->orderByDesc('date')
-            ->orderByDesc('time')
-            ->where('status', '!=', 'cancelled_by_patient')
-            ->where('status', '!=', 'cancelled_by_clinic')
-            ->get();
-
-        $formattedAppointments = $appointments->map(function ($appointment) {
-            return [
-                'id'          => $appointment->id,
-                'status'      => __('messages.' . $appointment->status),
-                'price'       => $appointment->price,
-                'date'        => $appointment->date,
-                'time'        => $appointment->time,
-                'child' => [
-                    'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child?->first_name,
-                    'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
-                ],
-                'doctor' => [
-                    'id'         => $appointment->doctor_id,
-                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
-                ]
-            ];
-        });
-
-        return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.past_success'),
-            'appointments' => $formattedAppointments
-        ], 200);
-    }
-
-    public function upcomingByChild($childId)
-    {
-        $currentUser = auth()->user();
-
-        $childExists = Child::where('id', $childId)->exists();
-        if (!$childExists) {
-            return response()->json([
-                'status'  => __('messages.error'),
-                'message' => __('messages.child_not_found')
-            ], 404);
-        }
-
-        $query = Appointment::query();
-
-        if ($currentUser instanceof ParentModel) {
-            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
-                $q->where('parent_id', $currentUser->id)
-                    ->where('id', $childId);
-            });
-        } elseif ($currentUser instanceof Receptionist) {
-            $query->where('child_id', $childId);
-        } else {
-            return response()->json([
-                'status'  => __('messages.error'),
-                'message' => __('messages.unauthorized')
-            ], 403);
-        }
-
-        $appointments = $query->with([
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+        $query->where('parent_id', auth()->id());
+    })
+        ->with([
             'child:id,first_name,image,gender',
             'doctor:id,first_name,last_name,department_id',
             'doctor.department:id,name',
         ])
-            ->whereDate('date', '>=', now()->toDateString())
-            ->orderBy('date')
-            ->orderBy('time')
-            ->get();
+        ->where(function ($query) {
+            $query->whereDate('date', '<', now()->toDateString())
+                ->orWhereIn('status', [
+                    'completed',
+                    'finished',
+                    'missed'
+                ]);
+        })
+        ->whereNotIn('status', [
+            'cancelled_by_patient',
+            'cancelled_by_clinic'
+        ])
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get();
 
-        $formattedAppointments = $appointments->map(function ($appointment) {
-            return [
-                'id'     => $appointment->id,
-                'status' => __('messages.' . $appointment->status),
-                'price'  => $appointment->price,
-                'date'   => $appointment->date,
-                'time'   => $appointment->time,
-                'child'  => [
-                    'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child?->first_name,
-                    'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
-                ],
-                'doctor' => [
-                    'id'         => $appointment->doctor_id,
-                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
-                ]
-            ];
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
+
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id'         => $appointment->doctor_id,
+                'full_name'  => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ]
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        'message'      => __('messages.past_success'),
+        'appointments' => $formattedAppointments
+    ], 200);
+}
+    public function upcomingByChild($childId)
+{
+    $currentUser = auth()->user();
+
+    $childExists = Child::where('id', $childId)->exists();
+
+    if (!$childExists) {
+        return response()->json([
+            'status'  => __('messages.error'),
+            'message' => __('messages.child_not_found')
+        ], 404);
+    }
+
+    $query = Appointment::query();
+
+    if ($currentUser instanceof ParentModel) {
+
+        $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+            $q->where('parent_id', $currentUser->id)
+                ->where('id', $childId);
         });
 
+    } elseif ($currentUser instanceof Receptionist) {
+
+        $query->where('child_id', $childId);
+
+    } else {
+
         return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.upcoming_child_success'),
-            'appointments' => $formattedAppointments
-        ], 200);
+            'status'  => __('messages.error'),
+            'message' => __('messages.unauthorized')
+        ], 403);
     }
+
+    $appointments = $query->with([
+        'child:id,first_name,image,gender',
+        'doctor:id,first_name,last_name,department_id',
+        'doctor.department:id,name',
+    ])
+        ->where(function ($query) {
+
+            // مواعيد الأيام القادمة
+            $query->whereDate('date', '>', now()->toDateString())
+
+                // مواعيد اليوم التي لم تنتهِ
+                ->orWhere(function ($q) {
+                    $q->whereDate('date', now()->toDateString())
+                        ->whereIn('status', [
+                            'pending',
+                            'confirmed',
+                            'checked_in'
+                        ]);
+                });
+        })
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get();
+
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
+
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id' => $appointment->doctor_id,
+                'full_name' => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ]
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        'message'      => __('messages.upcoming_child_success'),
+        'appointments' => $formattedAppointments
+    ], 200);
+}
 
     public function pastByChild($childId)
-    {
-        $currentUser = auth()->user();
+{
+    $currentUser = auth()->user();
 
-        $childExists = Child::where('id', $childId)->exists();
-        if (!$childExists) {
-            return response()->json([
-                'status'  => __('messages.error'),
-                'message' => __('messages.child_not_found')
-            ], 404);
-        }
+    $childExists = Child::where('id', $childId)->exists();
 
-        $query = Appointment::query();
-
-        if ($currentUser instanceof ParentModel) {
-            $query->whereHas('child', function ($q) use ($childId, $currentUser) {
-                $q->where('parent_id', $currentUser->id)
-                    ->where('id', $childId);
-            });
-        } elseif ($currentUser instanceof Receptionist) {
-            $query->where('child_id', $childId);
-        } else {
-            return response()->json([
-                'status'  => __('messages.error'),
-                'message' => __('messages.unauthorized')
-            ], 403);
-        }
-
-        $appointments = $query->with([
-            'child:id,first_name,image,gender',
-            'doctor:id,first_name,last_name,department_id',
-            'doctor.department:id,name',
-        ])
-            ->whereDate('date', '<', now()->toDateString())
-            ->orderByDesc('date')
-            ->orderByDesc('time')
-            ->where('status', '!=', 'cancelled_by_patient')
-            ->where('status', '!=', 'cancelled_by_clinic')
-            ->get();
-
-        $formattedAppointments = $appointments->map(function ($appointment) {
-            return [
-                'id'     => $appointment->id,
-                'status' => __('messages.' . $appointment->status),
-                'price'  => $appointment->price,
-                'date'   => $appointment->date,
-                'time'   => $appointment->time,
-                'child'  => [
-                    'id'         => $appointment->child_id,
-                    'first_name' => $appointment->child?->first_name,
-                    'image'      => $appointment->child?->image,
-                    'gender'     => $appointment->child?->gender,
-                ],
-                'doctor' => [
-                    'id'         => $appointment->doctor_id,
-                    'full_name'  => $appointment->doctor ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name : null,
-                    'department' => $appointment->doctor?->department?->name,
-                ]
-            ];
-        });
-
+    if (!$childExists) {
         return response()->json([
-            'status'       => 'success',
-            'message'      => __('messages.past_child_success'),
-            'appointments' => $formattedAppointments
-        ], 200);
+            'status'  => __('messages.error'),
+            'message' => __('messages.child_not_found')
+        ], 404);
     }
 
+    $query = Appointment::query();
+
+    if ($currentUser instanceof ParentModel) {
+
+        $query->whereHas('child', function ($q) use ($childId, $currentUser) {
+            $q->where('parent_id', $currentUser->id)
+                ->where('id', $childId);
+        });
+
+    } elseif ($currentUser instanceof Receptionist) {
+
+        $query->where('child_id', $childId);
+
+    } else {
+
+        return response()->json([
+            'status'  => __('messages.error'),
+            'message' => __('messages.unauthorized')
+        ], 403);
+    }
+
+    $appointments = $query->with([
+        'child:id,first_name,image,gender',
+        'doctor:id,first_name,last_name,department_id',
+        'doctor.department:id,name',
+    ])
+        ->where(function ($query) {
+
+            // أي موعد قبل اليوم
+            $query->whereDate('date', '<', now()->toDateString())
+
+                // أو موعد اليوم لكنه انتهى
+                ->orWhereIn('status', [
+                    'completed',
+                    'finished',
+                    'missed'
+                ]);
+        })
+
+        // المواعيد الملغاة لا تظهر في Past
+        ->whereNotIn('status', [
+            'cancelled_by_patient',
+            'cancelled_by_clinic'
+        ])
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get();
+
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
+
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id' => $appointment->doctor_id,
+                'full_name' => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ]
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        'message'      => __('messages.past_child_success'),
+        'appointments' => $formattedAppointments
+    ], 200);
+}
     public function getClosestAppointmentPerDoctor($departmentId)
     {
         $doctors = Doctor::where('department_id', $departmentId)
@@ -835,4 +913,55 @@ class AppointmentController extends Controller
             ], 500);
         }
     }
+    public function cancelledِAppointments()
+{
+    $appointments = Appointment::whereHas('child', function ($query) {
+        $query->where('parent_id', auth()->id());
+    })
+        ->with([
+            'child:id,first_name,image,gender',
+            'doctor:id,first_name,last_name,department_id',
+            'doctor.department:id,name',
+        ])
+        ->whereIn('status', [
+            'cancelled_by_patient',
+            'cancelled_by_clinic'
+        ])
+        ->orderByDesc('date')
+        ->orderByDesc('time')
+        ->get();
+
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id'     => $appointment->id,
+            'status' => __('messages.' . $appointment->status),
+            'price'  => $appointment->price,
+            'date'   => $appointment->date,
+            'time'   => $appointment->time,
+
+            'child' => [
+                'id'         => $appointment->child_id,
+                'first_name' => $appointment->child?->first_name,
+                'image'      => $appointment->child?->image,
+                'gender'     => $appointment->child?->gender,
+            ],
+
+            'doctor' => [
+                'id'         => $appointment->doctor_id,
+                'full_name'  => $appointment->doctor
+                    ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                    : null,
+                'department' => $appointment->doctor?->department
+        ? __('messages.departments_names.' . $appointment->doctor->department->name)
+        : null,
+            ],
+        ];
+    });
+
+    return response()->json([
+        'status'       => 'success',
+        //'message'      => __('messages.cancelled_success'),
+        'appointments' => $formattedAppointments,
+    ], 200);
+}
 }

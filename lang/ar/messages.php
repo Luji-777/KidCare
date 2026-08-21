@@ -55,6 +55,9 @@ return [
     'no_appointments' => 'لا يوجد مواعيد في هذا اليوم',
     'all_appointments_cancelled' => 'تم الغاء جميع المواعيد بنجاح',
     'appointment_cancelled' => 'تم الغاء الموعد بنجاح',
+    'no_upcoming'=>'لا يوجد مرضى قادمون',
+    'appointment_completed'=>'تم اكتمال الموعد',
+    'medical_not_found'=>'لا يوجد ملف طبي',
 
     //Addition
     'addition_added_successfully' => 'تمت الاضافة بنجاح',
@@ -93,6 +96,10 @@ return [
     'notification_all_appointments_cancelled_doctor_body' => 'تم إلغاء جميع المواعيد بتاريخ :date. عدد المواعيد الملغية: :count.',
     'notification_new_appointment_title' => 'موعد جديد',
     'notification_new_appointment_doctor_body' => 'تم حجز موعد جديد',
+    'appointment_reminder_title' => 'تذكير بالموعد',
+    'appointment_reminder_24h' => 'لديك موعد غداً.',
+    'appointment_reminder_2h' => 'لديك موعد بعد ساعتين.',
+
 
     // Children Management
     'child_added_success'      => 'تم إضافة ملف الطفل بنجاح.',
