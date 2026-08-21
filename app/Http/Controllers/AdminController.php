@@ -49,7 +49,9 @@ class AdminController extends Controller
     }
     public function logoutAdmin(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = auth()->user();
+
+        $user->tokens()->delete();
 
         return response()->json([
             'status'  => 'success',

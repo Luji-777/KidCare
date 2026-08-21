@@ -145,6 +145,28 @@ class DoctorController extends Controller
             'Token'   => $token,
         ], 200);
     }
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user) {
+            $user->update([
+                'fcm_token' => null
+            ]);
+
+            $user->tokens()->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('messages.logout_succssfuly')
+            ], 200);
+        }
+
+        return response()->json([
+            'status'  => __('messages.error'),
+            'message' => __('messages.no_active_session')
+        ], 401);
+    }
 
     public function store(StoreDoctorRequest $request)
     {

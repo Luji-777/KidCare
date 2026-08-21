@@ -55,9 +55,9 @@ return [
     'no_appointments' => 'لا يوجد مواعيد في هذا اليوم',
     'all_appointments_cancelled' => 'تم الغاء جميع المواعيد بنجاح',
     'appointment_cancelled' => 'تم الغاء الموعد بنجاح',
-    'no_upcoming'=>'لا يوجد مرضى قادمون',
-    'appointment_completed'=>'تم اكتمال الموعد',
-    'medical_not_found'=>'لا يوجد ملف طبي',
+    'no_upcoming' => 'لا يوجد مرضى قادمون',
+    'appointment_completed' => 'تم اكتمال الموعد',
+    'medical_not_found' => 'لا يوجد ملف طبي',
 
     //Addition
     'addition_added_successfully' => 'تمت الاضافة بنجاح',
@@ -170,6 +170,9 @@ return [
         'Pediatrics' => 'قسم الأطفال',
         'Dentistry'  => 'طب الأسنان',
         'Psychiatry' => 'الطب النفسي',
+        'pediatrics' => 'طب الأطفال',
+        'dentistry'  => 'طب الأسنان',
+        'psychiatry' => 'الطب النفسي',
     ],
 
     'vaccine_schedule_created_successfully' => 'تم الإعلان عن موعد اللقاح بنجاح.',

@@ -229,17 +229,23 @@ class ParentModelController extends Controller
     }
     public function logout(Request $request)
     {
-        if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        if ($user) {
+            $user->update([
+                'fcm_token' => null
+            ]);
+
+            $user->tokens()->delete();
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => __('messages.logout_succssfuly')
             ], 200);
         }
 
         return response()->json([
-            'status' => __('messages.error'),
+            'status'  => __('messages.error'),
             'message' => __('messages.no_active_session')
         ], 401);
     }

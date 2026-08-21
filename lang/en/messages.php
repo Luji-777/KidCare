@@ -29,9 +29,9 @@ return [
     'no_appointments' => 'No appointments found on this day',
     'all_appointments_cancelled' => 'All appointmrnts have been cancelled successfully',
     'appointment_cancelled' => 'Appointment has been cancelled successfully',
-    'no_upcoming'=>'No upcoming patients',
-    'appointment_completed'=>'Appointment completed',
-    'medical_not_found'=>'Medical record not found',
+    'no_upcoming' => 'No upcoming patients',
+    'appointment_completed' => 'Appointment completed',
+    'medical_not_found' => 'Medical record not found',
 
     //Addition
     'addition_added_successfully' => 'addition added successfully',
@@ -173,6 +173,10 @@ return [
         'Pediatrics' => 'Pediatrics',
         'Dentistry'  => 'Dentistry',
         'Psychiatry' => 'Psychiatry',
+
+        'pediatrics' => 'Pediatrics',
+        'dentistry'  => 'Dentistry',
+        'psychiatry' => 'Psychiatry',
     ],
 
     'vaccine_schedule_created_successfully' => 'Vaccine schedule created successfully.',
