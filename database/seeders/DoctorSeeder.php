@@ -15,7 +15,7 @@ class DoctorSeeder extends Seeder
 
     public function run(): void
     {
-        $defaultPassword = Hash::make('DoctorPassword123!');
+        $defaultPassword = Hash::make('doctor123');
 
         $genPedId  = DB::table('departments')->where('name', 'Pediatrics')->value('id');
         $cardioId  = DB::table('departments')->where('name', 'Dentistry')->value('id');

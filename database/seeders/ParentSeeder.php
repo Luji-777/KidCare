@@ -13,7 +13,7 @@ class ParentSeeder extends Seeder
 
     public function run(): void
     {
-        $defaultPassword = Hash::make('Password123!');
+        $defaultPassword = Hash::make('password123');
 
         $parents = [
             [
