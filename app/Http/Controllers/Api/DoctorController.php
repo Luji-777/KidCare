@@ -433,7 +433,7 @@ class DoctorController extends Controller
 
         $count = Appointment::where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->whereIn('status', ['confirmed', 'checkedIn'])
+            ->whereNotIn('status', ['cancelled_by_clinic', 'cancelled_by_patient'])
             ->count();
 
         return response()->json([
@@ -448,7 +448,7 @@ class DoctorController extends Controller
         $appointment = Appointment::with('child')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->whereIn('status', 'checkedIn')
+            ->where('status', 'checkedIn')
             ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->first();
