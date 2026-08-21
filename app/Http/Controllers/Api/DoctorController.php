@@ -148,6 +148,7 @@ class DoctorController extends Controller
         $data = $request->validated();
 
         $plainPassword = Str::random(6);
+
         $data['password'] = Hash::make($plainPassword);
 
         if ($request->hasFile('profile_picture')) {
@@ -184,10 +185,10 @@ class DoctorController extends Controller
         $doctor->refresh();
 
         return response()->json([
-            'status'  => 'success',
-            'message' => __('messages.doctor_created_success'),
+            'status'             => 'success',
+            'message'            => __('messages.doctor_created_success'),
             'generated_password' => $plainPassword,
-            'data'    => $doctor
+            'data'               => $doctor
         ], 201);
     }
     public function update(UpdateDoctorRequest $request, string $id)

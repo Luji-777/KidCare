@@ -30,7 +30,8 @@ class Doctor extends Authenticatable
         'fee',
         'commission_percentage',
         'gender',
-        'cv'
+        'cv',
+        'password'
     ];
     public function department()
     {
