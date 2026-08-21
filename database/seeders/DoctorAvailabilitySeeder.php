@@ -25,7 +25,7 @@ class DoctorAvailabilitySeeder extends Seeder
             return;
         }
 
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Saturday', 'Sunday'];
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
         $timeSlots = [
             ['start' => '09:00:00', 'end' => '11:00:00'],
@@ -36,9 +36,32 @@ class DoctorAvailabilitySeeder extends Seeder
         ];
 
         $availabilities = [];
-
         $doctorSlotCount = [];
 
+        // حساب اسم يوم اليوم واسم يوم الغد
+        $todayDayName = Carbon::today()->format('l');
+        $tomorrowDayName = Carbon::tomorrow()->format('l');
+
+        // 1. إضافة إتاحة خاصة ومضمونة للطبيب صاحب ID = 1 اليوم وبكراً
+        $docOne = DB::table('doctors')->where('id', 1)->first();
+        if ($docOne) {
+            foreach ([$todayDayName, $tomorrowDayName] as $targetDay) {
+                foreach ($timeSlots as $slot) {
+                    $availabilities[] = [
+                        'doctor_id'   => 1,
+                        'day_of_week' => $targetDay,
+                        'start_time'  => $slot['start'],
+                        'end_time'    => $slot['end'],
+                        'is_booked'   => false,
+                        'created_at'  => Carbon::now(),
+                        'updated_at'  => Carbon::now(),
+                    ];
+                }
+            }
+            $doctorSlotCount[1] = count($timeSlots) * 2;
+        }
+
+        // 2. توزيع باقي المواعيد للأطباء لمنع التضارب
         foreach ($departments as $departmentId => $doctors) {
             $doctorIds = $doctors->pluck('id')->toArray();
             $doctorCount = count($doctorIds);
@@ -50,7 +73,6 @@ class DoctorAvailabilitySeeder extends Seeder
             }
 
             foreach ($days as $dayIndex => $day) {
-
                 $activeSlotIndexes = match ($dayIndex % 3) {
                     0 => [0, 2, 4],
                     1 => [1, 3],
@@ -59,6 +81,11 @@ class DoctorAvailabilitySeeder extends Seeder
 
                 foreach ($activeSlotIndexes as $slotIdx) {
                     $assignedDoctorId = $doctorIds[($dayIndex * 2 + $slotIdx) % $doctorCount];
+
+                    // لتجنب التعارض: إذا كان اليوم ينطبق على اليوم/غداً والطبيب المسند هو 1، نجتاز التكرار لأن الطبيب 1 أضيفت أوقاته سابقاً
+                    if ($assignedDoctorId == 1 && in_array($day, [$todayDayName, $tomorrowDayName])) {
+                        continue;
+                    }
 
                     $availabilities[] = [
                         'doctor_id'   => $assignedDoctorId,
