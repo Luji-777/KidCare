@@ -285,7 +285,8 @@ class PaymentController extends Controller
 
                             DBNotification::create([
                                 'parent_id' => $parent->id,
-                                'message' => __('messages.appointment_confirmed_success')
+                                'title' => __('messages.appointment_confirmed_title'),
+                                'message' => __('messages.appointment_confirmed_body')
                             ]);
 
                             if ($parent && $parent->fcm_token) {

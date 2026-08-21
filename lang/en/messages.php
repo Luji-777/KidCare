@@ -29,6 +29,9 @@ return [
     'no_appointments' => 'No appointments found on this day',
     'all_appointments_cancelled' => 'All appointmrnts have been cancelled successfully',
     'appointment_cancelled' => 'Appointment has been cancelled successfully',
+    'no_upcoming'=>'No upcoming patients',
+    'appointment_completed'=>'Appointment completed',
+    'medical_not_found'=>'Medical record not found',
 
     //Addition
     'addition_added_successfully' => 'addition added successfully',
@@ -95,6 +98,10 @@ return [
     'notification_all_appointments_cancelled_doctor_body' => 'All appointments on :date have been cancelled. Total cancelled appointments: :count.',
     'notification_new_appointment_title' => 'New appointment',
     'notification_new_appointment_doctor_body' => 'New appointment was booked',
+    'appointment_reminder_title' => 'Appointment Reminder',
+    'appointment_reminder_24h' => 'Your appointment is tomorrow.',
+    'appointment_reminder_2h' => 'Your appointment is in 2 hours.',
+
 
 
 

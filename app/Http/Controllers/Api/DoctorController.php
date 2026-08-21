@@ -377,7 +377,8 @@ class DoctorController extends Controller
         return response()->json([
             'id' => $doctor->id,
             'name' => $doctor->first_name . ' ' . $doctor->last_name,
-            'specialization' => $doctor->department?->name,
+            'specialization' => $doctor->department
+            ? __('departments_names.' . $doctor->department->name): null,
             'image' => $doctor->profile_picture,
         ]);
     }
@@ -388,7 +389,7 @@ class DoctorController extends Controller
 
         $count = Appointment::where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->where('status', 'confirmed')
+            ->whereIn('status', ['confirmed','checkedIn'])
             ->count();
 
         return response()->json([
@@ -403,7 +404,7 @@ class DoctorController extends Controller
         $appointment = Appointment::with('child')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->where('status', 'confirmed')
+            ->whereIn('status', 'checkedIn')
             ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->first();
@@ -411,7 +412,7 @@ class DoctorController extends Controller
         if (!$appointment) {
             return response()->json([
                 'status' => __('messages.error'),
-                'message' => 'No upcoming patients'
+                'message' => __('messages.no_upcoming')
             ]);
         }
 
@@ -453,7 +454,7 @@ class DoctorController extends Controller
         $appointments = Appointment::with('child')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->where('status', 'confirmed')
+            ->whereIn('status',['confirmed','checkedIn'])
             ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->get();
@@ -520,7 +521,7 @@ class DoctorController extends Controller
         $appointment->save();
 
         return response()->json([
-            'message' => 'Appointment completed'
+            'message' => __('meassage.appointment_completed')
         ]);
     }
 

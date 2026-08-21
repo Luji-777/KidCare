@@ -131,7 +131,7 @@ class MedicalRecordController extends Controller
         if (!$record) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Medical record not found.'
+                'message' => __('message.medical_not_found')
             ], 404);
         }
 
