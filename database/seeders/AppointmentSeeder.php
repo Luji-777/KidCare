@@ -44,6 +44,25 @@ class AppointmentSeeder extends Seeder
 
             $this->createAppointment($child, $doctor, $isPast, $startOfYear, $today, $workingHours);
         }
+
+        // إضافة المواعيد الإضافية المحددة للطبيب ID = 1
+        $doctorOne = Doctor::find(1);
+
+        if ($doctorOne) {
+            $tomorrow = $today->copy()->addDay();
+
+            // 5 مواعيد لليوم
+            for ($i = 0; $i < 5; $i++) {
+                $child = $children->random();
+                $this->createFixedAppointment($child, $doctorOne, $today->toDateString(), $workingHours);
+            }
+
+            // 5 مواعيد لبكرة
+            for ($i = 0; $i < 5; $i++) {
+                $child = $children->random();
+                $this->createFixedAppointment($child, $doctorOne, $tomorrow->toDateString(), $workingHours);
+            }
+        }
     }
 
     private function createAppointment(
@@ -84,6 +103,33 @@ class AppointmentSeeder extends Seeder
             'date'            => $date,
             'time'            => $workingHours[array_rand($workingHours)],
             'status'          => $status,
+            'price'           => $price,
+            'currency'        => 'USD',
+            'payment_status'  => $paymentStatus,
+            'doctor_earnings' => $doctorEarnings,
+            'booking_source'  => $bookingSource,
+        ]);
+    }
+
+    private function createFixedAppointment(
+        Child $child,
+        Doctor $doctor,
+        string $date,
+        array $workingHours
+    ): void {
+        $price = (float) $doctor->fee;
+        $commissionRate = (float) $doctor->commission_percentage;
+        $doctorEarnings = $price * ($commissionRate / 100);
+
+        $bookingSource = (rand(0, 1) === 1) ? 'online' : 'reception';
+        $paymentStatus = ($bookingSource === 'online') ? 'paid_online' : 'unpaid';
+
+        Appointment::create([
+            'child_id'        => $child->id,
+            'doctor_id'       => $doctor->id,
+            'date'            => $date,
+            'time'            => $workingHours[array_rand($workingHours)],
+            'status'          => 'confirmed',
             'price'           => $price,
             'currency'        => 'USD',
             'payment_status'  => $paymentStatus,
