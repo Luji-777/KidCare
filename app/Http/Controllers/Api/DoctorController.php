@@ -1321,48 +1321,56 @@ class DoctorController extends Controller
 
         foreach ($appointments as $appointment) {
 
+            // 1. مرونة في البحث عن حالة الدفع الناجحة
             $transaction = Transaction::where('appointment_id', $appointment->id)
-                ->where('status', 'succeeded')
+                ->whereIn('status', ['succeeded', 'paid', 'completed', 'successful'])
                 ->first();
 
             $stripeRefundId = null;
             $refundAmount = 0;
 
-
-            if ($transaction) {
+            if ($transaction && !empty($transaction->stripe_payment_intent_id)) {
                 try {
                     $refundAmount = $transaction->amount;
                     $refundAmountInCents = (int) round($refundAmount * 100);
 
-                    $refund = \Stripe\Refund::create([
-                        'payment_intent' => $transaction->stripe_payment_intent_id,
+                    // إعداد معلمات الـ Refund بمرونة (سواء PaymentIntent أو Charge)
+                    $refundParams = [
                         'amount' => $refundAmountInCents,
                         'metadata' => [
                             'appointment_id' => $appointment->id,
                             'reason' => 'Cancelled by clinic / doctor'
                         ]
-                    ]);
+                    ];
 
+                    if (str_starts_with($transaction->stripe_payment_intent_id, 'ch_')) {
+                        $refundParams['charge'] = $transaction->stripe_payment_intent_id;
+                    } else {
+                        $refundParams['payment_intent'] = $transaction->stripe_payment_intent_id;
+                    }
+
+                    $refund = \Stripe\Refund::create($refundParams);
                     $stripeRefundId = $refund->id;
                 } catch (\Exception $e) {
-                    \Log::error("Stripe refund failed for appointment {$appointment->id}: " . $e->getMessage());
+                    // تسجيل الخطأ بدقة لمعرفة السبب إذا فشل Stripe
+                    \Log::error("Stripe refund exception for appointment {$appointment->id}: " . $e->getMessage());
                 }
+            } else {
+                \Log::warning("No valid transaction found for refund on appointment {$appointment->id}");
             }
 
             DB::beginTransaction();
             try {
-
                 if ($transaction && $stripeRefundId) {
                     Transaction::create([
                         'appointment_id' => $appointment->id,
                         'stripe_payment_intent_id' => $stripeRefundId,
                         'amount' => $refundAmount,
-                        'currency' => $transaction->currency,
+                        'currency' => $transaction->currency ?? 'USD',
                         'status' => 'refunded',
                     ]);
                 }
 
-                // إلغاء الموعد
                 $appointment->update([
                     'status' => 'cancelled_by_clinic',
                 ]);
