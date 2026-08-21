@@ -1415,6 +1415,7 @@ class DoctorController extends Controller
                         'message' => __('messages.notification_appointment_cancelled_parent_body', [
                             'date' => $appointment->date,
                             'time' => $appointment->time,
+                            'amount' => $refundAmount,
                         ])
                     ]);
                 }
@@ -1439,6 +1440,7 @@ class DoctorController extends Controller
                             __('messages.notification_appointment_cancelled_parent_body', [
                                 'date' => $appointment->date,
                                 'time' => $appointment->time,
+                                'amount' => $refundAmount,
                             ])
                         )
                     )->withData([
@@ -1446,6 +1448,7 @@ class DoctorController extends Controller
                         'type' => 'appointment_cancelled',
                         'date' => \Carbon\Carbon::parse($appointment->date)->toDateString(),
                         'time' => (string) $appointment->time,
+                        'refund_amount' => (string) $refundAmount,
                     ]);
 
                     $messaging->send($message);
@@ -1573,6 +1576,7 @@ class DoctorController extends Controller
                     'message' => __('messages.notification_appointment_cancelled_parent_body', [
                         'date' => $appointment->date,
                         'time' => $appointment->time,
+                        'amount' => $refundAmount,
                     ])
                 ]);
             }
@@ -1583,6 +1587,7 @@ class DoctorController extends Controller
                 'child' => $appointment->child->first_name . ' ' . $appointment->child->last_name,
                 'date' => $appointment->date,
                 'time' => $appointment->time,
+                //'amount' => $refundAmount,
             ]);
 
             DoctorNotification::create([
@@ -1617,6 +1622,7 @@ class DoctorController extends Controller
                         __('messages.notification_appointment_cancelled_parent_body', [
                             'date' => $appointment->date,
                             'time' => $appointment->time,
+                            'amount' => $refundAmount,
                         ])
                     )
                 )->withData([
@@ -1624,6 +1630,7 @@ class DoctorController extends Controller
                     'appointment_id' => (string) $appointment->id,
                     'date' => \Carbon\Carbon::parse($appointment->date)->toDateString(),
                     'time' => (string) $appointment->time,
+                    'refund_amount' => (string) $refundAmount,
                 ]);
 
                 $messaging->send($parentMessage);
@@ -1647,6 +1654,7 @@ class DoctorController extends Controller
                     'appointment_id' => (string) $appointment->id,
                     'date' => \Carbon\Carbon::parse($appointment->date)->toDateString(),
                     'time' => (string) $appointment->time,
+                    //'amount' => $refundAmount,
                     'sound' => 'default',
                 ]);
 

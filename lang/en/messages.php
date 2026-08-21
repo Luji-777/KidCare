@@ -90,7 +90,7 @@ return [
     'notification_appointment_confirmed_body'  => 'Your appointment has been confirmed successfully.',
     'notification_appointment_cancelled_title' => 'Appointment cancelled',
     'notification_appointment_cancelled_doctor_body' => ':child cancelled the appointment scheduled for :date at :time.',
-    'notification_appointment_cancelled_parent_body' => 'Your child’s appointment on :date at :time has been cancelled by the doctor.',
+    'notification_appointment_cancelled_parent_body' => 'Your child’s appointment on :date at :time has been cancelled by the doctor. Refund amount: :amount.',
     'notification_all_appointments_cancelled_title' => 'All Appointments Cancelled',
     'notification_all_appointments_cancelled_doctor_body' => 'All appointments on :date have been cancelled. Total cancelled appointments: :count.',
     'notification_single_appointment_cancelled_doctor_body' => 'The appointment for :child on :date at :time has been cancelled.',
