@@ -574,7 +574,7 @@ class DoctorController extends Controller
         $doctor = auth()->user();
 
         $revenue = Appointment::where('doctor_id', $doctor->id)
-            ->where('status', 'completed', 'finished')
+            ->where('status', ['completed', 'finished'])
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->sum('doctor_earnings');
@@ -1143,7 +1143,7 @@ class DoctorController extends Controller
         $income = Appointment::where('doctor_id', $doctor->id)
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
-            ->where('status', 'completed', 'finished')
+            ->whereIn('status', ['completed', 'finished'])
             ->whereIn('payment_status', ['paid_online', 'fully_paid'])
             ->sum('doctor_earnings');
 
