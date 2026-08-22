@@ -565,7 +565,7 @@ class DoctorController extends Controller
         $appointment->save();
 
         return response()->json([
-            'message' => __('meassage.appointment_completed')
+            'message' => 'appointment completed'
         ]);
     }
 

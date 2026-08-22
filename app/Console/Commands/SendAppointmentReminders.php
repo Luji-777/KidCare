@@ -88,8 +88,8 @@ class SendAppointmentReminders extends Command
             )
             ->withNotification(
                 Notification::create(
-                    __('notifications.appointment_reminder_title'),
-                    __('notifications.appointment_reminder_2h')
+                    __('messages.appointment_reminder_title'),
+                    __('messages.appointment_reminder_2h')
                 )
             );
 

@@ -160,7 +160,7 @@ Route::middleware('set.locale')->group(function () {
 
         // Home dashboard
         Route::get('/home/patients-count', [AdminController::class, 'getPatientsCount']);
-        Route::get('/home/present-doctors-count', [AdminController::class, 'getPresentDoctorsCount']);
+        Route::get('/home/present-', [AdminController::class, 'getPresentDoctorsCount']);
         Route::get('/home/appointments-count', [AdminController::class, 'getAppointmentsCount']);
         Route::get('/home/clinic-occupancy', [AdminController::class, 'getDailyClinicOccupancy']);
         Route::get('/monthly-revenue', [AdminController::class, 'getMonthlyRevenueReport']);
