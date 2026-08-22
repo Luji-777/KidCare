@@ -241,11 +241,8 @@ class PaymentController extends Controller
                             ]);
 
                             $child = Child::find($appointment->child_id);
-
                             $parent = ParentModel::find($child->parent_id);
-
                             $doctor = Doctor::find($appointment->doctor_id);
-
                             $doctorTitle = __('messages.notification_new_appointment_title');
 
                             $doctorBody = __('messages.notification_new_appointment_doctor_body', [
@@ -260,7 +257,6 @@ class PaymentController extends Controller
                                 'message'   => $doctorBody,
                             ]);
 
-                            // Push Notification للطبيب
                             if ($doctor && $doctor->fcm_token) {
 
                                 $doctorMessage = CloudMessage::withTarget(
