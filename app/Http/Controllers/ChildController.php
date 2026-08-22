@@ -316,13 +316,13 @@ class ChildController extends Controller
 
             if ($years >= 1) {
                 $age = $years;
-                $ageType = 'year'; // أو 'سنة'
+                $ageType = 'year'; 
             } elseif ($months >= 1) {
                 $age = $months;
-                $ageType = 'month'; // أو 'شهر'
+                $ageType = 'month'; 
             } else {
                 $age = $days;
-                $ageType = 'day'; // أو 'يوم'
+                $ageType = 'day'; 
             }
 
             return [

@@ -27,8 +27,7 @@ class StoreAppointmentRequest extends FormRequest
             'date' => 'required|date|after_or_equal:today',
             'time' => 'required|date_format:H:i',
             'price' => 'nullable|numeric|min:0',
-            //'type'      => 'nullable|in:consultation,vaccine',
-            //  'vaccine_id'=> 'required_if:type,vaccine|exists:vaccines,id',
+
         ];
     }
 }

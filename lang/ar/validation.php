@@ -28,7 +28,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'attributes' => [
-        // حقول عامة ومشتركة
+    
         'phone_number'          => 'رقم الهاتف',
         'password'              => 'كلمة المرور',
         'email'                 => 'البريد الإلكتروني',
@@ -39,7 +39,6 @@ return [
         'fcm_token'             => 'رمز الإشعارات',
         'status'                => 'الحالة',
 
-        // بيانات الأطباء (Doctor CRUD & Auth)
         'first_name'            => 'الاسم الأول',
         'last_name'             => 'الاسم الأخير',
         'profile_picture'       => 'الصورة الشخصية',
@@ -48,23 +47,19 @@ return [
         'department_id'         => 'القسم الطبي',
         'commission_percentage' => 'نسبة عمولة الطبيب',
 
-        // أوقات دوام الطبيب (Doctor Availability)
         'day_of_week'           => 'اليوم من الأسبوع',
         'start_time'            => 'وقت البدء',
         'end_time'              => 'وقت الانتهاء',
 
-        // بيانات الأطفال (Child CRUD & Medical Records)
         'child_id'              => 'معرّف الطفل',
         'image'                 => 'صورة الطفل',
         'birth_date'            => 'تاريخ الميلاد',
         'height'                => 'الطول',
         'weight'                => 'الوزن',
 
-        // المعاملات المالية والمواعيد (Appointments & Checkout)
         'appointment_id'        => 'رقم الموعد',
         'price'                 => 'السعر',
 
-        // التكاليف الإضافية (Additions)
         'additions'             => 'قائمة الإضافات والتكاليف',
         'additions.*.item_name' => 'اسم الخدمة الإضافية',
         'additions.*.price'     => 'سعر الخدمة الإضافية',

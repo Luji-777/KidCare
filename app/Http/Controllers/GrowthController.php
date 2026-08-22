@@ -173,10 +173,10 @@ class GrowthController extends Controller
         if ($ageInMonths <= 24) {
             $minHealthy = ($gender === 'male') ? 14.5 : 14.0;
             $maxHealthy = ($gender === 'male') ? 18.5 : 18.0;
-        } elseif ($ageInMonths > 24 && $ageInMonths <= 60) { // من سنتين إلى 5 سنوات
+        } elseif ($ageInMonths > 24 && $ageInMonths <= 60) { 
             $minHealthy = ($gender === 'male') ? 13.8 : 13.5;
             $maxHealthy = ($gender === 'male') ? 16.8 : 16.5;
-        } else { // من 5 سنوات إلى 7 سنوات
+        } else { 
             $minHealthy = ($gender === 'male') ? 13.5 : 13.0;
             $maxHealthy = ($gender === 'male') ? 17.0 : 16.8;
         }

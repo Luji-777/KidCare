@@ -7,14 +7,13 @@ if (!function_exists('sendWhatsAppMessage')) {
     {
         $instance = env('ULTRAMSG_INSTANCE_ID');
         $token    = env('ULTRAMSG_TOKEN');
-        $apiUrl   = env('ULTRAMSG_API_URL', 'https://api.ultramsg.com'); // default لو مش موجود في .env
+        $apiUrl   = env('ULTRAMSG_API_URL', 'https://api.ultramsg.com'); 
 
         if (empty($instance) || empty($token)) {
             Log::error('UltraMsg: Missing INSTANCE_ID or TOKEN in .env');
             return false;
         }
 
-        // الرقم لازم بدون + ، مثال: 963501234567
         $to = ltrim($to, '+');
 
         $params = [
@@ -30,8 +29,8 @@ if (!function_exists('sendWhatsAppMessage')) {
             CURLOPT_ENCODING       => "",
             CURLOPT_MAXREDIRS      => 10,
             CURLOPT_TIMEOUT        => 30,
-            CURLOPT_SSL_VERIFYHOST => 0, // للتجربة فقط، في الإنتاج غيري لـ 2
-            CURLOPT_SSL_VERIFYPEER => 0, // نفس الشيء
+            CURLOPT_SSL_VERIFYHOST => 0, 
+            CURLOPT_SSL_VERIFYPEER => 0, 
             CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST  => "POST",
             CURLOPT_POSTFIELDS     => http_build_query($params),

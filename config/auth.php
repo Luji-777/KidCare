@@ -40,7 +40,6 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        // اجعلي الـ driver هنا 'session' لأن Sanctum يتعامل داخلياً مع الـ session كحارس أساسي للموديل
         'receptionist' => [
             'driver' => 'session',
             'provider' => 'receptionists',

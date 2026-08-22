@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -44,11 +43,13 @@ class AppointmentSeeder extends Seeder
                 }
             }
         }
+
         $currentMonth = $today->month;
         $appointmentsPerMonth = (int) floor(($maxTotalAppointments - $createdCount) / $currentMonth);
+
         for ($month = 1; $month <= $currentMonth; $month++) {
             $monthCreated = 0;
-
+            
             $daysInMonth = Carbon::create($today->year, $month, 1)->daysInMonth;
             $step = max(1, (int) floor($daysInMonth / max(1, $appointmentsPerMonth)));
 
@@ -58,7 +59,7 @@ class AppointmentSeeder extends Seeder
                 }
 
                 $carbonDate = Carbon::create($today->year, $month, $day);
-
+                
                 if ($carbonDate->gt($today)) {
                     break;
                 }
@@ -101,7 +102,6 @@ class AppointmentSeeder extends Seeder
                                 $status,
                                 $bookedSlots
                             );
-
                             $createdCount++;
                             $monthCreated++;
                         }

@@ -23,7 +23,6 @@ class DoctorAvailabilityController extends Controller
     {
         $doctor = auth()->user();
 
-        // جلب جميع أطباء نفس القسم، بما فيهم الطبيب الحالي
         $departmentDoctorIds = Doctor::where(
             'department_id',
             $doctor->department_id
@@ -43,7 +42,6 @@ class DoctorAvailabilityController extends Controller
 
         foreach ($days as $day) {
 
-            // جلب جميع أوقات دوام أطباء القسم في هذا اليوم
             $availabilities = DoctorAvailability::whereIn(
                 'doctor_id',
                 $departmentDoctorIds
@@ -54,12 +52,10 @@ class DoctorAvailabilityController extends Controller
 
             $freePeriods = [];
 
-            // بداية ونهاية ساعات العمل العامة
             $startOfDay = Carbon::createFromTime(9, 0, 0);
             $endOfDay = Carbon::createFromTime(18, 0, 0);
 
-            // إذا لم يوجد أي دوام لأطباء القسم بهذا اليوم
-            if ($availabilities->isEmpty()) {
+        if ($availabilities->isEmpty()) {
 
                 $freePeriods[] = [
                     'start_time' => '09:00',
@@ -74,7 +70,6 @@ class DoctorAvailabilityController extends Controller
                     $start = Carbon::parse($availability->start_time);
                     $end = Carbon::parse($availability->end_time);
 
-                    // تجاهل أي وقت خارج ساعات العمل العامة
                     if ($end->lte($startOfDay)) {
                         continue;
                     }
@@ -83,17 +78,14 @@ class DoctorAvailabilityController extends Controller
                         break;
                     }
 
-                    // ضبط بداية الفترة ضمن 09:00 - 18:00
                     if ($start->lt($startOfDay)) {
                         $start = $startOfDay->copy();
                     }
 
-                    // ضبط نهاية الفترة ضمن 09:00 - 18:00
                     if ($end->gt($endOfDay)) {
                         $end = $endOfDay->copy();
                     }
 
-                    // يوجد وقت فارغ قبل بداية الدوام الحالي
                     if ($currentTime->lt($start)) {
 
                         $freePeriods[] = [
@@ -102,13 +94,11 @@ class DoctorAvailabilityController extends Controller
                         ];
                     }
 
-                    // تحريك currentTime إلى نهاية الدوام المشغول
                     if ($end->gt($currentTime)) {
                         $currentTime = $end->copy();
                     }
                 }
 
-                // يوجد وقت فارغ بعد آخر دوام
                 if ($currentTime->lt($endOfDay)) {
 
                     $freePeriods[] = [
@@ -134,12 +124,9 @@ class DoctorAvailabilityController extends Controller
     public function availability(StoreDoctorAvailabilityRequest $request)
     {
         $doctor = auth()->user();
-
-        // جلب جميع أطباء نفس القسم
         $doctorIds = Doctor::where('department_id', $doctor->department_id)
             ->pluck('id');
 
-        // التحقق من وجود تداخل فعلي في أوقات الدوام
         $conflict = DoctorAvailability::whereIn('doctor_id', $doctorIds)
             ->whereRaw('LOWER(day_of_week) = ?', [
                 strtolower($request->day_of_week)
@@ -154,7 +141,6 @@ class DoctorAvailabilityController extends Controller
             ], 422);
         }
 
-        // إنشاء الدوام
         $availability = DoctorAvailability::create([
             'doctor_id'   => $doctor->id,
             'day_of_week' => $request->day_of_week,

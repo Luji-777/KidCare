@@ -359,7 +359,6 @@ class AppointmentController extends Controller
 
             DB::commit();
             Cache::forget("booked_slot_{$appointment->doctor_id}_{$appointment->date}_{$appointment->time}");
-            // Push Notification للطبيب
             if ($doctor && !empty($doctor->fcm_token)) {
 
                 $firebase->send(
@@ -551,10 +550,8 @@ class AppointmentController extends Controller
         ])
             ->where(function ($query) {
 
-                // مواعيد الأيام القادمة
                 $query->whereDate('date', '>', now()->toDateString())
 
-                    // مواعيد اليوم التي لم تنتهِ
                     ->orWhere(function ($q) {
                         $q->whereDate('date', now()->toDateString())
                             ->whereIn('status', [
@@ -641,10 +638,8 @@ class AppointmentController extends Controller
         ])
             ->where(function ($query) {
 
-                // أي موعد قبل اليوم
                 $query->whereDate('date', '<', now()->toDateString())
 
-                    // أو موعد اليوم لكنه انتهى
                     ->orWhereIn('status', [
                         'completed',
                         'finished',
@@ -652,7 +647,6 @@ class AppointmentController extends Controller
                     ]);
             })
 
-            // المواعيد الملغاة لا تظهر في Past
             ->whereNotIn('status', [
                 'cancelled_by_patient',
                 'cancelled_by_clinic'

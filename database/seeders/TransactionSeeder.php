@@ -20,7 +20,6 @@ class TransactionSeeder extends Seeder
                     $fixedPaymentMethod = $isOnline ? 'stripe' : 'cash';
 
                     if ($appointment->status === 'confirmed') {
-                        // فقط أونلاين، أما الرسبشن فلا يتم إنشاء شيء له
                         if ($isOnline) {
                             $this->createTransaction(
                                 $appointment->id,

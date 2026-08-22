@@ -52,7 +52,6 @@ class SendAppointmentReminders extends Command
 
         $messaging = app('firebase.messaging');
 
-        // 🔔 قبل الموعد بـ 24 ساعة
         if (
             !$appointment->reminder_24_sent &&
             $minutesLeft <= 1440 &&
@@ -77,7 +76,6 @@ class SendAppointmentReminders extends Command
             ]);
         }
 
-        // 🔔 قبل الموعد بساعتين
         if (
             !$appointment->reminder_2h_sent &&
             $minutesLeft <= 120 &&
