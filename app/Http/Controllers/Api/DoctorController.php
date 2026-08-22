@@ -446,12 +446,11 @@ class DoctorController extends Controller
         $doctor = auth()->user();
 
         $appointment = Appointment::with('child')
-            ->where('doctor_id', $doctor->id)
-            ->whereDate('date', today())
-            ->where('status', 'checkedIn')
-            ->whereTime('time', '>=', now()->format('H:i:s'))
-            ->orderBy('time')
-            ->first();
+    ->where('doctor_id', $doctor->id)
+    ->whereDate('date', today())
+    ->where('status', 'checked_in')
+    ->orderBy('time')
+    ->first();
 
         if (!$appointment) {
             return response()->json([
@@ -498,7 +497,7 @@ class DoctorController extends Controller
         $appointments = Appointment::with('child')
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', today())
-            ->whereIn('status', ['confirmed', 'checkedIn'])
+            ->whereIn('status', ['confirmed', 'checked_in'])
             ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->get();
