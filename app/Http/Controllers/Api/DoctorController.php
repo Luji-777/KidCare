@@ -498,7 +498,7 @@ class DoctorController extends Controller
             ->where('doctor_id', $doctor->id)
             ->whereDate('date', today())
             ->whereIn('status', ['confirmed', 'checked_in'])
-            ->whereTime('time', '>=', now()->format('H:i:s'))
+           // ->whereTime('time', '>=', now()->format('H:i:s'))
             ->orderBy('time')
             ->get();
         $now = Carbon::now();
